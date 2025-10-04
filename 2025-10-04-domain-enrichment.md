@@ -1,18 +1,19 @@
 ---
 title: Domain Enrichment Report
-date: 2025-10-04T13:12:45.631Z
+date: 2025-10-04T13:39:36.165Z
 tags: [domains, enrichment, mdx]
 ---
 
 # Domain Enrichment Report
 
-**Generated:** 2025-10-04T13:12:45.631Z
+**Generated:** 2025-10-04T13:39:36.165Z
 **Domains Enriched:** 105
 
 ## Summary
 
 - ✅ **Successfully enriched:** 105 domains
 - ⚠️  **Nameserver mismatches:** 3 domains
+- 🚨 **Not working via HTTP:** 37 domains
 - 📁 **Output directory:** `sites/[tld]/[domain]/index.mdx`
 
 ## Enrichment Details
