@@ -1,0 +1,401 @@
+# First 10 Foundational & Parallelizable High-Impact Tasks
+
+**Date:** 2025-10-02
+**Purpose:** Initial sprint for microservices architecture migration
+**Duration:** 2-3 weeks with parallel execution
+**Max Parallelization:** 6 concurrent agents
+
+---
+
+## Execution Strategy
+
+### Phase 1: Foundation + Infrastructure (Week 1)
+**Parallel Execution Group A (Start Day 1)**
+
+#### 1. WS-001: @db/ RPC Service ⭐ CRITICAL PATH
+- **Priority:** P0 (blocks everything)
+- **Duration:** 3-5 days
+- **Agent:** Backend Engineer A
+- **Parallelizable:** No (foundation)
+
+**Deliverables:**
+- `@db/src/index.ts` - DatabaseService with WorkerEntrypoint
+- Query modules for all 14 tables (things, relationships, users, generations, etc.)
+- Full-text, vector, and hybrid search functions
+- Transaction support
+- 80%+ test coverage
+
+**Success Criteria:**
+```typescript
+✅ All CRUD operations via RPC
+✅ db.getThing(ns, id) returns in <10ms (p95)
+✅ Full-text search working with PostgreSQL tsvector
+✅ Vector search with pgvector
+✅ Deployed to staging as `db-service`
+```
+
+---
+
+#### 2. WS-004: Workers Scaffolding ⚡ PARALLEL
+- **Priority:** P1
+- **Duration:** 2-3 days
+- **Agent:** DevOps Engineer A
+- **Parallelizable:** Yes (independent of WS-001)
+
+**Deliverables:**
+- Service template generator CLI
+- Pre-configured templates (domain, integration, ai)
+- Shared packages: `workers/types/`, `workers/utils/`
+- Root monorepo configuration
+- Documentation
+
+**Success Criteria:**
+```bash
+✅ pnpm create-service --name agents --type domain
+✅ Generated service has RPC + HTTP + MCP + Queue
+✅ Template includes tests, wrangler config, types
+✅ Can scaffold new service in <30 seconds
+```
+
+---
+
+#### 3. WS-005: Testing Infrastructure ⚡ PARALLEL
+- **Priority:** P1
+- **Duration:** 2-3 days
+- **Agent:** QA Engineer A
+- **Parallelizable:** Yes (independent of WS-001)
+
+**Deliverables:**
+- Vitest + @cloudflare/vitest-pool-workers setup
+- Integration test framework (service-to-service RPC)
+- E2E test framework (Playwright)
+- Mock service factories
+- Test data generators
+
+**Success Criteria:**
+```typescript
+✅ Unit tests run with `pnpm test`
+✅ Integration tests can mock RPC calls
+✅ E2E tests can test full flows
+✅ CI runs all tests on PR
+✅ Coverage reports generated
+```
+
+---
+
+### Phase 2: Auth + Gateway (Week 1-2)
+**Sequential After WS-001 Complete**
+
+#### 4. WS-002: @auth/ RPC Service 🔒 DEPENDS ON DB
+- **Priority:** P0
+- **Duration:** 3-5 days
+- **Agent:** Backend Engineer B (can be same as A)
+- **Parallelizable:** After WS-001
+- **Dependencies:** WS-001 (needs db for users, sessions, api_keys)
+
+**Deliverables:**
+- `@auth/src/index.ts` - AuthService with WorkerEntrypoint
+- better-auth integration (GitHub OAuth)
+- API key validation
+- JWT generation and validation
+- Session management
+
+**Success Criteria:**
+```typescript
+✅ auth.validateToken(token) returns User in <5ms
+✅ GitHub OAuth flow working
+✅ API key authentication working
+✅ JWT tokens include user claims
+✅ Deployed to staging as `auth-service`
+```
+
+---
+
+#### 5. WS-006: CI/CD Setup ⚡ PARALLEL TO AUTH
+- **Priority:** P1
+- **Duration:** 2-3 days
+- **Agent:** DevOps Engineer A (continues from WS-004)
+- **Parallelizable:** Yes (parallel to WS-002)
+- **Dependencies:** WS-005 (needs testing infrastructure)
+
+**Deliverables:**
+- GitHub Actions workflows for each service
+- Staging deployment pipeline
+- Production deployment with canary (10% traffic)
+- Auto-rollback on errors
+- Monitoring and alerting (Sentry, LogFlare)
+
+**Success Criteria:**
+```yaml
+✅ PR → tests + deploy to staging automatically
+✅ Merge to main → canary deploy to production
+✅ Failed deployment auto-rolls back
+✅ Alerts fire on 5xx errors or high latency
+✅ Dashboard shows all service health
+```
+
+---
+
+#### 6. WS-003: @api/ Gateway 🚪 DEPENDS ON DB + AUTH
+- **Priority:** P0
+- **Duration:** 3-5 days
+- **Agent:** Backend Engineer C
+- **Parallelizable:** After WS-001 & WS-002
+- **Dependencies:** WS-001 (db), WS-002 (auth)
+
+**Deliverables:**
+- `@api/src/index.ts` - Pure routing gateway (NO business logic)
+- Domain routing (agents.do, mcp.do, workflows.do)
+- Path routing (/agents/*, /things/*)
+- Middleware (auth, rate limiting, CORS)
+- Service binding forwarding
+
+**Success Criteria:**
+```typescript
+✅ Routes /things/* to ThingsService via RPC
+✅ Domain agents.do → AgentsService
+✅ Auth middleware validates JWT/API keys
+✅ Rate limiting via Durable Objects
+✅ Routing overhead <1ms (p95)
+✅ Deployed to staging as `api-gateway`
+```
+
+---
+
+### Phase 3: Core Services (Week 2-3)
+**Parallel Execution After WS-003 Complete**
+
+All services depend on @db/ (WS-001) and @api/ (WS-003) being deployed.
+
+#### 7. WS-101: things/ Service 📦 PARALLEL
+- **Duration:** 2-3 days
+- **Agent:** Backend Engineer D
+- **Extract from:** api.services/api/routes/things.ts (21.7KB)
+
+**Deliverables:**
+- `workers/things/src/index.ts` - ThingsService
+- RPC: getThing, createThing, updateThing, deleteThing, listThings
+- HTTP: REST API endpoints
+- MCP: tools for LLMs
+- Queue: async operations
+- Tests: 80%+ coverage
+
+**Success Criteria:**
+```typescript
+✅ things.getThing('agent', 'my-agent') via RPC
+✅ GET /things/:id returns JSON/MDX
+✅ MCP tool get_thing() works
+✅ Gateway routes /things/* correctly
+✅ All 50+ tests passing
+```
+
+---
+
+#### 8. WS-102: relationships/ Service 🔗 PARALLEL
+- **Duration:** 2-3 days
+- **Agent:** Backend Engineer E
+- **Extract from:** api.services/api/routes/relationships.ts (3.0KB)
+
+**Deliverables:**
+- `workers/relationships/src/index.ts` - RelationshipsService
+- RPC: getRelationships, createRelationship, deleteRelationship
+- HTTP: REST API endpoints
+- MCP: tools for relationship queries
+- Tests: 80%+ coverage
+
+**Success Criteria:**
+```typescript
+✅ relationships.getRelationships('agent', 'my-agent')
+✅ POST /relationships creates new relationship
+✅ MCP tool create_relationship() works
+✅ Gateway routes /relationships/* correctly
+```
+
+---
+
+#### 9. WS-103: search/ Service 🔍 PARALLEL
+- **Duration:** 2-3 days
+- **Agent:** Backend Engineer F
+- **Extract from:** api.services/api/routes/search.ts (5.0KB)
+
+**Deliverables:**
+- `workers/search/src/index.ts` - SearchService
+- RPC: fullTextSearch, vectorSearch, hybridSearch
+- HTTP: GET /search?q=query
+- MCP: semantic search tools
+- Advanced ranking algorithms
+- Tests: 80%+ coverage
+
+**Success Criteria:**
+```typescript
+✅ search.fullTextSearch('agent tools') returns ranked results
+✅ search.vectorSearch(embedding, { limit: 10 })
+✅ search.hybridSearch(query, embedding) combines both
+✅ Results include relevance scores
+✅ Query latency <50ms (p95)
+```
+
+---
+
+#### 10. WS-106: ai/ Service 🤖 PARALLEL
+- **Duration:** 2-3 days
+- **Agent:** AI Engineer A
+- **Extract from:** api.services/api/routes/ai.ts (4.7KB)
+
+**Deliverables:**
+- `workers/ai/src/index.ts` - AIService
+- RPC: generateText, generateStream, analyzeContent
+- HTTP: POST /ai/generate
+- MCP: AI generation tools
+- Support for multiple providers (OpenAI, Workers AI, Anthropic)
+- Tests: 80%+ coverage
+
+**Success Criteria:**
+```typescript
+✅ ai.generateText(prompt, { model: 'gpt-4' })
+✅ ai.generateStream() returns ReadableStream
+✅ POST /ai/generate works
+✅ MCP tool generate_text() callable
+✅ Provider fallback working
+✅ Generation latency <2s (p95)
+```
+
+---
+
+## Parallelization Timeline
+
+```
+Week 1:
+Day 1-5:  [WS-001 db]───────────────────────────┐
+Day 1-3:  [WS-004 scaffolding]──────────┐       │
+Day 1-3:  [WS-005 testing]──────────────┤       │
+                                         ▼       ▼
+Day 3-8:                            [WS-002 auth]────────────┐
+Day 3-6:                            [WS-006 CI/CD]───────┐   │
+                                                          ▼   ▼
+Day 6-11:                                            [WS-003 gateway]
+                                                          │
+Week 2-3:                                                 ▼
+Day 12-15: [WS-101 things]──────────┬────────────────────┤
+Day 12-15: [WS-102 relationships]───┤                    │
+Day 12-15: [WS-103 search]──────────┤                    │
+Day 12-15: [WS-106 ai]──────────────┘                    │
+                                                          ▼
+Week 3:                                              [Next 6 services...]
+```
+
+**Total Duration:** 15-20 days
+**Max Concurrent Agents:** 6
+**Critical Path:** WS-001 → WS-002 → WS-003 (11-15 days)
+
+---
+
+## Agent Role Assignment
+
+| Agent | Role | Tasks | Duration |
+|-------|------|-------|----------|
+| **Backend Engineer A** | Database & Foundation | WS-001 (db) → WS-002 (auth) | Week 1-2 |
+| **DevOps Engineer A** | Infrastructure | WS-004 (scaffolding) → WS-006 (CI/CD) | Week 1-2 |
+| **QA Engineer A** | Testing | WS-005 (testing) → continuous | Week 1+ |
+| **Backend Engineer B** | Gateway | WS-003 (gateway) | Week 2 |
+| **Backend Engineer C** | Core Services | WS-101 (things) | Week 2-3 |
+| **Backend Engineer D** | Core Services | WS-102 (relationships) | Week 2-3 |
+| **Backend Engineer E** | Core Services | WS-103 (search) | Week 2-3 |
+| **AI Engineer A** | AI Services | WS-106 (ai) | Week 2-3 |
+
+---
+
+## Success Metrics
+
+### After 10 Tasks Complete:
+
+**Infrastructure:**
+- ✅ 3 foundational services deployed (db, auth, gateway)
+- ✅ Service template generator working
+- ✅ Testing framework operational
+- ✅ CI/CD pipelines running
+
+**Services:**
+- ✅ 4 core services extracted and deployed
+- ✅ Gateway routing all 4 services
+- ✅ All services <100ms latency (p95)
+- ✅ 80%+ test coverage across all services
+
+**Migration Progress:**
+- ✅ ~20% of api.services routes extracted (4/49)
+- ✅ Database fully isolated into @db/
+- ✅ Auth fully isolated into @auth/
+- ✅ Gateway pattern proven and working
+
+---
+
+## Next Steps After Task 10
+
+**Week 3-4: Continue Core Services (WS-104 through WS-110)**
+- WS-104: queue/ service
+- WS-105: events/ service
+- WS-107: embeddings/ service
+- WS-108: batch/ service
+- WS-109: code-exec/ service
+- WS-110: claude-code/ service
+
+**Week 5-6: Integration Services (WS-201 through WS-210)**
+- External API integrations (VAPI, Stripe, WorkOS, GitHub, Slack)
+- Content services (docs, markdown, SDK)
+
+**Week 7-8: Domain Services (WS-301 through WS-315)**
+- High-level features (agents, workflows, marketplace, billing)
+
+---
+
+## Risk Mitigation
+
+### Critical Path Risks:
+1. **WS-001 Delays** → Blocks everything
+   - Mitigation: Start immediately, assign best backend engineer
+   - Fallback: Parallel work on WS-004, WS-005 continues
+
+2. **RPC Performance** → May not meet <10ms target
+   - Mitigation: Early performance testing in WS-001
+   - Fallback: Optimize or add caching layer
+
+3. **Service Binding Limits** → Cloudflare has limits per worker
+   - Mitigation: Gateway can fan out to multiple sub-gateways
+   - Fallback: Domain-based routing reduces bindings per worker
+
+### Technical Risks:
+1. **better-auth in Workers** → May have compatibility issues
+   - Mitigation: Research and POC in WS-002
+   - Fallback: Custom JWT implementation
+
+2. **MCP Server in Workers** → New, may be unstable
+   - Mitigation: Use official @modelcontextprotocol/sdk
+   - Fallback: REST-only initially, add MCP later
+
+3. **Vitest Pool Workers** → Experimental
+   - Mitigation: WS-005 validates early
+   - Fallback: Use Miniflare for testing
+
+---
+
+## Resource Requirements
+
+### Human Resources:
+- 6-8 engineers (4 backend, 1 AI, 1 DevOps, 1 QA, 1 tech writer)
+
+### Infrastructure:
+- Cloudflare Workers Paid plan ($5/month base + usage)
+- Neon PostgreSQL (scale tier, ~$50/month)
+- GitHub Actions (included with org)
+- Sentry (free tier or $26/month team)
+
+### Timeline:
+- **Week 1-2:** Foundation (6 tasks)
+- **Week 2-3:** Core services (4 tasks)
+- **Total:** 15-20 days for first 10 tasks
+
+---
+
+**Status:** Ready to assign to agents
+**Next Action:** Create detailed implementation specs for each task
+**Owner:** Architecture Team

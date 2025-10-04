@@ -1,0 +1,1396 @@
+# Cloudflare Data Infrastructure Research
+
+**Date:** 2025-10-03
+**Purpose:** Comprehensive analysis of Cloudflare's data platform products for building ingestion pipelines, data warehouses, and analytics systems
+
+---
+
+## Executive Summary
+
+Cloudflare offers a modern data platform built on serverless architecture with these key products:
+
+1. **Pipelines** - Streaming data ingestion service (open beta)
+2. **Streams** - Durable event queues within Pipelines (NOT video streaming)
+3. **Queues** - General-purpose message queues for Workers
+4. **R2** - S3-compatible object storage with zero egress fees
+5. **R2 Data Catalog** - Managed Apache Iceberg catalog (public beta)
+6. **R2 SQL** - SQL query engine for Iceberg tables (open beta)
+7. **D1** - SQLite-based serverless database
+8. **Containers** - Full Linux containers on Cloudflare (beta)
+
+**Key Insight:** "Data Catalog" is NOT a standalone product - it's R2 Data Catalog, a managed Apache Iceberg REST catalog built into R2 buckets.
+
+---
+
+## 1. Cloudflare Pipelines (Open Beta)
+
+### Overview
+Cloudflare Pipelines is a **streaming data ingestion service** that ingests events, transforms them with SQL, and delivers them to R2 as Apache Iceberg tables or Parquet/JSON files.
+
+**Status:** Open beta, free during beta (only pay for R2 storage/operations)
+**Requirements:** Workers Paid plan
+
+### Architecture Components
+
+```
+┌─────────────┐
+│   STREAMS   │  ← HTTP endpoints or Worker bindings
+│  (Ingest)   │     Durable, buffered queues
+└──────┬──────┘     JSON events with optional schema validation
+       │
+       ▼
+┌─────────────┐
+│  PIPELINES  │  ← SQL transformations
+│ (Transform) │     Filter, enrich, aggregate
+└──────┬──────┘     INSERT INTO sink SELECT ... FROM stream
+       │
+       ▼
+┌─────────────┐
+│    SINKS    │  ← R2 destinations
+│  (Deliver)  │     Apache Iceberg tables (via R2 Data Catalog)
+└─────────────┘     OR Parquet/JSON files
+```
+
+### Key Features
+
+1. **Durable Ingestion**
+   - HTTP endpoints for external systems
+   - Worker bindings for internal data
+   - Exactly-once delivery guarantees
+   - No data loss during downstream failures
+
+2. **SQL Transformations**
+   - Validate, filter, transform, enrich at ingestion time
+   - Full SQL support (SELECT, WHERE, joins, functions)
+   - Real-time processing of streaming data
+
+3. **Multiple Output Formats**
+   - **Apache Iceberg tables** (recommended for analytics)
+   - **Parquet files** (columnar format)
+   - **JSON files** (raw data)
+
+4. **Stream Features**
+   - Structured streams with schema validation (Zod-like)
+   - Unstructured streams (any JSON)
+   - Single stream → multiple pipelines (fan-out)
+   - Supported types: string, int32/64, float32/64, bool, timestamp, json, binary, list, struct
+
+### Use Cases
+
+- **Log Analytics** - Ingest server logs, IoT telemetry, clickstream data
+- **Real-time ETL** - Transform and load data as it arrives
+- **Data Warehouses** - Build analytics-ready Iceberg tables
+- **Event Processing** - Process mobile app events, webhooks, metrics
+
+### Example Workflow
+
+```sql
+-- Create a stream (via Wrangler)
+npx wrangler pipelines streams create user-events --schema-file schema.json
+
+-- Create a pipeline with SQL transformation
+INSERT INTO analytics_sink
+SELECT
+  user_id,
+  event_type,
+  timestamp,
+  amount
+FROM user_events
+WHERE event_type = 'purchase' AND amount > 100
+```
+
+### Pricing (Beta)
+- **Current:** Free (only pay for R2 storage/operations)
+- **Future:** TBD after beta
+
+---
+
+## 2. Cloudflare Streams (Pipelines Component)
+
+### IMPORTANT: Disambiguation
+
+**Cloudflare has TWO products called "Stream":**
+
+1. **Pipelines Streams** (this section) - Data event queues
+2. **Cloudflare Stream** - Video hosting platform (separate product)
+
+### Pipelines Streams
+
+**What it is:** Durable, buffered queues that receive and store events for processing in Pipelines.
+
+**Key Characteristics:**
+- JSON format only
+- HTTP endpoints or Worker bindings for ingestion
+- Schema validation (optional)
+- Fan-out: One stream → multiple pipelines
+- Guarantees no data loss
+
+**Schema Configuration:**
+
+```json
+{
+  "fields": [
+    {
+      "name": "user_id",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "amount",
+      "type": "float64",
+      "required": false
+    },
+    {
+      "name": "tags",
+      "type": "list",
+      "required": false,
+      "items": {
+        "type": "string"
+      }
+    },
+    {
+      "name": "metadata",
+      "type": "struct",
+      "required": false,
+      "fields": [
+        {
+          "name": "source",
+          "type": "string"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**When to Use:**
+- ✅ High-throughput event ingestion
+- ✅ Need exactly-once delivery
+- ✅ Want SQL transformations at ingestion
+- ✅ Building data warehouses/lakehouses
+- ❌ NOT for inter-Worker communication (use Queues instead)
+
+---
+
+## 3. Cloudflare Queues vs Pipelines Streams
+
+### Cloudflare Queues (General Purpose)
+
+**What it is:** Flexible messaging queue for asynchronous processing between Workers.
+
+**Key Features:**
+- Worker-to-Worker communication
+- Batching and retries
+- Dead letter queues
+- Pull consumers (HTTP)
+- No egress charges
+
+**Use Cases:**
+- Offload work from request handlers
+- Inter-service communication
+- Buffer/batch before external APIs
+- Rate limiting external requests
+- Email sending, image processing, etc.
+
+**Example:**
+
+```typescript
+// Producer Worker
+await env.MY_QUEUE.send({
+  url: req.url,
+  method: req.method,
+  headers: Object.fromEntries(req.headers),
+});
+
+// Consumer Worker
+export default {
+  async queue(batch, env) {
+    for (const message of batch.messages) {
+      await processMessage(message.body);
+      message.ack();
+    }
+  }
+}
+```
+
+### Comparison Table
+
+| Feature | Pipelines Streams | Cloudflare Queues |
+|---------|------------------|-------------------|
+| **Purpose** | Data ingestion → R2 | Worker-to-Worker messaging |
+| **Output** | Iceberg tables, Parquet, JSON | Consumer Workers |
+| **Transformations** | SQL at ingestion | Code in consumer |
+| **Schema** | Optional validation | No schema |
+| **Delivery** | Exactly-once to R2 | At-least-once to Workers |
+| **Best For** | Analytics, data warehouses | Task queues, async jobs |
+| **Status** | Open beta | GA (production) |
+
+---
+
+## 4. R2 Data Catalog (Public Beta)
+
+### Overview
+
+**What it is:** A managed **Apache Iceberg REST catalog** built directly into R2 buckets.
+
+**Status:** Public beta, free during beta (only pay for R2 storage)
+
+### Key Concepts
+
+**Apache Iceberg:**
+- Open table format for large-scale analytics
+- ACID transactions (concurrent reads/writes)
+- Optimized metadata (no full table scans)
+- Schema evolution (add/rename/delete columns)
+- Time travel and versioning
+
+**Data Catalog Role:**
+- Central index of tables and metadata
+- Enables multiple query engines to access same tables
+- Prevents conflicts and data corruption
+- Single source of truth for table state
+
+### Features
+
+1. **Standard Iceberg REST API**
+   - Works with Spark, Snowflake, DuckDB, PyIceberg, Trino, ClickHouse
+   - No vendor lock-in
+
+2. **Zero Egress Fees**
+   - Query data from any cloud/region without transfer costs
+   - R2's core value proposition
+
+3. **Automatic Compaction**
+   - Combines small files into larger ones
+   - Improves query performance
+   - Configurable target file size (default 128 MB)
+   - Runs hourly, processes up to 2 GB per table
+
+4. **Namespaces and Tables**
+   - Organize tables into namespaces
+   - Standard Iceberg hierarchy
+
+### Setup
+
+```bash
+# Enable catalog on bucket
+npx wrangler r2 bucket catalog enable my-bucket
+
+# Returns:
+# - Catalog URI: https://api.cloudflare.com/client/v4/accounts/{account}/r2/buckets/my-bucket/catalog
+# - Warehouse name: {account}_default_my-bucket
+
+# Enable compaction
+npx wrangler r2 bucket catalog compaction enable my-bucket \
+  --target-size 128 \
+  --token $API_TOKEN
+```
+
+### Authentication
+
+Requires API token with **both**:
+- R2 Data Catalog permissions (read or read/write)
+- R2 Storage permissions (read or read/write)
+
+**Dashboard:** Create R2 token with "Admin Read & Write" permission
+
+### Integration Example (PyIceberg)
+
+```python
+from pyiceberg.catalog import load_catalog
+
+# Connect to catalog
+catalog = load_catalog(
+    "r2-catalog",
+    **{
+        "uri": "https://api.cloudflare.com/client/v4/accounts/{account}/r2/buckets/my-bucket/catalog",
+        "credential": "your-api-token",
+        "warehouse": "{account}_default_my-bucket"
+    }
+)
+
+# Create namespace and table
+catalog.create_namespace("analytics")
+table = catalog.create_table(
+    identifier="analytics.events",
+    schema=schema
+)
+
+# Query with DuckDB, Spark, etc.
+```
+
+### Use Cases
+
+- **Data Warehouses** - Structured analytics on large datasets
+- **Data Lakehouses** - Combine data lake flexibility with warehouse performance
+- **Log Analytics** - Centralize and query application logs
+- **Business Intelligence** - Power BI, Tableau, etc.
+- **Data Pipelines** - ETL/ELT workflows
+
+---
+
+## 5. R2 SQL (Open Beta)
+
+### Overview
+
+**What it is:** SQL query engine for Apache Iceberg tables in R2 Data Catalog.
+
+**Status:** Open beta, free during beta
+**Use Case:** Query Iceberg tables without setting up Spark/Trino/etc.
+
+### Capabilities
+
+**Supported SQL:**
+- `SELECT` (columns, *)
+- `FROM` (single table only)
+- `WHERE` (filters, comparisons, equality)
+- `ORDER BY` (partition key columns only)
+- `LIMIT` (1-10,000 range)
+
+**Not Supported:**
+- ❌ Aggregations (COUNT, AVG, SUM, MAX, MIN)
+- ❌ JOINs
+- ❌ GROUP BY
+- ❌ SQL functions
+- ❌ Array/JSON field querying
+- ❌ Subqueries
+
+### Query Methods
+
+**1. Wrangler CLI:**
+
+```bash
+# Set auth token
+export WRANGLER_R2_SQL_AUTH_TOKEN=your-token
+
+# Query
+npx wrangler r2 sql query my-warehouse \
+  "SELECT * FROM analytics.events WHERE amount > 100 LIMIT 10"
+```
+
+**2. REST API:**
+
+```bash
+curl -X POST \
+  "https://api.sql.cloudflarestorage.com/api/v1/accounts/{account}/r2-sql/query/{bucket}" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "SELECT * FROM analytics.events LIMIT 10"}'
+```
+
+### Best Practices
+
+✅ **Use R2 SQL for:**
+- Simple queries and exploration
+- Filtering and sampling data
+- Development and debugging
+
+❌ **Don't use R2 SQL for:**
+- Complex analytics (use Spark/DuckDB)
+- Aggregations (use proper query engine)
+- Production workloads (limited features)
+
+### Example Workflow
+
+```bash
+# 1. Create table with Pipelines (or manually)
+# 2. Query with R2 SQL
+npx wrangler r2 sql query my-warehouse "
+SELECT
+  transaction_id,
+  user_id,
+  amount,
+  location
+FROM fraud_detection.transactions
+WHERE is_fraud = true
+ORDER BY amount DESC
+LIMIT 100
+"
+```
+
+---
+
+## 6. Cloudflare Containers (Beta)
+
+### Overview
+
+**What it is:** Run full Linux containers on Cloudflare's edge network, controlled by Workers.
+
+**Status:** Beta
+**Requirements:** Workers Paid plan
+
+### Key Characteristics
+
+1. **Not Traditional Containers**
+   - NOT Kubernetes/Docker Swarm
+   - NOT always-on containers
+   - NOT direct HTTP access
+
+2. **Workers-Controlled**
+   - Each container backed by a Durable Object
+   - Worker code spawns/controls containers
+   - Containers sleep after inactivity
+
+3. **Resource Intensive**
+   - CPU cores running in parallel
+   - Large amounts of memory
+   - Disk space
+   - Full filesystem access
+
+### Architecture
+
+```
+┌─────────────┐
+│   Worker    │  ← Receives HTTP request
+│ (Routing)   │     Extracts session ID
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│   Durable   │  ← One per container instance
+│   Object    │     Manages lifecycle
+└──────┬──────┘     Handles start/stop
+       │
+       ▼
+┌─────────────┐
+│  Container  │  ← Full Linux environment
+│  Instance   │     Your Docker image
+└─────────────┘     Listens on ports
+```
+
+### Use Cases
+
+✅ **Good for:**
+- Running existing applications (Java, Python, Ruby, etc.)
+- Resource-intensive processing
+- Applications requiring full filesystem
+- Legacy tools distributed as containers
+- Complex dependencies/runtimes
+- **Web scraping with proxies** ← Your use case!
+
+❌ **Not good for:**
+- Simple API endpoints (use Workers)
+- High-volume, low-latency requests (use Workers)
+- Always-on services (containers sleep)
+
+### Example Configuration
+
+```javascript
+// Worker code
+import { Container, getContainer } from "@cloudflare/containers";
+
+export class MyContainer extends Container {
+  defaultPort = 4000;
+  sleepAfter = "10m"; // Stop after 10 min inactivity
+}
+
+export default {
+  async fetch(request, env) {
+    const { sessionId } = await request.json();
+
+    // Get container for this session
+    const container = getContainer(env.MY_CONTAINER, sessionId);
+
+    // Forward request to container
+    return container.fetch(request);
+  },
+};
+```
+
+```jsonc
+// wrangler.jsonc
+{
+  "name": "scraper-service",
+  "main": "src/index.js",
+  "containers": [
+    {
+      "class_name": "MyContainer",
+      "image": "./Dockerfile",
+      "max_instances": 5
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "MyContainer",
+        "name": "MY_CONTAINER"
+      }
+    ]
+  }
+}
+```
+
+### Container Features
+
+**Dockerfile Support:**
+- Build any Docker image
+- Full Linux environment
+- Install any packages
+- Run any runtime
+
+**Lifecycle Management:**
+- On-demand spawning
+- Automatic sleep after inactivity
+- Durable Object controls start/stop
+- Instances limited per deployment
+
+**Networking:**
+- Containers listen on ports
+- Worker forwards requests to container
+- Container can make outbound requests
+- **Proxy support** ✅
+
+### Scraping with Proxies Use Case
+
+```dockerfile
+# Dockerfile
+FROM python:3.11
+
+# Install Chrome + dependencies
+RUN apt-get update && apt-get install -y \
+    chromium chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install scraping tools
+RUN pip install selenium requests beautifulsoup4
+
+# Copy scraper code
+COPY scraper.py /app/scraper.py
+
+# Start web server that handles scraping requests
+CMD ["python", "/app/scraper.py"]
+```
+
+```python
+# scraper.py
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import os
+
+def create_driver(proxy_url):
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument(f'--proxy-server={proxy_url}')
+    return webdriver.Chrome(options=options)
+
+# Web server that accepts scraping requests
+# Uses different proxies per request
+# Returns scraped data
+```
+
+**Benefits for Scraping:**
+- ✅ Full browser support (Chrome/Firefox)
+- ✅ Proxy rotation per container instance
+- ✅ Heavy processing (parsing, rendering)
+- ✅ Large memory for browser
+- ✅ Session isolation (one scraper per ID)
+- ✅ Geographic distribution (Cloudflare edge)
+
+### Resource Limits
+
+**Current Beta Limits:**
+- Max instances per deployment (configurable)
+- Sleep after inactivity (configurable)
+- Resource quotas (CPU, memory, disk)
+- Pricing TBD (beta is paid plan only)
+
+### Deployment
+
+```bash
+# Build and deploy
+npm exec deploy
+
+# Or with Wrangler
+npx wrangler deploy
+
+# Wrangler automatically:
+# 1. Builds Docker image
+# 2. Pushes to Cloudflare Registry
+# 3. Deploys Worker
+# 4. Provisions container infrastructure
+```
+
+### Pricing
+
+**Components:**
+- Worker pricing (requests, CPU time)
+- Durable Object pricing (requests, duration)
+- Container-specific pricing (TBD)
+- Workers Logs pricing (if enabled)
+
+**Note:** During beta, requires Workers Paid plan. Final pricing structure TBD.
+
+---
+
+## 7. Storage Options Comparison
+
+### Overview Table
+
+| Storage | Type | Use Case | Limits | Pricing |
+|---------|------|----------|--------|---------|
+| **R2** | Object Storage | Files, backups, data lakes | Unlimited | $0.015/GB/month, **$0 egress** |
+| **D1** | SQLite Database | Structured app data | 10 GB per database | $0.75/million reads, $5/GB storage |
+| **KV** | Key-Value Store | Global config, sessions | 1 GB per namespace | $0.50/million reads, $5/GB storage |
+| **Durable Objects** | Stateful Storage | Real-time coordination | 128 KB per DO | $0.02/million requests + duration |
+| **Vectorize** | Vector Database | AI embeddings, RAG | Varies | TBD (beta) |
+| **Analytics Engine** | Time-Series DB | Metrics, events | Unlimited cardinality | $0.25/million writes |
+
+### Decision Matrix
+
+**Choose R2 when:**
+- Storing large files (images, videos, backups)
+- Building data lakes/warehouses
+- Need zero egress fees
+- Iceberg tables for analytics
+
+**Choose D1 when:**
+- Relational data with SQL queries
+- Transactions and ACID guarantees
+- < 10 GB per database
+- Complex queries (joins, aggregations)
+
+**Choose KV when:**
+- Simple key-value lookups
+- Global configuration
+- Low-latency reads
+- Small values (< 25 MB)
+
+**Choose Durable Objects when:**
+- Real-time coordination
+- WebSocket connections
+- Stateful workflows
+- Per-user/session isolation
+
+**Choose Vectorize when:**
+- Semantic search
+- RAG for LLMs
+- Embeddings storage
+
+**Choose Analytics Engine when:**
+- Time-series metrics
+- Usage-based billing data
+- High-cardinality events
+- Custom analytics for customers
+
+---
+
+## 8. Architecture Patterns
+
+### Pattern 1: Data Ingestion Pipeline
+
+**Goal:** Ingest high-volume events, transform, store in R2 for analytics
+
+```
+External Events (HTTP)
+    ↓
+Pipelines Stream (buffer)
+    ↓
+Pipeline (SQL transform)
+    ↓
+R2 Data Catalog (Iceberg)
+    ↓
+Query with Spark/DuckDB/Snowflake
+```
+
+**Implementation:**
+
+```bash
+# 1. Create stream
+npx wrangler pipelines streams create events --schema-file schema.json
+
+# 2. Create sink (Iceberg table in R2)
+npx wrangler pipelines sinks create analytics-sink \
+  --bucket my-bucket \
+  --namespace analytics \
+  --table events
+
+# 3. Create pipeline with SQL
+npx wrangler pipelines create event-pipeline \
+  --sql "INSERT INTO analytics-sink
+         SELECT user_id, event_type, timestamp, properties
+         FROM events
+         WHERE event_type IN ('purchase', 'signup')"
+
+# 4. Send events
+curl -X POST https://pipelines.cloudflare.com/v1/streams/events \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"user_id": "123", "event_type": "purchase", ...}'
+
+# 5. Query with R2 SQL
+npx wrangler r2 sql query my-warehouse \
+  "SELECT event_type, COUNT(*) as count FROM analytics.events GROUP BY event_type"
+```
+
+### Pattern 2: Workers → Queues → D1
+
+**Goal:** Asynchronous processing with database persistence
+
+```
+Worker (API Handler)
+    ↓
+Queue (buffer tasks)
+    ↓
+Consumer Worker (process)
+    ↓
+D1 Database (persist)
+```
+
+**Implementation:**
+
+```typescript
+// Producer Worker
+export default {
+  async fetch(req, env) {
+    await env.TASKS_QUEUE.send({
+      type: 'process_upload',
+      uploadId: req.headers.get('x-upload-id'),
+      timestamp: Date.now()
+    });
+    return new Response('Queued');
+  }
+}
+
+// Consumer Worker
+export default {
+  async queue(batch, env) {
+    const db = env.DB; // D1 binding
+
+    for (const msg of batch.messages) {
+      const { type, uploadId } = msg.body;
+
+      // Process task
+      const result = await processUpload(uploadId);
+
+      // Persist to D1
+      await db.prepare(
+        'INSERT INTO uploads (id, status, result) VALUES (?, ?, ?)'
+      ).bind(uploadId, 'complete', JSON.stringify(result)).run();
+
+      msg.ack();
+    }
+  }
+}
+```
+
+### Pattern 3: Container-Based Scraping Service
+
+**Goal:** Heavy scraping with proxy rotation and browser rendering
+
+```
+Worker (Router)
+    ↓
+Durable Object + Container (per session)
+    ↓
+Chrome in Container (with proxy)
+    ↓
+Scraped Data → R2 (via Worker)
+```
+
+**Implementation:**
+
+```javascript
+// Worker
+import { Container, getContainer } from "@cloudflare/containers";
+
+export class ScraperContainer extends Container {
+  defaultPort = 8080;
+  sleepAfter = "10m";
+}
+
+export default {
+  async fetch(request, env) {
+    const { url, sessionId, proxyUrl } = await request.json();
+
+    // Get container for this session
+    const scraper = getContainer(env.SCRAPER, sessionId);
+
+    // Forward scraping request to container
+    const response = await scraper.fetch(new Request('http://localhost:8080/scrape', {
+      method: 'POST',
+      body: JSON.stringify({ url, proxyUrl })
+    }));
+
+    const data = await response.json();
+
+    // Store in R2
+    await env.BUCKET.put(`scraped/${sessionId}/${Date.now()}.json`,
+      JSON.stringify(data)
+    );
+
+    return new Response(JSON.stringify(data));
+  }
+}
+```
+
+```python
+# Container scraper.py
+from flask import Flask, request, jsonify
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
+app = Flask(__name__)
+
+@app.route('/scrape', methods=['POST'])
+def scrape():
+    data = request.json
+    url = data['url']
+    proxy = data['proxyUrl']
+
+    # Configure Chrome with proxy
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument(f'--proxy-server={proxy}')
+
+    driver = webdriver.Chrome(options=options)
+    driver.get(url)
+
+    # Scrape data
+    title = driver.title
+    content = driver.find_element_by_tag_name('body').text
+
+    driver.quit()
+
+    return jsonify({
+        'title': title,
+        'content': content,
+        'url': url
+    })
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+```
+
+### Pattern 4: Real-Time Analytics Dashboard
+
+**Goal:** Live metrics from Analytics Engine
+
+```
+Worker (collect metrics)
+    ↓
+Analytics Engine (write events)
+    ↓
+GraphQL API (query)
+    ↓
+Dashboard Worker (serve)
+```
+
+**Implementation:**
+
+```typescript
+// Collector Worker
+export default {
+  async fetch(req, env) {
+    // Write event to Analytics Engine
+    env.ANALYTICS.writeDataPoint({
+      blobs: ['user-123', 'api-call', '/users'],
+      doubles: [42.5, 1.23],
+      indexes: ['user-123']
+    });
+
+    // Handle request
+    return fetch(req);
+  }
+}
+
+// Dashboard Worker
+export default {
+  async fetch(req, env) {
+    // Query Analytics Engine via GraphQL
+    const response = await fetch('https://api.cloudflare.com/client/v4/graphql', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.CF_API_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query: `
+          query {
+            viewer {
+              accounts(filter: {accountTag: "${env.ACCOUNT_ID}"}) {
+                analyticsEngineDataset(name: "my-dataset") {
+                  count
+                  sum
+                  dimensions
+                }
+              }
+            }
+          }
+        `
+      })
+    });
+
+    const data = await response.json();
+    return new Response(JSON.stringify(data));
+  }
+}
+```
+
+---
+
+## 9. Pricing Considerations
+
+### R2 Storage
+
+**Storage:** $0.015/GB/month
+**Class A Operations:** $4.50/million (writes)
+**Class B Operations:** $0.36/million (reads)
+**Egress:** **$0** (zero!)
+
+**Comparison to S3:**
+- S3 Standard: $0.023/GB/month + egress fees ($0.09/GB)
+- R2 Advantage: Save ~60% on storage + eliminate egress costs
+
+### D1 Database
+
+**Storage:** $5/GB/month
+**Reads:** $0.75/million rows
+**Writes:** $1/million rows
+**Free Tier:** 5 GB storage, 25 million reads/month
+
+### Cloudflare Queues
+
+**Standard Messages:** $0.40/million
+**No egress charges**
+
+### Workers
+
+**Requests:** $0.50/million (Paid plan)
+**Duration:** $12.50/million GB-seconds
+**Free Tier:** 100,000 requests/day
+
+### Pipelines (Beta)
+
+**Current:** Free (only R2 storage/operations)
+**Future:** TBD after beta
+
+### Containers (Beta)
+
+**Current:** Requires Workers Paid plan
+**Pricing:** TBD (will include Worker + DO + container-specific costs)
+
+### Cost Optimization Tips
+
+1. **Use R2 for large data** - Zero egress saves massive costs
+2. **Batch Queue messages** - Process in batches to reduce requests
+3. **Cache in KV** - Reduce D1 reads for hot data
+4. **Compress in R2** - Reduce storage costs
+5. **Use Workers efficiently** - Minimize CPU time and subrequest count
+
+---
+
+## 10. Best Practices
+
+### Data Ingestion
+
+1. **Use Pipelines for high-volume streaming**
+   - Handles backpressure automatically
+   - Exactly-once delivery to R2
+   - SQL transformations at ingestion time
+
+2. **Use Queues for Worker communication**
+   - Decouple producers from consumers
+   - Retry failed messages
+   - Dead letter queues for errors
+
+3. **Schema design**
+   - Define schemas for Pipelines streams when possible
+   - Use Iceberg schema evolution for flexibility
+   - Partition tables by date/time for query performance
+
+### Storage Selection
+
+1. **R2 for:**
+   - Large files (> 10 MB)
+   - Data lakes and warehouses
+   - Archival storage
+   - Multi-cloud access
+
+2. **D1 for:**
+   - Structured relational data
+   - ACID transactions needed
+   - SQL queries required
+   - < 10 GB datasets
+
+3. **KV for:**
+   - Global configuration
+   - Session storage
+   - Simple key lookups
+   - Small values
+
+### Query Optimization
+
+1. **R2 SQL limitations**
+   - Use for exploration and simple queries
+   - Switch to Spark/DuckDB for complex analytics
+   - Partition Iceberg tables for better filtering
+
+2. **D1 query performance**
+   - Use indexes on frequent WHERE clauses
+   - Monitor with `wrangler d1 insights`
+   - Split large databases (> 5 GB) into multiple D1 instances
+
+3. **Analytics Engine**
+   - Write unlimited cardinality events
+   - Query with GraphQL API
+   - Use for custom customer analytics
+
+### Container Best Practices
+
+1. **Minimize container size**
+   - Use minimal base images (Alpine)
+   - Multi-stage Docker builds
+   - Remove unnecessary dependencies
+
+2. **Handle sleep/wake**
+   - Containers sleep after inactivity
+   - First request after sleep has cold start
+   - Design for stateless containers
+
+3. **Resource management**
+   - Set appropriate `sleepAfter` timeout
+   - Limit `max_instances` to control costs
+   - Monitor container logs
+
+---
+
+## 11. Integration Examples
+
+### Example 1: End-to-End Data Pipeline
+
+**Scenario:** Process transaction events, detect fraud, store in Iceberg
+
+```bash
+# 1. Create stream with schema
+cat > transaction-schema.json <<EOF
+{
+  "fields": [
+    {"name": "transaction_id", "type": "string", "required": true},
+    {"name": "user_id", "type": "string", "required": true},
+    {"name": "amount", "type": "float64", "required": true},
+    {"name": "merchant_category", "type": "string", "required": true},
+    {"name": "location", "type": "string", "required": true},
+    {"name": "timestamp", "type": "timestamp", "required": true}
+  ]
+}
+EOF
+
+npx wrangler pipelines streams create transactions --schema-file transaction-schema.json
+
+# 2. Create Iceberg sink
+npx wrangler r2 bucket catalog enable fraud-detection
+npx wrangler pipelines sinks create fraud-sink \
+  --bucket fraud-detection \
+  --namespace fraud_detection \
+  --table fraud_transactions \
+  --format iceberg
+
+# 3. Create pipeline with fraud detection logic
+cat > pipeline.sql <<EOF
+INSERT INTO fraud_sink
+SELECT
+    transaction_id,
+    user_id,
+    amount,
+    location,
+    merchant_category,
+    CASE
+        WHEN amount > 10000 THEN true
+        WHEN merchant_category = 'gambling' AND amount > 1000 THEN true
+        ELSE false
+    END as is_fraud,
+    timestamp as transaction_timestamp
+FROM transactions
+WHERE amount > 0
+EOF
+
+npx wrangler pipelines create fraud-pipeline --sql-file pipeline.sql
+
+# 4. Send test events
+curl -X POST https://pipelines.cloudflare.com/v1/streams/transactions \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "transaction_id": "tx-123",
+    "user_id": "user-456",
+    "amount": 15000.00,
+    "merchant_category": "electronics",
+    "location": "US",
+    "timestamp": "2025-10-03T10:00:00Z"
+  }'
+
+# 5. Query fraudulent transactions
+npx wrangler r2 sql query my-warehouse \
+  "SELECT * FROM fraud_detection.fraud_transactions
+   WHERE is_fraud = true
+   LIMIT 100"
+```
+
+### Example 2: Container-Based Web Scraper
+
+**Scenario:** Scrape websites with rotating proxies and headless Chrome
+
+See "Pattern 3" above for complete implementation.
+
+### Example 3: Real-Time Metrics Dashboard
+
+**Scenario:** Collect API metrics and display in dashboard
+
+```typescript
+// metrics-collector.ts (Worker)
+export default {
+  async fetch(req: Request, env: any) {
+    const start = Date.now();
+
+    // Process request
+    const response = await fetch(req);
+
+    // Record metrics
+    env.ANALYTICS.writeDataPoint({
+      blobs: [
+        req.url,
+        req.method,
+        response.status.toString()
+      ],
+      doubles: [
+        Date.now() - start, // latency
+        response.headers.get('content-length') || 0
+      ],
+      indexes: [req.headers.get('x-user-id')]
+    });
+
+    return response;
+  }
+}
+
+// dashboard.ts (Worker)
+export default {
+  async fetch(req: Request, env: any) {
+    // Query metrics via GraphQL
+    const metricsQuery = `
+      query {
+        viewer {
+          accounts(filter: {accountTag: "${env.ACCOUNT_ID}"}) {
+            analyticsEngineDataset(name: "api-metrics") {
+              count
+              avg
+              dimensions
+            }
+          }
+        }
+      }
+    `;
+
+    // Return dashboard HTML with live metrics
+    return new Response(html, {
+      headers: { 'content-type': 'text/html' }
+    });
+  }
+}
+```
+
+---
+
+## 12. Migration Strategies
+
+### From AWS to Cloudflare
+
+**S3 → R2:**
+- S3 API compatible
+- Use `aws s3 sync` with R2 credentials
+- Zero egress fees save costs immediately
+
+**Redshift → R2 Data Catalog + Iceberg:**
+- Export Redshift tables to Parquet
+- Upload to R2
+- Create Iceberg tables from Parquet
+- Query with Spark/DuckDB/Snowflake
+
+**Lambda → Workers:**
+- Rewrite Node.js functions for Workers runtime
+- Use Queues instead of SQS
+- Use D1 instead of RDS for small databases
+
+**Kinesis → Pipelines:**
+- Pipelines replaces Kinesis Data Streams
+- SQL transformations replace Kinesis Analytics
+- Iceberg tables replace Kinesis Firehose
+
+### From GCP to Cloudflare
+
+**GCS → R2:**
+- Similar to S3 migration
+- Use `gsutil` or transfer service
+
+**BigQuery → R2 Data Catalog:**
+- Export tables to Parquet
+- Create Iceberg tables in R2
+- Query with BigQuery Omni or Spark
+
+**Cloud Functions → Workers:**
+- Similar migration to Lambda → Workers
+
+**Pub/Sub → Queues:**
+- Queues replace Pub/Sub topics
+- Workers replace subscribers
+
+---
+
+## 13. Limitations and Gotchas
+
+### Pipelines
+
+❌ **Not GA yet** - Open beta, features may change
+❌ **JSON only** - No binary formats (Avro, Protobuf)
+❌ **Limited SQL** - Not all SQL features supported in transformations
+❌ **Pricing TBD** - Will charge after beta ends
+
+### R2 SQL
+
+❌ **Very limited SQL** - No aggregations, joins, group by
+❌ **Not for production** - Use proper query engine
+❌ **Partition key only for ORDER BY** - Can't sort by arbitrary columns
+❌ **10K limit** - Max 10,000 rows per query
+
+### R2 Data Catalog
+
+❌ **Beta features** - Compaction still evolving
+❌ **REST catalog only** - No Hive metastore compatibility
+❌ **Hourly compaction** - Not real-time
+❌ **2 GB limit per compaction** - May not keep up with very high write rates
+
+### Containers
+
+❌ **Beta status** - Not production-ready yet
+❌ **Cold starts** - First request after sleep has delay
+❌ **Resource limits** - Not published yet
+❌ **Pricing unknown** - Will be expensive for always-on use cases
+❌ **Not for APIs** - Use Workers for HTTP APIs instead
+
+### D1
+
+❌ **10 GB limit** - Per database maximum
+❌ **No PostgreSQL** - SQLite only
+❌ **Limited extensions** - Not all SQLite extensions available
+❌ **Read replicas** - No multi-region replicas yet
+
+---
+
+## 14. Recommendations for Your Use Case
+
+Based on your research needs, here are specific recommendations:
+
+### For Data Ingestion Pipelines
+
+**Use Cloudflare Pipelines when:**
+- ✅ High-throughput event streams (thousands/second)
+- ✅ Need exactly-once delivery guarantees
+- ✅ Want SQL transformations at ingestion
+- ✅ Building analytics data warehouse
+- ✅ Budget-conscious (free during beta)
+
+**Architecture:**
+```
+HTTP Webhook → Pipeline Stream → SQL Transform → Iceberg Table (R2)
+                                                     ↓
+                                            Query with Spark/DuckDB
+```
+
+### For Web Scraping with Proxies
+
+**Use Cloudflare Containers when:**
+- ✅ Need full browser (Chrome/Firefox)
+- ✅ Heavy rendering/processing
+- ✅ Proxy rotation per session
+- ✅ Complex scraping logic
+- ✅ Can tolerate cold starts
+
+**Architecture:**
+```
+Worker (API) → Container (per session) → Chrome with Proxy → Target Site
+                    ↓
+               R2 (store results)
+```
+
+**Alternative (if containers too expensive):**
+- Use Workers + Puppeteer (limited)
+- Use external scraping service
+- Use Workers + Browser Rendering API
+
+### For Analytics Storage
+
+**Use R2 Data Catalog + Iceberg when:**
+- ✅ Large datasets (> 100 GB)
+- ✅ Need schema evolution
+- ✅ Multi-cloud access
+- ✅ Zero egress costs important
+- ✅ Want vendor-neutral format
+
+**Query with:**
+- DuckDB (fastest for ad-hoc queries)
+- Apache Spark (large-scale processing)
+- Snowflake (if already using)
+- PyIceberg (Python notebooks)
+
+### For Operational Databases
+
+**Use D1 when:**
+- ✅ Relational data model
+- ✅ SQL queries needed
+- ✅ < 10 GB total data
+- ✅ ACID transactions required
+
+**Don't use D1 when:**
+- ❌ Data > 10 GB (split or use R2)
+- ❌ Need PostgreSQL features
+- ❌ Multi-region replication required
+
+---
+
+## 15. Next Steps and Resources
+
+### Getting Started
+
+1. **Enable Pipelines (Beta)**
+   - Requires Workers Paid plan
+   - `npx wrangler pipelines setup`
+
+2. **Enable R2 Data Catalog (Beta)**
+   - `npx wrangler r2 bucket catalog enable <bucket>`
+
+3. **Try Containers (Beta)**
+   - `npm create cloudflare@latest -- --template=cloudflare/templates/containers-template`
+
+### Documentation Links
+
+- **Pipelines:** https://developers.cloudflare.com/pipelines/
+- **R2 Data Catalog:** https://developers.cloudflare.com/r2/data-catalog/
+- **R2 SQL:** https://developers.cloudflare.com/r2-sql/
+- **Queues:** https://developers.cloudflare.com/queues/
+- **Containers:** https://developers.cloudflare.com/containers/
+- **D1:** https://developers.cloudflare.com/d1/
+- **Workers:** https://developers.cloudflare.com/workers/
+
+### Community
+
+- **Discord:** https://discord.cloudflare.com
+- **Forum:** https://community.cloudflare.com
+- **GitHub:** https://github.com/cloudflare
+
+---
+
+## Summary
+
+Cloudflare provides a complete serverless data platform:
+
+- **Pipelines** replaces Kafka/Kinesis for streaming ingestion
+- **R2 Data Catalog** replaces AWS Glue for Iceberg tables
+- **R2 SQL** provides basic querying (use Spark for production)
+- **Containers** enable resource-intensive workloads (scraping, browsers)
+- **Queues** handle async Worker communication
+- **Zero egress fees** make multi-cloud analytics affordable
+
+The platform is in beta but rapidly maturing. Best suited for new projects or gradual migration from AWS/GCP. Cost savings from zero egress alone can justify migration for data-heavy workloads.
+
+---
+
+**Research completed:** 2025-10-03
+**Next update:** When products exit beta or pricing announced

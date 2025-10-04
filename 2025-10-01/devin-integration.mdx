@@ -1,0 +1,1017 @@
+# Devin AI MCP Server Integration
+
+**Priority:** P0 - Critical (AI-powered autonomous coding across all repos)
+**Status:** Planning
+**Target:** Week 2-3 of Q4 2025
+
+---
+
+## Overview
+
+Create Model Context Protocol (MCP) server for Devin.ai, enabling task assignment, PR review, and autonomous coding across all .do repositories. Devin complements Claude Code by handling longer-running implementation tasks while Claude focuses on architecture and coordination.
+
+## Devin vs Claude Code
+
+### Devin.ai Strengths
+- **Deep implementation work**: Full feature builds, complex refactoring
+- **Extended sessions**: Can work for hours on single task
+- **Production-ready code**: Tests, documentation, edge cases
+- **Multi-file changes**: Comprehensive implementations across many files
+- **PR creation**: Automated pull requests with full context
+
+### Claude Code Strengths
+- **Architecture**: System design, planning, strategy
+- **Quick iterations**: Fast edits, small changes
+- **Coordination**: Cross-repo management, task breakdown
+- **Review**: PR review, code analysis, debugging
+- **Documentation**: CLAUDE.md, TODO.md, STATUS.md updates
+
+### Workflow Integration
+```
+User Voice (VAPI) → Claude Code (planning) → Devin (implementation) → Claude Code (review/merge)
+```
+
+---
+
+## Devin API Reference
+
+### Base URL
+```
+https://api.devin.ai/v1
+```
+
+### Authentication
+```
+Authorization: Bearer <DEVIN_API_KEY>
+```
+
+### Core Endpoints
+
+#### 1. Create Session
+```http
+POST /sessions
+Content-Type: application/json
+Authorization: Bearer <api_key>
+
+{
+  "prompt": "Implementation task description",
+  "github_url": "https://github.com/dot-do/api/pull/123",
+  "idempotent": true
+}
+```
+
+**Response:**
+```json
+{
+  "session_id": "sess_abc123",
+  "url": "https://preview.devin.ai/sessions/sess_abc123",
+  "is_new_session": true
+}
+```
+
+#### 2. Get Session Status
+```http
+GET /sessions/{session_id}
+Authorization: Bearer <api_key>
+```
+
+**Response:**
+```json
+{
+  "session_id": "sess_abc123",
+  "status": "running" | "completed" | "failed",
+  "progress": {
+    "current_step": "Writing tests",
+    "percentage": 75
+  },
+  "artifacts": [
+    {
+      "type": "pull_request",
+      "url": "https://github.com/dot-do/api/pull/124"
+    }
+  ]
+}
+```
+
+#### 3. Send Message to Session
+```http
+POST /sessions/{session_id}/messages
+Content-Type: application/json
+
+{
+  "message": "Please also add integration tests",
+  "files": ["src/routes/metrics.ts"]
+}
+```
+
+#### 4. List Sessions
+```http
+GET /sessions?status=running&limit=10
+```
+
+---
+
+## MCP Server Implementation
+
+### File Structure
+```
+api/
+└── src/
+    └── mcp/
+        ├── devin-server.ts      # MCP server entry point
+        ├── devin-client.ts      # Devin API client
+        ├── devin-tools.ts       # MCP tool definitions
+        └── devin-types.ts       # TypeScript types
+```
+
+### MCP Tool Definitions
+
+#### 1. `devin_create_task`
+**Description:** Assign implementation task to Devin in specific repository
+
+**Parameters:**
+```typescript
+{
+  repository: string              // 'api', 'db', 'ai', 'ctx', 'mdx', etc.
+  task: string                    // Task description
+  files?: string[]               // Files to focus on
+  branch?: string                // Branch to work from (default: main)
+  createPR?: boolean            // Auto-create PR when done (default: true)
+  labels?: string[]             // GitHub labels for PR
+  priority?: 'P0' | 'P1' | 'P2' // Task priority
+}
+```
+
+**Example:**
+```typescript
+await mcp.call('devin_create_task', {
+  repository: 'api',
+  task: 'Implement /api/metrics/mrr endpoint with Numerics JSON format. Include database query, caching, and tests.',
+  files: ['src/routes/metrics/mrr.ts', 'db/queries/revenue.ts'],
+  createPR: true,
+  labels: ['metrics-api', 'devin-created'],
+  priority: 'P1'
+})
+```
+
+**Returns:**
+```json
+{
+  "sessionId": "sess_abc123",
+  "sessionUrl": "https://preview.devin.ai/sessions/sess_abc123",
+  "repository": "api",
+  "status": "running"
+}
+```
+
+#### 2. `devin_get_status`
+**Description:** Check status of Devin session
+
+**Parameters:**
+```typescript
+{
+  sessionId: string  // Devin session ID
+}
+```
+
+**Returns:**
+```json
+{
+  "sessionId": "sess_abc123",
+  "status": "completed",
+  "progress": 100,
+  "pullRequest": "https://github.com/dot-do/api/pull/124",
+  "filesChanged": 8,
+  "linesAdded": 342,
+  "linesDeleted": 12
+}
+```
+
+#### 3. `devin_review_pr`
+**Description:** Have Devin review a pull request
+
+**Parameters:**
+```typescript
+{
+  repository: string      // Repository name
+  prNumber: number       // PR number
+  focus?: string[]       // Specific aspects (security, performance, tests)
+  maxComments?: number   // Limit inline comments (default: 10)
+}
+```
+
+**Example:**
+```typescript
+await mcp.call('devin_review_pr', {
+  repository: 'api',
+  prNumber: 123,
+  focus: ['security', 'performance', 'edge-cases'],
+  maxComments: 5
+})
+```
+
+**Returns:**
+```json
+{
+  "sessionId": "sess_review_123",
+  "commentsPosted": 3,
+  "issuesFound": ["Missing input validation", "No error handling for network timeout"],
+  "approved": false
+}
+```
+
+#### 4. `devin_send_message`
+**Description:** Send message to active Devin session
+
+**Parameters:**
+```typescript
+{
+  sessionId: string   // Devin session ID
+  message: string     // Message text
+  files?: string[]   // Additional files to reference
+}
+```
+
+**Example:**
+```typescript
+await mcp.call('devin_send_message', {
+  sessionId: 'sess_abc123',
+  message: 'Please also add Zod validation for the query parameters'
+})
+```
+
+#### 5. `devin_list_sessions`
+**Description:** List all Devin sessions for user
+
+**Parameters:**
+```typescript
+{
+  repository?: string              // Filter by repo
+  status?: 'running' | 'completed' | 'failed'
+  limit?: number                   // Default: 10
+}
+```
+
+**Returns:**
+```json
+{
+  "sessions": [
+    {
+      "sessionId": "sess_abc123",
+      "repository": "api",
+      "task": "Implement metrics API",
+      "status": "completed",
+      "createdAt": "2025-10-01T10:00:00Z",
+      "pullRequest": "https://github.com/dot-do/api/pull/124"
+    }
+  ],
+  "total": 15
+}
+```
+
+#### 6. `devin_cancel_session`
+**Description:** Cancel running Devin session
+
+**Parameters:**
+```typescript
+{
+  sessionId: string   // Session to cancel
+  reason?: string     // Cancellation reason
+}
+```
+
+---
+
+## Devin API Client Implementation
+
+### `devin-client.ts`
+
+```typescript
+import { Octokit } from '@octokit/rest'
+
+export interface DevinSession {
+  sessionId: string
+  url: string
+  status: 'running' | 'completed' | 'failed'
+  repository: string
+  pullRequestUrl?: string
+}
+
+export class DevinClient {
+  private apiKey: string
+  private baseUrl = 'https://api.devin.ai/v1'
+  private github: Octokit
+
+  constructor(apiKey: string, githubToken: string) {
+    this.apiKey = apiKey
+    this.github = new Octokit({ auth: githubToken })
+  }
+
+  async createSession(params: {
+    repository: string
+    task: string
+    files?: string[]
+    branch?: string
+    createPR?: boolean
+    labels?: string[]
+  }): Promise<DevinSession> {
+    // 1. Clone repository context
+    const repoPath = `/Users/nathanclevenger/Projects/.do/${params.repository}`
+
+    // 2. Build comprehensive prompt
+    const prompt = this.buildPrompt(params)
+
+    // 3. Create Devin session
+    const response = await fetch(`${this.baseUrl}/sessions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt,
+        idempotent: true,
+        context: {
+          repository: `dot-do/${params.repository}`,
+          branch: params.branch || 'main',
+          files: params.files
+        }
+      })
+    })
+
+    const data = await response.json()
+
+    return {
+      sessionId: data.session_id,
+      url: data.url,
+      status: 'running',
+      repository: params.repository
+    }
+  }
+
+  async getSessionStatus(sessionId: string): Promise<DevinSession> {
+    const response = await fetch(`${this.baseUrl}/sessions/${sessionId}`, {
+      headers: { 'Authorization': `Bearer ${this.apiKey}` }
+    })
+
+    const data = await response.json()
+
+    return {
+      sessionId: data.session_id,
+      url: data.url,
+      status: data.status,
+      repository: data.context?.repository || 'unknown',
+      pullRequestUrl: data.artifacts?.find((a: any) => a.type === 'pull_request')?.url
+    }
+  }
+
+  async sendMessage(sessionId: string, message: string, files?: string[]): Promise<void> {
+    await fetch(`${this.baseUrl}/sessions/${sessionId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message, files })
+    })
+  }
+
+  async listSessions(filters?: {
+    repository?: string
+    status?: string
+    limit?: number
+  }): Promise<DevinSession[]> {
+    const params = new URLSearchParams()
+    if (filters?.status) params.append('status', filters.status)
+    if (filters?.limit) params.append('limit', filters.limit.toString())
+
+    const response = await fetch(`${this.baseUrl}/sessions?${params}`, {
+      headers: { 'Authorization': `Bearer ${this.apiKey}` }
+    })
+
+    const data = await response.json()
+
+    let sessions = data.sessions || []
+
+    if (filters?.repository) {
+      sessions = sessions.filter((s: any) =>
+        s.context?.repository === `dot-do/${filters.repository}`
+      )
+    }
+
+    return sessions.map((s: any) => ({
+      sessionId: s.session_id,
+      url: s.url,
+      status: s.status,
+      repository: s.context?.repository?.split('/')[1] || 'unknown',
+      pullRequestUrl: s.artifacts?.find((a: any) => a.type === 'pull_request')?.url
+    }))
+  }
+
+  private buildPrompt(params: {
+    repository: string
+    task: string
+    files?: string[]
+    branch?: string
+    createPR?: boolean
+  }): string {
+    return `
+# Task: ${params.task}
+
+## Repository Context
+- **Repository**: dot-do/${params.repository}
+- **Branch**: ${params.branch || 'main'}
+- **Files to modify**: ${params.files?.join(', ') || 'Determine from task'}
+
+## Project Standards
+- Read CLAUDE.md for repository-specific guidelines
+- Follow existing code patterns and conventions
+- Add comprehensive tests for all new code
+- Update documentation (README, CLAUDE.md, STATUS.md)
+- Ensure type safety (no 'any' types)
+- Run build and tests before creating PR
+
+## .do Platform Context
+- Multi-repo architecture with git submodules
+- API.Services: Everything is a function over API/MCP/RPC/SDK
+- Services.Delivery: Marketplace for economically valuable services
+- Services.Studio: "Vibe-Code" your Agentic AI Service
+- Target: $1M ARR by EOY 2025
+
+## Task Details
+${params.task}
+
+## Expected Deliverables
+1. Fully implemented feature with tests
+2. All tests passing (npm run test)
+3. Type checking passing (tsc --noEmit)
+4. Documentation updated
+${params.createPR ? '5. Pull request created with detailed description' : ''}
+
+## Notes
+- Place implementation notes in /notes/YYYY-MM-DD-description.md
+- Follow DRY principles
+- Prioritize code quality and maintainability
+- If blocked, ask questions via session messages
+`.trim()
+  }
+}
+```
+
+---
+
+## MCP Server Implementation
+
+### `devin-server.ts`
+
+```typescript
+import { Server } from '@modelcontextprotocol/sdk/server/index.js'
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
+import { DevinClient } from './devin-client.js'
+
+const DEVIN_API_KEY = process.env.DEVIN_API_KEY!
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN!
+
+const devin = new DevinClient(DEVIN_API_KEY, GITHUB_TOKEN)
+
+const server = new Server(
+  {
+    name: 'devin-mcp-server',
+    version: '1.0.0'
+  },
+  {
+    capabilities: {
+      tools: {}
+    }
+  }
+)
+
+// Tool definitions
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [
+    {
+      name: 'devin_create_task',
+      description: 'Assign implementation task to Devin in specific repository',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          repository: {
+            type: 'string',
+            enum: ['api', 'db', 'ai', 'ctx', 'mdx', 'agent', 'app', 'site', 'sdk', 'docs'],
+            description: 'Repository to work in'
+          },
+          task: {
+            type: 'string',
+            description: 'Detailed task description'
+          },
+          files: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Files to focus on (optional)'
+          },
+          branch: {
+            type: 'string',
+            description: 'Branch to work from (default: main)'
+          },
+          createPR: {
+            type: 'boolean',
+            description: 'Auto-create PR when done (default: true)'
+          },
+          labels: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'GitHub labels for PR'
+          },
+          priority: {
+            type: 'string',
+            enum: ['P0', 'P1', 'P2'],
+            description: 'Task priority'
+          }
+        },
+        required: ['repository', 'task']
+      }
+    },
+    {
+      name: 'devin_get_status',
+      description: 'Check status of Devin session',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          sessionId: {
+            type: 'string',
+            description: 'Devin session ID'
+          }
+        },
+        required: ['sessionId']
+      }
+    },
+    {
+      name: 'devin_review_pr',
+      description: 'Have Devin review a pull request',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          repository: {
+            type: 'string',
+            enum: ['api', 'db', 'ai', 'ctx', 'mdx', 'agent', 'app', 'site', 'sdk', 'docs']
+          },
+          prNumber: {
+            type: 'number',
+            description: 'Pull request number'
+          },
+          focus: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['security', 'performance', 'tests', 'edge-cases', 'style']
+            },
+            description: 'Review focus areas'
+          },
+          maxComments: {
+            type: 'number',
+            description: 'Max inline comments (default: 10)'
+          }
+        },
+        required: ['repository', 'prNumber']
+      }
+    },
+    {
+      name: 'devin_send_message',
+      description: 'Send message to active Devin session',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          sessionId: { type: 'string' },
+          message: { type: 'string' },
+          files: {
+            type: 'array',
+            items: { type: 'string' }
+          }
+        },
+        required: ['sessionId', 'message']
+      }
+    },
+    {
+      name: 'devin_list_sessions',
+      description: 'List all Devin sessions',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          repository: { type: 'string' },
+          status: {
+            type: 'string',
+            enum: ['running', 'completed', 'failed']
+          },
+          limit: {
+            type: 'number',
+            description: 'Default: 10'
+          }
+        }
+      }
+    },
+    {
+      name: 'devin_cancel_session',
+      description: 'Cancel running Devin session',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          sessionId: { type: 'string' },
+          reason: { type: 'string' }
+        },
+        required: ['sessionId']
+      }
+    }
+  ]
+}))
+
+// Tool execution
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params
+
+  switch (name) {
+    case 'devin_create_task': {
+      const session = await devin.createSession(args as any)
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify(session, null, 2)
+        }]
+      }
+    }
+
+    case 'devin_get_status': {
+      const status = await devin.getSessionStatus(args.sessionId as string)
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify(status, null, 2)
+        }]
+      }
+    }
+
+    case 'devin_review_pr': {
+      const { repository, prNumber, focus, maxComments } = args as any
+
+      const prUrl = `https://github.com/dot-do/${repository}/pull/${prNumber}`
+      const task = `Review pull request #${prNumber} in ${repository} repository.
+Focus on: ${focus?.join(', ') || 'general code quality'}.
+Post up to ${maxComments || 10} inline comments.
+PR URL: ${prUrl}`
+
+      const session = await devin.createSession({
+        repository,
+        task,
+        createPR: false
+      })
+
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({ ...session, prUrl }, null, 2)
+        }]
+      }
+    }
+
+    case 'devin_send_message': {
+      const { sessionId, message, files } = args as any
+      await devin.sendMessage(sessionId, message, files)
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({ success: true, sessionId }, null, 2)
+        }]
+      }
+    }
+
+    case 'devin_list_sessions': {
+      const sessions = await devin.listSessions(args as any)
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify(sessions, null, 2)
+        }]
+      }
+    }
+
+    case 'devin_cancel_session': {
+      // Implementation depends on Devin API - may need to send cancel message
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({
+            success: true,
+            message: 'Session cancel requested'
+          }, null, 2)
+        }]
+      }
+    }
+
+    default:
+      throw new Error(`Unknown tool: ${name}`)
+  }
+})
+
+// Start server
+async function main() {
+  const transport = new StdioServerTransport()
+  await server.connect(transport)
+  console.error('Devin MCP Server running on stdio')
+}
+
+main().catch(console.error)
+```
+
+---
+
+## Integration with VAPI and Claude Code
+
+### Complete Workflow
+
+```
+1. User talks to VAPI
+   "Add recurring subscriptions to the marketplace with Stripe integration"
+
+2. VAPI creates GitHub issue with label 'claude-code'
+   Issue #45: [P1] Implement recurring subscription support
+
+3. Claude Code GitHub Action triggers
+   - Reads issue
+   - Analyzes scope (large implementation task)
+   - Creates implementation plan in notes/
+   - Decides to delegate to Devin
+
+4. Claude Code calls Devin MCP
+   devin_create_task({
+     repository: 'api',
+     task: 'Implement recurring subscriptions...',
+     priority: 'P1'
+   })
+
+5. Devin implements feature
+   - Creates database migration
+   - Implements API endpoints
+   - Adds Stripe integration
+   - Writes comprehensive tests
+   - Updates documentation
+   - Creates PR #46
+
+6. Claude Code reviews PR
+   - Checks implementation against plan
+   - Reviews test coverage
+   - Validates documentation updates
+   - Requests changes if needed via devin_send_message
+
+7. Devin addresses feedback
+   - Makes requested changes
+   - Updates PR
+
+8. Claude Code approves and merges
+   - Comments on original issue #45
+   - Notifies user via VAPI
+```
+
+---
+
+## Configuration
+
+### Environment Variables
+
+```bash
+# Devin API
+DEVIN_API_KEY=<devin_api_key>
+
+# GitHub
+GITHUB_TOKEN=<github_pat>
+GITHUB_OWNER=dot-do
+
+# Claude Code (for coordination)
+ANTHROPIC_API_KEY=<claude_api_key>
+
+# VAPI (for voice updates)
+VAPI_API_KEY=<vapi_api_key>
+```
+
+### MCP Configuration (`.mcp.json`)
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "devin": {
+      "command": "node",
+      "args": ["dist/mcp/devin-server.js"],
+      "env": {
+        "DEVIN_API_KEY": "<api_key>",
+        "GITHUB_TOKEN": "<token>"
+      }
+    }
+  }
+}
+```
+
+---
+
+## Implementation Phases
+
+### Phase 1: Devin Client (Week 2)
+- [ ] Create `devin-client.ts` with API wrapper
+- [ ] Implement session creation
+- [ ] Add status polling
+- [ ] Test with simple task
+
+### Phase 2: MCP Server (Week 2)
+- [ ] Create `devin-server.ts` with MCP protocol
+- [ ] Implement all 6 tools
+- [ ] Add error handling and retries
+- [ ] Test tool execution
+
+### Phase 3: GitHub Integration (Week 3)
+- [ ] Configure Devin with GitHub access
+- [ ] Test PR creation workflow
+- [ ] Add PR review capability
+- [ ] Validate merge process
+
+### Phase 4: Claude Code Coordination (Week 3)
+- [ ] Add Devin delegation logic to Claude Code
+- [ ] Implement task size estimation
+- [ ] Create handoff workflow
+- [ ] Add review and merge logic
+
+### Phase 5: VAPI Integration (Week 4)
+- [ ] Connect VAPI → Claude Code → Devin pipeline
+- [ ] Add voice status updates
+- [ ] Implement progress notifications
+- [ ] Test end-to-end workflow
+
+---
+
+## Task Assignment Strategy
+
+### Delegate to Devin When:
+- ✅ New feature implementation (>100 lines of code)
+- ✅ Database schema changes with migrations
+- ✅ Complex refactoring across multiple files
+- ✅ External service integration (Stripe, APIs)
+- ✅ Comprehensive test suite creation
+- ✅ Performance optimization work
+
+### Keep with Claude Code When:
+- ✅ Architecture decisions and planning
+- ✅ Quick fixes and small edits (<50 lines)
+- ✅ Documentation updates (CLAUDE.md, README)
+- ✅ Code review and analysis
+- ✅ Cross-repo coordination
+- ✅ Debugging and investigation
+
+---
+
+## Success Metrics
+
+- [ ] Devin MCP server operational with all 6 tools
+- [ ] Successfully create sessions in all repos
+- [ ] PRs created and merged via Devin
+- [ ] <5 minute handoff time (Claude → Devin)
+- [ ] 90%+ PR approval rate on first review
+- [ ] Zero Devin sessions stuck/abandoned
+
+---
+
+## Example Use Cases
+
+### 1. Implement Numerics Metrics API
+
+**Claude Code (Planning):**
+```typescript
+// Analyzes requirement, creates plan
+const plan = await createImplementationPlan({
+  feature: '16 Numerics metrics endpoints',
+  repos: ['api', 'db'],
+  complexity: 'high'
+})
+
+// Delegates to Devin
+const session = await mcp.call('devin_create_task', {
+  repository: 'api',
+  task: `Implement 16 Numerics metrics API endpoints:
+
+/api/metrics/visitors, /api/metrics/signups, /api/metrics/active-users,
+/api/metrics/mrr, /api/metrics/arr, /api/metrics/gmv, /api/metrics/gmv-growth,
+/api/metrics/services-listed, /api/metrics/services-active, /api/metrics/providers,
+/api/metrics/service-rating, /api/metrics/dispute-rate, /api/metrics/creators,
+/api/metrics/top-creators-revenue, /api/metrics/functions, /api/metrics/api-calls
+
+Each endpoint must return Numerics JSON format:
+{
+  "postfix": "unit",
+  "data": [{ "value": number }]
+}
+
+Requirements:
+- Database queries in db/queries/metrics.ts
+- Route handlers in api/routes/metrics/*.ts
+- Redis caching layer
+- Zod validation
+- Comprehensive tests
+- Update CLAUDE.md and STATUS.md`,
+
+  files: [
+    'src/routes/metrics/',
+    'db/queries/metrics.ts'
+  ],
+  priority: 'P0',
+  labels: ['numerics-api', 'metrics', 'devin-created']
+})
+```
+
+**Devin (Implementation):**
+- Creates 16 route handlers
+- Writes database queries
+- Adds caching layer
+- Creates 16 test files
+- Updates documentation
+- Creates PR with 800+ lines of code
+
+**Claude Code (Review):**
+```typescript
+const pr = await github.pulls.get({ pull_number: 124 })
+
+// Review checklist
+const review = {
+  allEndpointsImplemented: checkEndpoints(pr.files),
+  testsPresent: checkTests(pr.files),
+  documentationUpdated: checkDocs(pr.files),
+  followsNumericsSpec: validateFormat(pr.files)
+}
+
+if (review.allGood) {
+  await github.pulls.merge({ pull_number: 124 })
+  await vapi.speak("Metrics API is complete! All 16 endpoints are live.")
+} else {
+  await mcp.call('devin_send_message', {
+    sessionId: session.sessionId,
+    message: 'Please add missing tests for GMV growth endpoint'
+  })
+}
+```
+
+### 2. ctx Repository Setup
+
+**Claude Code:**
+```typescript
+const session = await mcp.call('devin_create_task', {
+  repository: 'ctx',
+  task: `Set up ctx repository for entity MDX files with Velite and Zod validation.
+
+Directory structure:
+ctx/
+├── content/
+│   ├── brands/
+│   ├── functions/
+│   ├── nouns/
+│   ├── verbs/
+│   ├── workflows/
+│   ├── agents/
+│   └── ideas/
+├── schemas/
+│   ├── brand.ts (Zod schema)
+│   ├── function.ts
+│   ├── noun.ts
+│   ├── verb.ts
+│   ├── workflow.ts
+│   ├── agent.ts
+│   └── idea.ts
+├── velite.config.ts
+├── package.json
+└── CLAUDE.md
+
+Requirements:
+- Velite for MDX processing
+- Zod schemas for validation
+- Example MDX files for each type
+- GitHub webhook integration docs
+- Comprehensive README`,
+
+  priority: 'P0',
+  labels: ['infrastructure', 'ctx-repo', 'devin-created']
+})
+```
+
+---
+
+## Related Documentation
+
+- [TODO.md](TODO.md) - Master project plan
+- [README.md](README.md) - OKRs and goals
+- [VAPI-INTEGRATION.md](VAPI-INTEGRATION.md) - Voice AI integration
+- [NUMERICS-INTEGRATION.md](NUMERICS-INTEGRATION.md) - Metrics dashboard
+
+---
+
+**Created:** 2025-10-01
+**Priority:** P0 - Critical
+**Owner:** Claude Code (AI Project Manager)
+**Dependencies:** GitHub integration, Devin API access

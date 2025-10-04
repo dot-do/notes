@@ -1,0 +1,1098 @@
+# External Community Channels Strategy
+
+**Date:** October 3, 2025
+**Purpose:** Multi-channel community strategy for Discord, Twitter, Reddit, Dev.to, Hacker News, Stack Overflow
+**Status:** Production-Ready
+
+---
+
+## Executive Summary
+
+This multi-channel strategy extends GitHub-based community to external platforms where developers congregate. Each channel serves a specific purpose and audience, creating a comprehensive presence across the developer ecosystem.
+
+**Expected Impact:**
+- Discord: 500+ members by Month 12
+- Twitter: 1,000+ followers by Month 12
+- Dev.to: 300+ followers by Month 12
+- Reddit: 100+ upvotes/post average
+- Stack Overflow: 20+ answers with .do links
+
+---
+
+## Table of Contents
+
+1. [Discord Server Setup](#1-discord-server-setup)
+2. [Twitter/X Strategy](#2-twitterx-strategy)
+3. [Reddit Participation](#3-reddit-participation)
+4. [Dev.to Strategy](#4-devto-strategy)
+5. [Hacker News Strategy](#5-hacker-news-strategy)
+6. [Stack Overflow Strategy](#6-stack-overflow-strategy)
+7. [Cross-Channel Content Flow](#7-cross-channel-content-flow)
+8. [Moderation Guidelines](#8-moderation-guidelines)
+
+---
+
+## 1. Discord Server Setup
+
+### 1.1 Server Structure
+
+**Server Name:** .do Community
+**Vanity URL:** discord.gg/dotdo
+**Icon:** .do logo
+**Banner:** .do branding with tagline
+
+### 1.2 Channel Structure
+
+**📌 Welcome & Rules**
+- `#welcome` (read-only)
+  - Welcome message
+  - Server rules
+  - Role descriptions
+  - Quick links
+
+- `#introductions`
+  - New members introduce themselves
+  - Icebreaker questions
+  - Where are you from? What are you building?
+
+---
+
+**💬 General Discussion**
+- `#general`
+  - Casual conversation
+  - Off-topic allowed
+  - Community bonding
+
+- `#announcements` (read-only)
+  - Official updates from team
+  - New releases
+  - Blog posts
+  - Events
+
+- `#showcase`
+  - Share projects built with .do
+  - Get feedback
+  - Inspire others
+
+---
+
+**🆘 Support & Help**
+- `#help`
+  - General questions
+  - Troubleshooting
+  - Quick answers
+
+- `#troubleshooting`
+  - Debug issues together
+  - Error messages
+  - Detailed help
+
+- `#feature-requests`
+  - Suggest new features
+  - Vote with reactions
+  - Discuss ideas
+
+---
+
+**🔨 Development**
+- `#contributors`
+  - For active contributors
+  - Discuss PRs and issues
+  - Coordinate work
+
+- `#core-team` (private)
+  - For maintainers only
+  - Internal discussions
+  - Planning
+
+- `#github-feed`
+  - Automated GitHub activity
+  - New issues, PRs, releases
+  - Real-time updates
+
+---
+
+**📚 Topic Channels**
+- `#workers`
+  - Microservices discussions
+  - Workers questions
+  - Deployment help
+
+- `#sdk`
+  - SDK usage
+  - Package questions
+  - Type issues
+
+- `#ai`
+  - AI integration questions
+  - LLM discussions
+  - Prompt engineering
+
+- `#database`
+  - db.do questions
+  - Drizzle ORM help
+  - PostgreSQL tips
+
+- `#cloudflare`
+  - Cloudflare-specific questions
+  - Workers platform
+  - D1, R2, KV discussions
+
+---
+
+**🎉 Community**
+- `#random`
+  - Off-topic fun
+  - Memes (tasteful)
+  - Weekend chat
+
+- `#jobs`
+  - Job postings (no spam)
+  - Hiring announcements
+  - Freelance opportunities
+
+- `#events`
+  - Community calls
+  - Meetups
+  - Conferences
+
+---
+
+**🎤 Voice Channels**
+- `Office Hours` (scheduled times)
+- `Community Call` (monthly)
+- `Coworking` (open anytime)
+- `AFK` (auto-move when idle)
+
+---
+
+### 1.3 Roles & Permissions
+
+**Roles:**
+
+1. **🎓 New Member** (default)
+   - Can read and post in most channels
+   - Cannot post in #announcements, #core-team
+   - Auto-assigned on join
+
+2. **✅ Contributor**
+   - 5+ merged PRs on GitHub
+   - Special color (green)
+   - Access to #contributors channel
+   - Manually assigned by bot or admin
+
+3. **⭐ Core Team**
+   - 20+ merged PRs, core contributor status
+   - Special color (gold)
+   - Access to #contributors and special perks
+   - Manually assigned
+
+4. **👑 Maintainer**
+   - Full GitHub access
+   - Special color (purple)
+   - Access to #core-team (private)
+   - All previous perks
+   - Manually assigned
+
+5. **🤖 Bot**
+   - For automated bots
+   - Limited permissions
+   - GitHub bot, welcome bot, moderation bot
+
+6. **🛡️ Moderator**
+   - Community moderators (not necessarily core team)
+   - Can timeout/kick/ban
+   - Enforce rules
+   - Manually assigned
+
+---
+
+### 1.4 Moderation Setup
+
+**Rules (#welcome channel):**
+
+```markdown
+# .do Community Rules
+
+Welcome! Please follow these rules to keep our community friendly and productive.
+
+## 1. Be Respectful
+- Treat everyone with kindness
+- No harassment, hate speech, or discrimination
+- Disagree constructively
+
+## 2. Stay On Topic
+- Keep discussions relevant to channels
+- Use #random for off-topic chat
+- No spam or self-promotion without value
+
+## 3. Help Each Other
+- Answer questions when you can
+- Be patient with beginners
+- Share knowledge generously
+
+## 4. No NSFW Content
+- Keep content safe for work
+- No explicit, violent, or offensive material
+
+## 5. Respect Privacy
+- Don't share personal information
+- Don't DM people without permission
+
+## 6. Follow Discord's ToS
+- Follow [Discord Community Guidelines](https://discord.com/guidelines)
+- Follow [Discord Terms of Service](https://discord.com/terms)
+
+## Enforcement
+- 1st violation: Warning
+- 2nd violation: Timeout (24 hours)
+- 3rd violation: Ban
+
+Serious violations (harassment, spam): Immediate ban
+
+## Questions?
+Contact @Moderator or email conduct@do.com
+```
+
+**Moderation Bots:**
+- **AutoMod** (Discord built-in)
+  - Block spam keywords
+  - Block invite links
+  - Block NSFW content
+  - Auto-timeout repeat offenders
+
+- **Welcome Bot** (custom or MEE6)
+  - Greet new members in #welcome
+  - DM with server info
+  - Assign @New Member role
+
+- **GitHub Bot** (custom webhook)
+  - Post new issues/PRs to #github-feed
+  - Post releases to #announcements
+  - Link PRs when mentioned
+
+---
+
+### 1.5 Engagement Strategy
+
+**Daily:**
+- Team members active in #general and #help
+- Answer questions within 2 hours (business hours)
+- Welcome new members
+
+**Weekly:**
+- **Monday:** Feature spotlight in #announcements
+- **Wednesday:** Community highlight in #showcase
+- **Friday:** Weekly recap in #announcements
+
+**Monthly:**
+- **First Tuesday:** Community call (voice channel)
+- **Third Thursday:** AMA in #general
+- **Last Friday:** Contributor spotlight
+
+**Events:**
+- Virtual office hours (2x per week, 1 hour each)
+- Coworking sessions (open #coworking voice channel)
+- Hackathons (quarterly)
+
+---
+
+## 2. Twitter/X Strategy
+
+### 2.1 Account Setup
+
+**Handle:** @dotdo_ai (or @dotdo_services)
+**Name:** .do | AI-Native API Platform
+**Bio:** Build APIs with 8 microservices, 121 SDKs, zero config. Open source, edge-first, AI-powered. Built on @Cloudflare Workers. 🚀
+
+**Profile Picture:** .do logo
+**Banner:** .do branding with features highlighted
+**Website:** https://do.com
+**Location:** Global (Edge Network)
+
+### 2.2 Content Strategy
+
+**Daily Content Mix (7 tweets/week):**
+
+**Monday: Feature Spotlight** (1 tweet)
+```
+🚀 Feature Spotlight: Workers RPC
+
+Type-safe service communication with zero overhead.
+
+✅ Compile-time type checking
+✅ No HTTP serialization
+✅ Automatic retries
+✅ 10x faster than REST
+
+Learn more: [link]
+
+#CloudflareWorkers #TypeScript #Microservices
+```
+
+**Tuesday: Blog Post Share** (1 tweet + thread)
+```
+📝 New Blog Post: "Building Microservices on Cloudflare Workers"
+
+We built 8 production microservices in 3 months. Here's what we learned:
+
+🧵 Thread 👇
+
+[1/7] Why edge computing changes everything...
+
+[2/7] Service isolation without containers...
+
+[3/7] Workers RPC vs REST: 10x faster...
+
+[4/7-7/7] ...
+
+Read the full post: [link]
+
+#EdgeComputing #Microservices
+```
+
+**Wednesday: Community Highlight** (1 tweet thread)
+```
+🌟 Community Spotlight: @username
+
+Built a SaaS backend with .do in 2 weeks!
+
+What they built:
+• REST API with 20 endpoints
+• PostgreSQL database
+• AI-powered features
+• Auth with WorkOS
+
+Tech stack:
+• @dotdo_ai microservices
+• @Cloudflare Workers
+• @neondatabase
+• @WorkOS
+
+Check it out: [link]
+
+Want to be featured? Share your project in our Discord! 🎉
+```
+
+**Thursday: Tip/Tutorial** (1 tweet)
+```
+💡 TypeScript Tip: Type-safe environment variables
+
+Instead of:
+❌ process.env.API_KEY
+
+Do this:
+✅
+type Env = {
+  API_KEY: string
+}
+
+export default {
+  async fetch(req: Request, env: Env) {
+    // env.API_KEY is typed!
+  }
+}
+
+#TypeScript #CloudflareWorkers
+```
+
+**Friday: Weekly Recap** (1 tweet thread)
+```
+📊 This Week in .do
+
+✨ 5 PRs merged
+🚀 gateway v1.2.0 released
+📝 3 new blog posts
+👥 12 new contributors
+💬 50+ discussions
+
+Top contributions:
+• @contributor1 - Added tests for db service
+• @contributor2 - Improved error messages
+• @contributor3 - Fixed auth bug
+
+Thank you! 🙌
+
+[1/4] Highlights 👇
+```
+
+**Saturday: Behind the Scenes** (1 tweet)
+```
+🔧 Behind the Scenes: How we deploy
+
+Our deployment flow:
+1. Push to main
+2. GitHub Actions runs tests
+3. Build all 8 services
+4. Deploy to Cloudflare
+5. Health checks pass
+6. Traffic switches
+
+⏱️ Total time: 3 minutes
+
+Zero downtime. Zero stress. ✅
+
+#DevOps #CI/CD
+```
+
+**Sunday: Community Engagement** (1 retweet + replies)
+```
+[Retweet community project]
+
+Amazing work, @username! 🔥
+
+Love seeing what you built with .do. The AI integration is especially impressive.
+
+Anyone else building with AI? Share below! 👇
+
+#builtwith #cloudflare
+```
+
+---
+
+### 2.3 Engagement Tactics
+
+**Reply to Mentions:**
+- Respond within 2 hours (business hours)
+- Always add value
+- Link to docs when helpful
+- Thank people for feedback
+
+**Engage with Related Content:**
+- Follow #CloudflareWorkers, #TypeScript, #Microservices hashtags
+- Retweet community projects
+- Quote tweet with additional insights
+- Comment on competitor posts (add value, don't attack)
+
+**Use Relevant Hashtags:**
+- Primary: #CloudflareWorkers, #TypeScript, #Microservices
+- Secondary: #EdgeComputing, #API, #OpenSource
+- Long-tail: #WorkersRPC, #TypeSafeAPIs, #CloudflarePlatform
+
+**Tag Relevant Accounts:**
+- @Cloudflare (when relevant)
+- @typescript (when relevant)
+- Community members (when featuring)
+
+**Run Polls:**
+```
+📊 What's your biggest API development pain point?
+
+1. Authentication & auth
+2. Database connections
+3. Deployment complexity
+4. Monitoring & errors
+
+Vote below! 👇
+```
+
+---
+
+### 2.4 Growth Strategy
+
+**Phase 1 (Months 1-3): Foundation**
+- Follow 500 relevant developers
+- Post consistently (7 tweets/week)
+- Engage with 20+ posts/day
+- Target: 200 followers
+
+**Phase 2 (Months 4-6): Acceleration**
+- Increase to 10 tweets/week
+- Run Twitter Spaces (monthly)
+- Collaborate with influencers
+- Target: 500 followers
+
+**Phase 3 (Months 7-12): Scale**
+- Maintain consistency
+- Host giveaways (swag)
+- Conference live-tweeting
+- Target: 1,000 followers
+
+---
+
+## 3. Reddit Participation
+
+### 3.1 Target Subreddits
+
+| Subreddit | Members | Relevance | Frequency |
+|-----------|---------|-----------|-----------|
+| r/webdev | 1.6M | High | 2x/month |
+| r/programming | 6.6M | High | 1x/month |
+| r/javascript | 2.2M | High | 2x/month |
+| r/typescript | 200K | Very High | 3x/month |
+| r/cloudflare | 20K | Very High | 4x/month |
+| r/node | 100K | High | 2x/month |
+| r/devops | 300K | Medium | 1x/month |
+| r/selfhosted | 400K | Medium | 1x/month |
+
+### 3.2 Participation Guidelines
+
+**10:1 Rule:**
+- 10 helpful comments for every 1 self-promotional post
+- Focus on adding value, not marketing
+- Answer questions genuinely
+
+**Subreddit Rules:**
+- Read rules before posting
+- Follow formatting guidelines
+- No cross-posting to multiple subreddits same day
+- No spammy titles
+
+**Value-First Approach:**
+- Share learnings, not ads
+- Provide code examples
+- Explain trade-offs honestly
+- Link to .do only if genuinely helpful
+
+### 3.3 Content Strategy
+
+**Blog Post Sharing:**
+
+**Good Title:**
+```
+I built 8 microservices on Cloudflare Workers - here's what I learned
+```
+
+**Bad Title:**
+```
+Check out .do - the best API platform!
+```
+
+**Post Structure:**
+```markdown
+**TL;DR:** [One sentence summary]
+
+[Compelling introduction with problem statement]
+
+**What I Built:**
+- [Feature 1]
+- [Feature 2]
+- [Feature 3]
+
+**Tech Stack:**
+- Cloudflare Workers
+- TypeScript
+- Drizzle ORM
+- PostgreSQL
+
+**Lessons Learned:**
+
+1. **[Lesson 1]**
+   [Detailed explanation with code]
+
+2. **[Lesson 2]**
+   [Detailed explanation with code]
+
+3. **[Lesson 3]**
+   [Detailed explanation with code]
+
+**Challenges:**
+[Honest discussion of difficulties]
+
+**Would I do it again?**
+[Honest take]
+
+**Resources:**
+- Code: github.com/dot-do/.do
+- Blog: blog.do
+- Docs: docs.do
+
+**AMA!** Happy to answer questions.
+```
+
+**Engagement:**
+- Reply to ALL comments within 2 hours
+- Provide detailed, helpful answers
+- Thank people for feedback
+- Be humble and gracious
+
+### 3.4 Community Participation
+
+**Answer Questions:**
+- Search for questions about Cloudflare Workers, TypeScript, etc.
+- Provide detailed answers with code examples
+- Link to .do docs only if genuinely helpful
+
+**Example Answer:**
+```markdown
+Great question! Here's how I handle this:
+
+```typescript
+// Your code example
+```
+
+This approach works well because [explanation].
+
+**Alternatives:**
+- [Alternative 1]
+- [Alternative 2]
+
+**Resources:**
+- [Official docs]
+- [Helpful blog post]
+
+Let me know if you have questions!
+```
+
+**"What are you working on?" Threads:**
+- Share monthly progress
+- Be genuine, not salesy
+- Ask for feedback
+- Engage with other projects
+
+---
+
+## 4. Dev.to Strategy
+
+### 4.1 Profile Setup
+
+**Username:** dotdo
+**Name:** .do
+**Website:** https://do.com
+**Location:** Global Edge Network
+**Bio:** Building AI-native API infrastructure on Cloudflare Workers. 8 microservices, 121 SDKs, zero config. Open source. 🚀
+
+### 4.2 Content Strategy
+
+**Cross-Post All Blog Posts:**
+- Same day as GitHub Pages blog
+- Use canonical URL (points to blog.do)
+- Full content (not just excerpt)
+
+**Tags (4 per post):**
+- Primary: #typescript, #cloudflare, #microservices
+- Secondary: #api, #ai, #database, #devops
+- Long-tail: #cloudfl areworkers, #edgecomputing
+
+**Series to Create:**
+
+1. **"Microservices on Edge"** (5-part series)
+   - Part 1: Architecture Overview
+   - Part 2: Service Communication (Workers RPC)
+   - Part 3: Database Layer
+   - Part 4: Authentication & Security
+   - Part 5: Deployment & Monitoring
+
+2. **"AI Integration Guide"** (10-part series)
+   - Part 1: Getting Started with AI
+   - Part 2: Multi-Model Support
+   - Part 3: Streaming Responses
+   - Part 4: Function Calling
+   - Part 5-10: Advanced topics
+
+3. **"Database Optimization"** (5-part series)
+   - Part 1: PostgreSQL at the Edge
+   - Part 2: Drizzle ORM
+   - Part 3: Query Optimization
+   - Part 4: Connection Pooling
+   - Part 5: Scaling Strategies
+
+4. **"Building in Public"** (weekly updates)
+   - Weekly progress updates
+   - Learnings and challenges
+   - Metrics and growth
+
+### 4.3 Engagement Strategy
+
+**Reply to Comments:**
+- <24 hours response time
+- Thoughtful, detailed replies
+- Thank commenters
+- Continue discussion
+
+**Follow Relevant Authors:**
+- Cloudflare community
+- TypeScript experts
+- Microservices advocates
+- AI/ML practitioners
+
+**Comment on Related Articles:**
+- Add value to discussions
+- Share insights
+- Link to .do only if helpful
+
+**Participate in Discussions:**
+- #discuss posts
+- #help posts
+- #showdev posts
+
+### 4.4 Dev.to Benefits
+
+✅ **Dofollow backlinks** in articles
+✅ **Large audience** (1M+ monthly visitors)
+✅ **SEO benefits** (DA 90+)
+✅ **Built-in community** and comments
+✅ **Series support** for multi-part content
+✅ **RSS feed** for subscribers
+✅ **Analytics** for post performance
+
+---
+
+## 5. Hacker News Strategy
+
+### 5.1 Submission Strategy
+
+**Best Practices:**
+- **Best days:** Tuesday-Thursday
+- **Best times:** 8-10am EST
+- **Frequency:** 1-2 submissions/month max (avoid spam)
+
+**Content to Submit:**
+- Major releases (e.g., "Show HN: .do - Open source microservices platform")
+- Architecture deep-dives (e.g., "Why we chose Workers RPC over REST")
+- Performance benchmarks (e.g., "Cloudflare Workers vs Lambda: 10x faster")
+- Technical post-mortems (e.g., "How we scaled to 1M requests")
+- "Ask HN" discussions (e.g., "Ask HN: How do you structure microservices?")
+
+**Title Guidelines:**
+- Use original title or modify slightly
+- No clickbait
+- No ALL CAPS
+- No emoji
+- Be specific and intriguing
+
+**Good Titles:**
+```
+Show HN: .do – Open source microservices platform on Cloudflare Workers
+Why we chose Workers RPC over REST for microservices (and you should too)
+Cloudflare Workers vs AWS Lambda: Performance comparison
+```
+
+**Bad Titles:**
+```
+Check out our AMAZING new platform! 🚀
+You won't believe how fast Cloudflare Workers are
+The best microservices platform ever built
+```
+
+### 5.2 Submission Process
+
+**1. Create Submission:**
+- Use "Submit" link on HN
+- Choose appropriate type (Story, Ask HN, Show HN)
+- Include URL if linking to article
+
+**2. Monitor First 2 Hours:**
+- Check every 30 minutes
+- Reply to comments quickly
+- Provide additional context
+
+**3. Participate in Discussion:**
+- Reply to ALL questions
+- Be humble and informative
+- Acknowledge limitations
+- Thank people for feedback
+- Don't argue aggressively
+
+**4. Follow Up:**
+- Monitor for 24 hours
+- Reply to late comments
+- Note feedback for future improvements
+
+### 5.3 Response Strategy
+
+**Example Responses:**
+
+**Question:**
+```
+How does this compare to Vercel?
+```
+
+**Response:**
+```
+Great question! Here's how we're different:
+
+.do focuses on backend microservices (API, database, auth), while Vercel focuses on frontend deployment.
+
+Key differences:
+- We use Workers (V8 isolates), Vercel uses Lambda (containers)
+- We provide 8 microservices out-of-the-box
+- We're 100% open source, Vercel is proprietary
+
+That said, you can use both together! Deploy frontend on Vercel, backend on .do.
+```
+
+**Criticism:**
+```
+This seems unnecessarily complex.
+```
+
+**Response:**
+```
+Fair criticism! Here's our thinking:
+
+For simple projects, you're right - monoliths are simpler. We built this for teams that:
+- Need independent scaling
+- Want fault isolation
+- Have multiple developers working in parallel
+
+That said, we provide a single-command deploy for all services, so the complexity is mostly under the hood.
+
+What use case are you solving for? Happy to discuss if this fits your needs.
+```
+
+**Comparison:**
+```
+How is this different from X?
+```
+
+**Response:**
+```
+Good question! Here's how we compare:
+
+**Similarities:**
+- Both use [technology]
+- Both support [feature]
+
+**Differences:**
+- We use Workers (edge), X uses Lambda (regional)
+- We're open source, X is proprietary
+- We provide [unique feature]
+
+Honestly, both are good choices depending on your needs. We're optimized for [use case].
+```
+
+### 5.4 What NOT to Do
+
+❌ **Manipulate votes** (vote rings, asking for upvotes)
+❌ **Spam submissions** (more than 2/month)
+❌ **Ignore comments** (must participate)
+❌ **Be defensive** (acknowledge criticism graciously)
+❌ **Self-promote excessively** (focus on value)
+
+---
+
+## 6. Stack Overflow Strategy
+
+### 6.1 Target Tags
+
+**Primary Tags (Answer Questions):**
+- [cloudflare-workers] (1,500+ questions)
+- [typescript] (200,000+ questions)
+- [microservices] (15,000+ questions)
+- [edge-computing] (500+ questions)
+- [drizzle] (Drizzle ORM, 300+ questions)
+- [hono] (Hono framework, 200+ questions)
+
+**Secondary Tags:**
+- [postgresql] (when relevant)
+- [api] (when relevant)
+- [authentication] (when relevant)
+
+### 6.2 Answer Strategy
+
+**Find Questions:**
+1. Search for unanswered questions in target tags
+2. Sort by "Newest" or "Active"
+3. Look for questions you can answer well
+
+**Answer Structure:**
+
+```markdown
+**Short Answer:**
+[One-sentence solution]
+
+**Detailed Explanation:**
+[Why this works, when to use it]
+
+**Code Example:**
+```typescript
+// Working code example
+```
+
+**Alternative Approaches:**
+- [Alternative 1]
+- [Alternative 2]
+
+**Additional Resources:**
+- [Official docs link]
+- [Tutorial link (only if genuinely helpful)]
+
+Let me know if you have questions!
+```
+
+**Example Answer:**
+
+**Question:** "How do I use environment variables in Cloudflare Workers?"
+
+**Answer:**
+```markdown
+**Short Answer:**
+Environment variables are passed as the second parameter to your `fetch` handler.
+
+**Code:**
+```typescript
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const apiKey = env.API_KEY
+    return new Response(`API Key: ${apiKey}`)
+  }
+}
+```
+
+**Type Safety:**
+For type-safe environment variables, define an `Env` type:
+
+```typescript
+type Env = {
+  API_KEY: string
+  DATABASE_URL: string
+}
+```
+
+**Setting Variables:**
+- Locally: `.dev.vars` file
+- Production: `wrangler secret put API_KEY`
+
+**More Info:**
+- [Cloudflare Docs: Environment Variables](https://developers.cloudflare.com/workers/configuration/environment-variables/)
+
+Let me know if you have questions!
+```
+
+### 6.3 Linking to .do
+
+**When It's Appropriate:**
+✅ Question is directly about microservices architecture
+✅ Question asks for examples or tutorials
+✅ .do docs genuinely solve their problem
+✅ You've already provided a complete answer
+
+**When It's NOT Appropriate:**
+❌ Question is unrelated to .do
+❌ You haven't answered the question fully
+❌ It feels spammy or self-promotional
+
+**How to Link:**
+```markdown
+**Note:** If you're building microservices on Workers, we've documented this pattern extensively in our [microservices guide](https://docs.do/microservices). It might help!
+```
+
+### 6.4 Building Reputation
+
+**Goal: Earn Badges and Rep**
+- Answer 5-10 questions per week
+- Focus on quality over quantity
+- Edit questions for clarity (helps SEO)
+- Upvote good questions and answers
+
+**Benefits of High Rep:**
+- Dofollow links (10K+ rep)
+- Increased visibility
+- More traffic to docs
+- Establishes expertise
+
+---
+
+## 7. Cross-Channel Content Flow
+
+### 7.1 Publication Workflow
+
+```
+GitHub Blog Post Published (Primary)
+      ↓
+Within 24 hours:
+├─→ Dev.to (canonical URL to blog)
+├─→ Hashnode (canonical URL to blog)
+├─→ Twitter (thread + link)
+└─→ Discord #announcements
+
+Within 48 hours:
+├─→ Reddit (relevant subreddit)
+├─→ Hacker News (if major announcement)
+└─→ Stack Overflow (answer related questions)
+
+Within 1 week:
+├─→ Medium (1 week delay for SEO)
+├─→ LinkedIn (professional angle)
+└─→ Newsletter (if monthly)
+```
+
+### 7.2 Content Adaptation
+
+**Same Content, Different Formats:**
+
+**Blog Post → Twitter Thread:**
+- Break into 7-10 tweets
+- Lead with hook
+- One point per tweet
+- End with link to full post
+
+**Blog Post → Reddit:**
+- Add TL;DR
+- More detailed code examples
+- Honest discussion of challenges
+- Encourage discussion
+
+**Blog Post → HN:**
+- Title focused on insight, not product
+- Be ready to discuss in comments
+- Share learnings, not marketing
+
+**Blog Post → Stack Overflow:**
+- Find related questions
+- Provide answer + link to blog
+- Focus on solving their problem
+
+---
+
+## 8. Moderation Guidelines
+
+### 8.1 Consistent Code of Conduct
+
+**Same rules across all channels:**
+- Be respectful and kind
+- No harassment, spam, NSFW
+- Help others when you can
+- Follow platform-specific ToS
+
+**Enforcement:**
+- 1st violation: Warning
+- 2nd violation: Temporary ban (7 days)
+- 3rd violation: Permanent ban
+- Serious violations: Immediate permanent ban
+
+### 8.2 Moderation Team
+
+**Structure:**
+- 2-3 core team members (always active)
+- 3-5 community moderators (selected from active contributors)
+- Weekly moderation sync meeting
+- Shared moderation dashboard/docs
+
+**Responsibilities:**
+- Monitor channels daily
+- Respond to reports within 2 hours
+- Enforce Code of Conduct consistently
+- Escalate serious issues to core team
+
+---
+
+## Success Metrics
+
+### Month 3 Targets:
+- Discord: 100 members, 20 daily active
+- Twitter: 200 followers, 2-3% engagement
+- Reddit: 3 posts, 50+ upvotes average
+- Dev.to: 50 followers, 500 views/post
+- Stack Overflow: 10 answers
+
+### Month 6 Targets:
+- Discord: 300 members, 50 daily active
+- Twitter: 500 followers, 3-4% engagement
+- Reddit: 4 posts, 100+ upvotes average
+- Dev.to: 150 followers, 1,000 views/post
+- Stack Overflow: 20 answers
+
+### Month 12 Targets:
+- Discord: 500 members, 100 daily active
+- Twitter: 1,000 followers, 4-5% engagement
+- Reddit: 6 posts/month, 200+ upvotes average
+- Dev.to: 300 followers, 2,000 views/post
+- Stack Overflow: 50+ answers
+
+---
+
+**Document Status:** ✅ Complete - Production Ready
+**Last Updated:** October 3, 2025
+**Subagent:** D4 - External Community Channels

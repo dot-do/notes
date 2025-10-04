@@ -1,0 +1,561 @@
+# VAPI Voice AI → GitHub → Claude Code Integration
+
+**Priority:** P1 - High Priority (Voice-driven project management)
+**Status:** Planning
+**Target:** Week 2-3 of Q4 2025
+
+---
+
+## Overview
+
+Enable voice-driven project management by connecting VAPI voice AI agent to Claude Code via GitHub issues. This allows conversational brainstorming and task assignment through natural voice interactions.
+
+## Architecture Flow
+
+```
+User Voice Command
+    ↓
+VAPI Voice AI Agent (conversation + understanding)
+    ↓
+VAPI Custom Function (create GitHub issue)
+    ↓
+GitHub Issues API (authenticated)
+    ↓
+GitHub Webhook (issue created/labeled)
+    ↓
+Claude Code GitHub Actions (triggered)
+    ↓
+Claude Code Execution (autonomous work)
+    ↓
+Pull Request Created (with changes)
+    ↓
+Notification to User (GitHub/Email/Voice)
+```
+
+---
+
+## Use Cases
+
+### 1. Voice Task Assignment
+**User:** "Hey VAPI, have Claude create a new function for calculating MRR and add it to the metrics API"
+
+**VAPI Actions:**
+- Understands: Need new function for MRR calculation
+- Creates GitHub issue with label `claude-code`
+- Includes context: metrics API, MRR calculation, Numerics format
+- Assigns to Claude Code
+
+**Claude Code Actions:**
+- Reads issue from GitHub webhook
+- Creates function in `api/src/routes/metrics/mrr.ts`
+- Updates `db/src/queries/revenue.ts` with MRR query
+- Adds tests
+- Creates PR with changes
+
+### 2. Voice Brainstorming
+**User:** "I'm thinking we should add tiered pricing to the marketplace. What do you think?"
+
+**VAPI Actions:**
+- Engages in conversation about pricing tiers
+- Discusses pros/cons, implementation complexity
+- User confirms: "Let's do it"
+- Creates GitHub issue: "Design and implement tiered marketplace pricing"
+- Adds conversation context to issue body
+
+**Claude Code Actions:**
+- Reviews issue and context
+- Creates design document
+- Proposes database schema changes
+- Creates implementation plan
+- Adds to TODO.md
+- Comments on issue with plan for user approval
+
+### 3. Voice Progress Check
+**User:** "What's the status on the ctx repository setup?"
+
+**VAPI Actions:**
+- Queries GitHub API for related issues/PRs
+- Checks TODO.md status
+- Synthesizes voice response:
+  - "The ctx repository is currently pending. It's Phase 1 of the migration plan."
+  - "Would you like me to have Claude start working on it?"
+
+### 4. Voice Debugging
+**User:** "The Numerics dashboard is showing wrong GMV numbers. Can you investigate?"
+
+**VAPI Actions:**
+- Creates urgent GitHub issue with `bug` and `claude-code` labels
+- Includes: Numerics dashboard, GMV metric, data accuracy
+- Sets priority high
+
+**Claude Code Actions:**
+- Reviews GMV calculation in `api/src/routes/metrics/gmv.ts`
+- Checks database queries
+- Identifies issue (wrong date range)
+- Fixes bug
+- Adds test case
+- Creates PR with fix
+
+---
+
+## Implementation Components
+
+### 1. VAPI Assistant Configuration
+
+```json
+{
+  "name": "do-platform-manager",
+  "model": "gpt-4",
+  "voice": "jennifer-playht",
+  "description": "Voice AI project manager for .do platform. Can assign tasks to Claude Code, check project status, and brainstorm ideas.",
+  "firstMessage": "Hey! I'm your .do platform manager. I can help you brainstorm ideas, assign work to Claude, and check on progress. What's on your mind?",
+  "functions": [
+    {
+      "name": "create_github_issue",
+      "description": "Create a new GitHub issue to assign work to Claude Code",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Clear, concise issue title"
+          },
+          "body": {
+            "type": "string",
+            "description": "Detailed description including context from conversation"
+          },
+          "labels": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Labels to apply (always include 'claude-code')"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["P0", "P1", "P2"],
+            "description": "Priority level based on urgency"
+          }
+        },
+        "required": ["title", "body", "labels"]
+      }
+    },
+    {
+      "name": "check_project_status",
+      "description": "Check status of specific feature, repo, or task",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "What to check (e.g., 'ctx repository', 'Numerics integration')"
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "list_open_tasks",
+      "description": "List all open tasks and their status",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "type": "string",
+            "enum": ["all", "in-progress", "pending", "blocked"],
+            "description": "Filter tasks by status"
+          }
+        }
+      }
+    }
+  ],
+  "serverUrl": "https://api.do/vapi/webhook"
+}
+```
+
+### 2. VAPI Webhook Handler
+
+```typescript
+// api/src/routes/vapi/webhook.ts
+import { Hono } from 'hono'
+import { Octokit } from '@octokit/rest'
+
+const vapi = new Hono()
+
+vapi.post('/webhook', async (c) => {
+  const { message } = await c.req.json()
+
+  // Verify VAPI signature
+  const signature = c.req.header('x-vapi-signature')
+  if (!verifyVapiSignature(signature, message)) {
+    return c.json({ error: 'Invalid signature' }, 401)
+  }
+
+  const { toolCalls } = message
+
+  for (const toolCall of toolCalls) {
+    if (toolCall.function.name === 'create_github_issue') {
+      const { title, body, labels, priority } = toolCall.function.arguments
+
+      // Create GitHub issue
+      const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN })
+
+      const issue = await octokit.issues.create({
+        owner: 'dot-do',
+        repo: '.do',
+        title: `[${priority}] ${title}`,
+        body: `${body}\n\n---\n\n🎙️ Created via VAPI voice command\n📅 ${new Date().toISOString()}`,
+        labels: [...labels, 'claude-code', 'vapi-created']
+      })
+
+      // Return success to VAPI
+      return c.json({
+        results: [{
+          toolCallId: toolCall.id,
+          result: {
+            success: true,
+            issueNumber: issue.data.number,
+            issueUrl: issue.data.html_url,
+            message: `Created issue #${issue.data.number}. Claude Code will start working on it shortly.`
+          }
+        }]
+      })
+    }
+
+    if (toolCall.function.name === 'check_project_status') {
+      const { query } = toolCall.function.arguments
+
+      // Query GitHub issues and TODO.md
+      const status = await checkProjectStatus(query)
+
+      return c.json({
+        results: [{
+          toolCallId: toolCall.id,
+          result: status
+        }]
+      })
+    }
+
+    if (toolCall.function.name === 'list_open_tasks') {
+      const { filter } = toolCall.function.arguments
+
+      // Read TODO.md and parse tasks
+      const tasks = await listTasks(filter)
+
+      return c.json({
+        results: [{
+          toolCallId: toolCall.id,
+          result: { tasks }
+        }]
+      })
+    }
+  }
+})
+
+function verifyVapiSignature(signature: string, payload: any): boolean {
+  // Implement VAPI signature verification
+  const hmac = crypto.createHmac('sha256', process.env.VAPI_SECRET!)
+  const hash = hmac.update(JSON.stringify(payload)).digest('hex')
+  return hash === signature
+}
+
+async function checkProjectStatus(query: string) {
+  // Search TODO.md, GitHub issues, recent commits
+  // Return structured status
+  return {
+    status: 'in_progress',
+    summary: 'ctx repository setup is pending in Phase 1',
+    details: 'Waiting for completion of Numerics integration'
+  }
+}
+
+async function listTasks(filter: string) {
+  // Parse TODO.md
+  // Filter by status
+  // Return task list
+  return [
+    { id: 1, title: 'Create ctx repository', status: 'pending' },
+    { id: 2, title: 'Numerics integration', status: 'in_progress' }
+  ]
+}
+
+export default vapi
+```
+
+### 3. GitHub Actions Workflow
+
+```yaml
+# .github/workflows/claude-code-vapi.yml
+name: Claude Code - VAPI Voice Commands
+
+on:
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+
+jobs:
+  claude-code:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'claude-code')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract priority and context
+        id: parse
+        run: |
+          TITLE="${{ github.event.issue.title }}"
+          PRIORITY=$(echo "$TITLE" | grep -oP '\[P\d\]' | tr -d '[]')
+          echo "priority=$PRIORITY" >> $GITHUB_OUTPUT
+
+          BODY="${{ github.event.issue.body }}"
+          IS_VAPI=$(echo "$BODY" | grep -q "Created via VAPI" && echo "true" || echo "false")
+          echo "is_vapi=$IS_VAPI" >> $GITHUB_OUTPUT
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          issue-number: ${{ github.event.issue.number }}
+          repository: ${{ github.repository }}
+          working-directory: ${{ github.workspace }}
+          priority: ${{ steps.parse.outputs.priority }}
+
+      - name: Create Pull Request
+        if: steps.claude-code.outputs.changes-made == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: ${{ steps.claude-code.outputs.commit-message }}
+          branch: claude-code/${{ github.event.issue.number }}
+          title: "Fix #${{ github.event.issue.number }}"
+          body: |
+            🤖 Automated fix by Claude Code
+            🎙️ Assigned via VAPI voice command
+
+            Closes #${{ github.event.issue.number }}
+
+            ${{ steps.claude-code.outputs.summary }}
+
+            ---
+
+            🤖 Generated with [Claude Code](https://claude.com/claude-code)
+          labels: |
+            claude-code
+            vapi-created
+            automated-pr
+
+      - name: Comment on issue
+        if: steps.parse.outputs.is_vapi == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🎙️ Voice command received! I\'m working on this now...'
+            })
+```
+
+### 4. Environment Variables
+
+```bash
+# .env / GitHub Secrets
+
+# VAPI Configuration
+VAPI_SECRET=<vapi_webhook_secret>
+VAPI_API_KEY=<vapi_api_key>
+VAPI_ASSISTANT_ID=<assistant_id>
+
+# GitHub Configuration
+GITHUB_TOKEN=<github_pat_with_issues_access>
+
+# Claude Code
+ANTHROPIC_API_KEY=<claude_api_key>
+```
+
+---
+
+## Conversation Patterns
+
+### Natural Language → GitHub Issue Translation
+
+**Voice Input:** "Can you add support for recurring subscriptions to the marketplace?"
+
+**VAPI Understanding:**
+- Feature request: recurring subscriptions
+- Scope: marketplace functionality
+- Priority: Not urgent (P2)
+
+**GitHub Issue Created:**
+```markdown
+Title: [P2] Add recurring subscription support to marketplace
+
+Body:
+Implement recurring subscription functionality for marketplace services.
+
+Requirements (from conversation):
+- Monthly and annual billing cycles
+- Automatic renewal
+- Prorated refunds
+- Integration with Stripe
+
+Related to:
+- Services.Delivery marketplace (KR2.2)
+- Revenue tracking (MRR/ARR metrics)
+
+Context:
+User requested this feature during voice brainstorming session.
+This will help achieve $1M ARR target by enabling subscription revenue.
+
+---
+
+🎙️ Created via VAPI voice command
+📅 2025-10-01T14:32:00Z
+```
+
+### Status Query → Voice Response
+
+**Voice Input:** "What's our progress toward the $1M ARR goal?"
+
+**VAPI Process:**
+1. Calls `check_project_status` function with query "ARR progress"
+2. Backend queries Numerics API `/api/metrics/arr`
+3. Returns current ARR and progress percentage
+
+**Voice Response:**
+"We're currently at $626,000 in annual recurring revenue, which is 62.6% of the $1M target. We need to grow by $374,000 to hit the goal. Based on current 60% month-over-month growth, we're on track to reach $1M by December."
+
+---
+
+## Implementation Phases
+
+### Phase 1: VAPI Setup (Week 2)
+- [ ] Create VAPI account and assistant
+- [ ] Configure voice, model, and personality
+- [ ] Define custom functions (create_github_issue, check_status, list_tasks)
+- [ ] Set up serverUrl webhook endpoint
+
+### Phase 2: Webhook Handler (Week 2)
+- [ ] Create `/api/vapi/webhook` endpoint in api repo
+- [ ] Implement signature verification
+- [ ] Add GitHub Octokit integration
+- [ ] Test issue creation flow
+
+### Phase 3: GitHub Actions (Week 3)
+- [ ] Create `.github/workflows/claude-code-vapi.yml`
+- [ ] Configure issue triggers with `claude-code` label
+- [ ] Add priority parsing from issue title
+- [ ] Test Claude Code execution
+
+### Phase 4: Status Queries (Week 3)
+- [ ] Implement `check_project_status` function
+- [ ] Parse TODO.md for task status
+- [ ] Query GitHub API for issues/PRs
+- [ ] Integrate with Numerics API for metrics
+
+### Phase 5: Voice Responses (Week 4)
+- [ ] Configure VAPI to speak responses
+- [ ] Add natural language metric summaries
+- [ ] Implement progress calculations
+- [ ] Test end-to-end voice conversation
+
+---
+
+## Success Metrics
+
+- [ ] VAPI can create GitHub issues with 100% accuracy
+- [ ] Claude Code executes tasks from VAPI within 5 minutes
+- [ ] Voice status queries return accurate data
+- [ ] <2 second voice response time
+- [ ] Zero failed GitHub API calls
+- [ ] User satisfaction with voice interaction
+
+---
+
+## Example Voice Conversations
+
+### Brainstorming Session
+```
+User: Hey VAPI, I want to brainstorm about improving creator onboarding.
+
+VAPI: Great! What aspects of creator onboarding are you thinking about?
+
+User: Well, the Studio interface is complex. New creators get overwhelmed.
+
+VAPI: I see. Are you thinking about a guided tutorial, simplified UI, or maybe a wizard-style flow?
+
+User: A wizard would be perfect. Step by step through defining their service.
+
+VAPI: Excellent idea. This would help with KR3.1 - shipping the Studio interface. Should I have Claude create a design document for this?
+
+User: Yes, make it priority 1.
+
+VAPI: Creating GitHub issue now... Done! Issue #42 created and assigned to Claude. He'll start working on the wizard design document shortly.
+```
+
+### Quick Task Assignment
+```
+User: Have Claude add a gauge chart widget to the Numerics API for dispute rate.
+
+VAPI: Got it. Creating issue for gauge chart widget, dispute rate metric, Numerics format. This is for the metrics API, correct?
+
+User: Yes.
+
+VAPI: Perfect. Issue #43 created. Claude will implement the gauge chart endpoint.
+```
+
+### Progress Check
+```
+User: How many functions do we have catalogued?
+
+VAPI: Let me check... We currently have 887 functions catalogued, which is 88.7% of the 1,000 target for KR1.5. We've added 142 functions in the past month.
+
+User: Nice. What about services in the marketplace?
+
+VAPI: We have 187 services listed, with 92 actively processing transactions. We're 93.5% to the 200 listed target and 92% to the 100 active target.
+```
+
+---
+
+## Security Considerations
+
+### 1. VAPI Signature Verification
+- Always verify webhook signatures from VAPI
+- Use HMAC-SHA256 with secret key
+- Reject invalid signatures immediately
+
+### 2. GitHub Token Scope
+- Use fine-grained PAT with minimal scope
+- Only `issues:write` permission needed
+- Rotate tokens quarterly
+
+### 3. Rate Limiting
+- Limit VAPI webhook to 60 requests/minute
+- Prevent issue creation spam
+- Add cooldown between voice commands
+
+### 4. Content Validation
+- Sanitize issue titles and bodies
+- Prevent injection attacks
+- Validate label names against whitelist
+
+---
+
+## Related Documentation
+
+- [TODO.md](TODO.md) - Task tracking
+- [README.md](README.md) - OKRs and goals
+- [NUMERICS-INTEGRATION.md](NUMERICS-INTEGRATION.md) - Metrics API
+- [.github/workflows/](../.github/workflows/) - GitHub Actions
+
+---
+
+**Created:** 2025-10-01
+**Priority:** P1 - High Priority
+**Owner:** Claude Code (AI Project Manager)
+**Dependencies:** GitHub Actions setup, Numerics API

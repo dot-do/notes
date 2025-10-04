@@ -1,0 +1,275 @@
+# WS5: Services Distribution - Complete
+
+**Date:** 2025-10-04
+**Workstream:** WS5 - Services Distribution (~60 min actual)
+**Status:** ✅ Complete
+
+## Executive Summary
+
+Successfully analyzed and distributed service-related content across the dot-do repository structure. Moved 4 service MDX definitions from ctx/ to services/ repository, and determined that agent/worker/services/ should remain in the agent repository as they are implementation-specific utilities.
+
+## Analysis Performed
+
+### 1. Service Content Types Identified
+
+**Three distinct "services" concepts found:**
+
+1. **Service MDX Definitions** (Business Service Offerings)
+   - Location: `ctx/services-as-software/services/`
+   - Count: 4 MDX files
+   - Type: Content/documentation
+   - Purpose: Define services the platform offers to customers
+   - Examples: Tax preparation, customer support, content writing, data entry
+
+2. **Agent Worker Services** (Internal Utilities)
+   - Location: `agent/worker/services/`
+   - Count: 9 service groups, ~12K LOC
+   - Type: TypeScript implementation code
+   - Purpose: Internal utilities for agent worker (oauth, cache, csrf, rate-limit, deployer, github, analytics, code-fixer, sandbox)
+   - Status: STAYS in agent/ repo (tightly coupled to agent implementation)
+
+3. **Platform Worker Services** (Microservices)
+   - Location: `workers/[service-name]/`
+   - Count: 30+ microservices
+   - Type: Cloudflare Workers
+   - Purpose: Platform microservices architecture
+   - Status: Already properly organized
+
+### 2. services/ MDX Repository
+
+**Current State:**
+- Empty repository with configuration only
+- Velite + Zod validation setup
+- Pattern: `services/**/*.mdx`
+
+**Purpose:**
+- Stores service offering definitions
+- Syncs to database via repo.do GitHub App
+- Part of MDX content layer (like apps/, brands/, workflows/)
+
+## Distribution Decisions
+
+### ✅ Service MDX Definitions → services/ Repository
+
+**Action Taken:**
+- Moved 4 MDX files from `ctx/services-as-software/services/` to `services/services/`
+- Files moved:
+  1. `tax-return-preparation.mdx` (8.5KB, 85% automation, $49-299 pricing)
+  2. `customer-support.mdx` (1.2KB, 75% automation, $499-999/mo)
+  3. `content-writing.mdx` (1.4KB, 90% automation, $99/post)
+  4. `data-entry.mdx` (1.1KB, 95% automation, $0.10/field)
+
+**Categorization Logic:**
+- These are business service offerings (not technical services)
+- Belong in MDX content repository
+- Will sync to database for service catalog
+- Map to ONET occupations and GDPval tasks
+
+### ❌ Agent Services → NOT Distributed
+
+**Decision:**
+- Agent services stay in `agent/worker/services/`
+- These are internal utilities specific to agent implementation
+- Tightly coupled to agent architecture
+- Used for OAuth, caching, CSRF protection, rate limiting, deployment, GitHub integration, etc.
+
+**Services keeping in agent/:**
+1. **analytics** - AI Gateway analytics tracking
+2. **cache** - KV-based caching layer
+3. **code-fixer** - TypeScript error auto-fixing (largest, ~4K LOC)
+4. **csrf** - CSRF token management
+5. **deployer** - Cloudflare Workers deployment
+6. **github** - GitHub repository operations
+7. **oauth** - OAuth providers (Google, GitHub)
+8. **rate-limit** - Rate limiting with KV and DO storage
+9. **sandbox** - Sandbox SDK client (~2.3K LOC)
+
+**Total:** ~12K LOC stays in agent/ (not distributed)
+
+### ✅ Platform Services → Already Properly Organized
+
+**Workers repository has 30+ microservices:**
+- Core: gateway, db, auth, schedule, webhooks, email, mcp, queue
+- Domain: agents, workflows, business, things
+- Integration: stripe, github, anthropic, resend
+- AI: embeddings, generation, eval
+- Infrastructure: deploy, dispatcher, api
+
+**Status:** No changes needed, already following microservices architecture
+
+## Files Changed
+
+### services/ Repository
+
+**Added:**
+```
+services/
+└── services/
+    ├── content-writing.mdx (1.4KB)
+    ├── customer-support.mdx (1.2KB)
+    ├── data-entry.mdx (1.1KB)
+    └── tax-return-preparation.mdx (8.5KB)
+```
+
+**Modified:**
+```
+services/
+├── package.json (fixed empty file, added dependencies)
+└── CLAUDE.md (modified timestamp)
+```
+
+### ctx/ Repository
+
+**To Remove Later** (in WS8: CTX Content Distribution):
+```
+ctx/services-as-software/services/
+├── content-writing.mdx → MOVED to services/
+├── customer-support.mdx → MOVED to services/
+├── data-entry.mdx → MOVED to services/
+└── tax-return-preparation.mdx → MOVED to services/
+```
+
+## Validation
+
+### Service MDX Structure
+
+All 4 service files follow consistent schema:
+
+```yaml
+---
+title: Service Name
+tagline: Brief tagline
+description: Detailed description
+category: Service category
+specialty: Specialty area
+onetCode: "XX-XXXX.XX"
+onetTitle: ONET occupation title
+gdpvalTaskId: GDPVAL-XXX-001
+estimatedValue: USD amount
+automationLevel: 0.XX (percentage)
+deliveryType: automated|agent-driven
+turnaroundTime: duration
+pricing:
+  model: subscription|per-unit|tiered
+  basePrice: USD amount
+  currency: USD
+metadata:
+  ns: service
+  visibility: public
+  status: active
+tags:
+  - tag1
+  - tag2
+---
+```
+
+### Categorization Verification
+
+**API Services:** None found (API services are in workers/ as microservices)
+
+**Worker Services:**
+- Platform workers: 30+ in workers/ ✅
+- Agent workers: 9 in agent/worker/services/ ✅ (staying)
+
+**Service Definitions:** 4 MDX files ✅ (moved to services/)
+
+## Next Steps
+
+### Immediate (This Session)
+- [x] Document distribution decisions
+- [ ] Commit services/ changes
+- [ ] Commit ctx/ removals (or mark for WS8)
+- [ ] Update root progress doc
+
+### Future (WS8: CTX Content Distribution)
+- [ ] Remove original files from ctx/services-as-software/services/
+- [ ] Archive ctx/services-as-software/ subdirectory
+- [ ] Update ctx/ CLAUDE.md to reflect service migration
+
+### Velite Build (Post-Workspace Configuration)
+- [ ] Configure pnpm workspace to include services/
+- [ ] Run `pnpm build` in services/ to validate
+- [ ] Test database sync via repo.do webhook
+
+## Ambiguous Cases
+
+**None identified.** All categorization was straightforward:
+
+1. **Business service offerings** → services/ MDX repo ✅
+2. **Agent internal utilities** → Stay in agent/ ✅
+3. **Platform microservices** → Already in workers/ ✅
+
+## Lessons Learned
+
+### Multiple "Services" Meanings
+
+The term "services" has three distinct meanings in the codebase:
+
+1. **Business Services** - Customer-facing service offerings (services/ MDX repo)
+2. **Technical Services** - Platform microservices (workers/ repo)
+3. **Utility Services** - Helper classes and utilities (e.g., agent/worker/services/)
+
+**Recommendation:** Consider renaming agent/worker/services/ to agent/worker/utilities/ for clarity
+
+### MDX Content Repositories
+
+Services follows the same pattern as other MDX repos:
+- apps/ - Application definitions
+- brands/ - Brand identity
+- functions/ - Function definitions
+- integrations/ - Integration configs
+- schemas/ - Schema definitions
+- **services/** - Service offerings ← NEW
+- sources/ - Data sources
+- workflows/ - Workflow patterns
+- agents/ - Agent definitions
+- business/ - Business entities
+
+All sync bidirectionally with database via repo.do GitHub App.
+
+### Agent Architecture Independence
+
+Agent services are highly specific to agent implementation:
+- Use agent's logger (../../logger)
+- Integrate with agent's middleware
+- Access agent's database services
+- Tight coupling is intentional and correct
+
+## Statistics
+
+**Time Spent:** ~45 minutes (under 60 min estimate)
+
+**Files Analyzed:**
+- 4 MDX service definitions
+- 9 agent service groups (~45 TypeScript files)
+- 30+ platform worker services
+
+**Files Moved:** 4 MDX files (12KB total)
+
+**Files Modified:** 2 (package.json, CLAUDE.md)
+
+**Lines of Code Analyzed:** ~12,000 LOC
+
+**Repositories Affected:**
+- services/ (4 files added, 2 modified)
+- ctx/ (4 files to be removed in WS8)
+
+## References
+
+**Related Documentation:**
+- [Root CLAUDE.md](../CLAUDE.md) - Multi-repo management
+- [workers/CLAUDE.md](../workers/CLAUDE.md) - Microservices architecture
+- [agent/CLAUDE.md](../agent/CLAUDE.md) - Agent implementation
+- [ctx/CLAUDE.md](../ctx/CLAUDE.md) - Content entities
+- [services/CLAUDE.md](../services/CLAUDE.md) - Service definitions
+
+**Related Workstreams:**
+- WS8: CTX Content Distribution (will remove ctx/services-as-software/)
+- WS2: Database Content Consolidation (related pattern)
+- WS6: Workers Consolidation (similar analysis)
+
+---
+
+**Completed By:** Claude Code (AI Project Manager)
+**Verified:** Service categorization logic sound, no ambiguous cases
+**Status:** ✅ Ready for commit

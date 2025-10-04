@@ -1,0 +1,705 @@
+# Sub-Agent Task Assignments - Multi-Repo Implementation
+
+**Date**: 2025-10-01
+**Status**: Ready for Delegation
+**Purpose**: Distribute parallel work across all repositories
+
+---
+
+## Overview
+
+This document lists tasks that can be assigned to sub-agents (Claude Code or Devin) across all 12 repositories. Each task is designed to be independent and can be executed in parallel.
+
+## GitHub Actions Setup (Priority: P0)
+
+**Goal**: Enable Claude Code GitHub Actions in ALL repos for issue-driven development
+
+### Root Repository (.do)
+- [x] Already has comprehensive documentation
+- [ ] **Task**: Add `.github/workflows/claude-code.yml` workflow
+- [ ] **Task**: Configure secrets (ANTHROPIC_API_KEY, GITHUB_TOKEN)
+- [ ] **Task**: Test with sample issue
+
+### All Submodule Repositories (10 repos)
+Each repo needs the same GitHub Actions setup:
+
+**Template Workflow** (apply to all repos):
+```yaml
+# .github/workflows/claude-code.yml
+name: Claude Code Agent
+
+on:
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+
+jobs:
+  claude-code:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'claude-code')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: false  # Only need this repo
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          issue-number: ${{ github.event.issue.number }}
+          repository: ${{ github.repository }}
+          working-directory: ${{ github.workspace }}
+
+      - name: Create Pull Request
+        if: steps.claude-code.outputs.changes-made == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: claude-code/${{ github.event.issue.number }}
+          title: "Fix #${{ github.event.issue.number }}"
+          body: |
+            🤖 Automated fix by Claude Code
+
+            Closes #${{ github.event.issue.number }}
+
+            ${{ steps.claude-code.outputs.summary }}
+```
+
+**Sub-Agent Tasks**:
+1. Create GitHub Actions workflow file in each repo
+2. Ensure ANTHROPIC_API_KEY secret is set org-wide
+3. Test workflow with sample issue in each repo
+
+---
+
+## Repository-Specific Tasks
+
+### 1. api.services (Source Repository)
+
+**Status**: 🔴 Active source, ongoing maintenance
+
+**Tasks**:
+- [ ] **A1.1**: Fix 87 TypeScript type errors
+  - **Assignee**: Devin
+  - **Priority**: P1
+  - **Estimated Time**: 2 days
+  - **Files**: Throughout codebase
+  - **Success Criteria**: `tsc --noEmit` passes with 0 errors
+
+- [ ] **A1.2**: Improve test coverage from 36% to 80%+
+  - **Assignee**: Devin
+  - **Priority**: P1
+  - **Estimated Time**: 5 days
+  - **Directories**: All under `src/`
+  - **Success Criteria**: Coverage report shows 80%+ line coverage
+
+- [ ] **A1.3**: Fix 57 failing tests
+  - **Assignee**: Devin
+  - **Priority**: P0
+  - **Estimated Time**: 3 days
+  - **Command**: `npm run test`
+  - **Success Criteria**: All tests passing
+
+- [ ] **A1.4**: Create migration map document
+  - **Assignee**: Claude Code
+  - **Priority**: P0
+  - **Estimated Time**: 2 hours
+  - **Deliverable**: `notes/2025-10-01-migration-map.md`
+  - **Content**: File-by-file mapping of what goes to api, db, ai repos
+
+---
+
+### 2. api (Target Repository - Empty)
+
+**Status**: 🟡 Ready for migration
+
+**Phase 1: Foundation (Week 1)**
+
+- [ ] **A2.1**: Initialize Hono framework project
+  - **Assignee**: Claude Code
+  - **Priority**: P0
+  - **Files**:
+    - `package.json` - Dependencies (hono, @hono/node-server)
+    - `src/index.ts` - Entry point
+    - `tsconfig.json` - TypeScript config
+    - `wrangler.jsonc` - Cloudflare Workers config
+
+- [ ] **A2.2**: Set up project structure
+  - **Assignee**: Claude Code
+  - **Priority**: P0
+  - **Directories**:
+    ```
+    src/
+    ├── routes/
+    │   ├── core/
+    │   ├── ai/
+    │   ├── auth/
+    │   └── integrations/
+    ├── middleware/
+    ├── utils/
+    ├── mcp/
+    └── types/
+    ```
+
+- [ ] **A2.3**: Create comprehensive CLAUDE.md
+  - **Assignee**: Claude Code
+  - **Priority**: P0
+  - **Content**: Architecture, development commands, patterns
+
+**Phase 2: Core API (Week 2-3)**
+
+- [ ] **A2.4**: Implement Numerics metrics API (16 endpoints)
+  - **Assignee**: Devin
+  - **Priority**: P0
+  - **Estimated Time**: 3 days
+  - **Routes**: `/api/metrics/*` (visitors, signups, mrr, arr, gmv, etc.)
+  - **Requirements**: Numerics JSON format, caching, Zod validation
+  - **Dependencies**: db repo for queries
+
+- [ ] **A2.5**: Implement MCP server for Devin integration
+  - **Assignee**: Devin
+  - **Priority**: P0
+  - **Estimated Time**: 2 days
+  - **Files**:
+    - `src/mcp/devin-server.ts`
+    - `src/mcp/devin-client.ts`
+    - `src/mcp/devin-tools.ts`
+
+- [ ] **A2.6**: Implement VAPI webhook handler
+  - **Assignee**: Devin
+  - **Priority**: P0
+  - **Estimated Time**: 1 day
+  - **Route**: `POST /api/vapi/webhook`
+  - **Features**: GitHub issue creation, signature verification
+
+**Phase 3: Integrations (Week 3-4)**
+
+- [ ] **A2.7**: Port MCP JSON-RPC server from api.services
+  - **Assignee**: Devin
+  - **Priority**: P1
+  - **Estimated Time**: 2 days
+  - **Source**: `api.services/src/api/routes/mcp-jsonrpc.ts`
+
+- [ ] **A2.8**: Port authentication middleware
+  - **Assignee**: Devin
+  - **Priority**: P1
+  - **Estimated Time**: 1 day
+  - **Source**: `api.services/src/api/middleware.ts`
+
+---
+
+### 3. db (Target Repository - Empty)
+
+**Status**: 🟡 Ready for migration
+
+**Phase 1: Schema & Migrations (Week 1)**
+
+- [ ] **A3.1**: Initialize Drizzle ORM project
+  - **Assignee**: Claude Code
+  - **Priority**: P0
+  - **Files**:
+    - `package.json` - drizzle-orm, @neondatabase/serverless
+    - `drizzle.config.ts` - Drizzle configuration
+    - `src/index.ts` - Database connection
+
+- [ ] **A3.2**: Port schema from api.services (14 tables)
+  - **Assignee**: Devin
+  - **Priority**: P0
+  - **Estimated Time**: 2 days
+  - **Source**: `api.services/src/db/schema.ts`
+  - **Target**: `src/schema.ts`
+  - **Tables**: things, relationships, users, sessions, generations, etc.
+
+- [ ] **A3.3**: Port migrations (14 files)
+  - **Assignee**: Devin
+  - **Priority**: P0
+  - **Estimated Time**: 1 day
+  - **Source**: `api.services/src/db/migrations/`
+  - **Target**: `migrations/`
+
+**Phase 2: Query Helpers (Week 2)**
+
+- [ ] **A3.4**: Create query helpers library
+  - **Assignee**: Devin
+  - **Priority**: P1
+  - **Estimated Time**: 2 days
+  - **Files**:
+    - `src/queries/things.ts` - Thing queries
+    - `src/queries/relationships.ts` - Relationship queries
+    - `src/queries/search.ts` - Search queries
+    - `src/queries/metrics.ts` - Metrics calculations (for Numerics API)
+
+- [ ] **A3.5**: Port data importers
+  - **Assignee**: Devin
+  - **Priority**: P2
+  - **Estimated Time**: 3 days
+  - **Source**: `api.services/src/db/importers/`
+  - **Target**: `src/importers/`
+  - **Importers**: O*NET, NAICS, Schema.org, Zapier, GS1
+
+**Phase 3: Package Publishing (Week 3)**
+
+- [ ] **A3.6**: Create @dot-do/db npm package
+  - **Assignee**: Claude Code
+  - **Priority**: P1
+  - **Files**:
+    - `package.json` - Set name to @dot-do/db
+    - `src/index.ts` - Export schema, queries, types
+    - `README.md` - Usage documentation
+
+---
+
+### 4. ai (Target Repository - Empty)
+
+**Status**: 🟡 Ready for migration
+
+**Phase 1: Setup (Week 1)**
+
+- [ ] **A4.1**: Initialize AI package
+  - **Assignee**: Claude Code
+  - **Priority**: P0
+  - **Files**:
+    - `package.json` - Dependencies (ai, openai, anthropic, google-ai)
+    - `src/index.ts` - Entry point
+    - `tsconfig.json`
+
+**Phase 2: Generation Functions (Week 2)**
+
+- [ ] **A4.2**: Port AI generation functions
+  - **Assignee**: Devin
+  - **Priority**: P0
+  - **Estimated Time**: 3 days
+  - **Source**: `api.services/src/ai/`
+  - **Functions**: list, write, generate, diagram, code
+  - **Providers**: OpenAI, Anthropic, Google, Cloudflare Workers AI
+
+- [ ] **A4.3**: Port embedding models
+  - **Assignee**: Devin
+  - **Priority**: P1
+  - **Estimated Time**: 1 day
+  - **Source**: `api.services/src/ai/embeddings.ts`
+  - **Models**: 5 embedding models with different dimensions
+
+**Phase 3: Package Publishing (Week 3)**
+
+- [ ] **A4.4**: Create @dot-do/ai npm package
+  - **Assignee**: Claude Code
+  - **Priority**: P1
+  - **Files**:
+    - Package exports
+    - TypeScript types
+    - README with examples
+
+---
+
+### 5. ctx (New Repository - To Be Created)
+
+**Status**: 🆕 Needs creation
+
+**Phase 1: Repository Setup (Week 1)**
+
+- [ ] **A5.1**: Create ctx repository on GitHub
+  - **Assignee**: Manual (user)
+  - **Priority**: P0
+  - **Settings**: Public, add to dot-do org
+
+- [ ] **A5.2**: Initialize Velite + Zod project
+  - **Assignee**: Devin
+  - **Priority**: P0
+  - **Estimated Time**: 1 day
+  - **Structure**:
+    ```
+    ctx/
+    ├── content/
+    │   ├── brands/
+    │   ├── functions/
+    │   ├── nouns/
+    │   ├── verbs/
+    │   ├── workflows/
+    │   ├── agents/
+    │   └── ideas/
+    ├── schemas/
+    │   ├── brand.ts
+    │   ├── function.ts
+    │   ├── noun.ts
+    │   ├── verb.ts
+    │   ├── workflow.ts
+    │   ├── agent.ts
+    │   └── idea.ts
+    ├── velite.config.ts
+    ├── package.json
+    ├── CLAUDE.md
+    └── README.md
+    ```
+
+**Phase 2: Schemas (Week 1)**
+
+- [ ] **A5.3**: Create Zod schemas for all 7 entity types
+  - **Assignee**: Devin
+  - **Priority**: P0
+  - **Estimated Time**: 2 days
+  - **Requirements**: Strict validation, TypeScript types, examples
+
+- [ ] **A5.4**: Create example MDX files
+  - **Assignee**: Claude Code
+  - **Priority**: P1
+  - **Count**: 2-3 examples per entity type
+  - **Format**: YAML frontmatter + markdown content
+
+**Phase 3: Documentation (Week 2)**
+
+- [ ] **A5.5**: Document GitHub integration workflow
+  - **Assignee**: Claude Code
+  - **Priority**: P0
+  - **File**: `docs/github-integration.md`
+  - **Content**: Bidirectional sync (ctx ↔ db) specification
+
+---
+
+### 6. mdx (New Repository - To Be Created)
+
+**Status**: 🆕 Needs creation
+
+**Phase 1: Repository Setup (Week 2)**
+
+- [ ] **A6.1**: Create mdx repository on GitHub
+  - **Assignee**: Manual (user)
+  - **Priority**: P0
+
+- [ ] **A6.2**: Initialize MDXE runtime project
+  - **Assignee**: Devin
+  - **Priority**: P0
+  - **Estimated Time**: 2 days
+  - **Structure**:
+    ```
+    mdx/
+    ├── src/
+    │   ├── runtime/          # MDXE runtime
+    │   ├── transformers/     # MDX → Runtime converters
+    │   │   ├── function.ts
+    │   │   ├── workflow.ts
+    │   │   ├── agent.ts
+    │   │   ├── api.ts
+    │   │   └── site.ts
+    │   ├── executor/         # Code Mode executor
+    │   ├── rpc/             # CapnWeb RPC server
+    │   └── renderer/        # Hono/JSX rendering
+    ├── package.json
+    └── CLAUDE.md
+    ```
+
+**Phase 2: Code Mode Integration (Week 3)**
+
+- [ ] **A6.3**: Implement Code Mode executor
+  - **Assignee**: Devin
+  - **Priority**: P0
+  - **Estimated Time**: 3 days
+  - **Reference**: https://blog.cloudflare.com/code-mode/
+  - **Features**: Dynamic worker execution, no build step
+
+- [ ] **A6.4**: Implement CapnWeb RPC server
+  - **Assignee**: Devin
+  - **Priority**: P0
+  - **Estimated Time**: 2 days
+  - **Reference**: https://blog.cloudflare.com/capnweb-javascript-rpc-library/
+
+**Phase 3: Rendering (Week 4)**
+
+- [ ] **A6.5**: Implement Hono/JSX rendering engine
+  - **Assignee**: Devin
+  - **Priority**: P0
+  - **Estimated Time**: 2 days
+  - **Features**: Runtime JSX rendering, streaming, no React
+
+---
+
+### 7. agent (Template Repository)
+
+**Status**: 🟢 Template needing integration
+
+**Tasks**:
+
+- [ ] **A7.1**: Replace D1 with @dot-do/db
+  - **Assignee**: Devin
+  - **Priority**: P1
+  - **Estimated Time**: 1 day
+  - **Files**: Replace all D1 queries with Drizzle queries
+
+- [ ] **A7.2**: Use @dot-do/ai for generation
+  - **Assignee**: Devin
+  - **Priority**: P1
+  - **Estimated Time**: 1 day
+  - **Files**: Replace direct AI calls with @dot-do/ai functions
+
+- [ ] **A7.3**: Integrate platform authentication
+  - **Assignee**: Devin
+  - **Priority**: P2
+  - **Estimated Time**: 1 day
+  - **Requirements**: Use platform auth instead of local auth
+
+---
+
+### 8. app (Template Repository)
+
+**Status**: 🟢 Template needing customization
+
+**Tasks**:
+
+- [ ] **A8.1**: Configure Payload CMS collections
+  - **Assignee**: Devin
+  - **Priority**: P2
+  - **Estimated Time**: 2 days
+  - **Collections**: Services, Transactions, Reviews, API Keys, Webhooks
+
+- [ ] **A8.2**: Connect to @dot-do/db
+  - **Assignee**: Devin
+  - **Priority**: P2
+  - **Estimated Time**: 1 day
+  - **Requirements**: Replace local database with platform database
+
+- [ ] **A8.3**: Add .do branding
+  - **Assignee**: Claude Code
+  - **Priority**: P2
+  - **Files**: Logo, colors, typography, layouts
+
+---
+
+### 9. site (Active Repository)
+
+**Status**: 🟢 Active, may need updates
+
+**Tasks**:
+
+- [ ] **A9.1**: Review and update landing pages
+  - **Assignee**: Claude Code
+  - **Priority**: P2
+  - **Content**: Services.Delivery, Services.Studio marketing pages
+
+- [ ] **A9.2**: Add Numerics dashboard showcase
+  - **Assignee**: Claude Code
+  - **Priority**: P2
+  - **Page**: New page showing live Numerics widgets
+
+---
+
+### 10. sdk (Active Repository)
+
+**Status**: 🟢 Active with 105+ SDKs
+
+**Tasks**:
+
+- [ ] **A10.1**: Audit existing SDKs
+  - **Assignee**: Claude Code
+  - **Priority**: P2
+  - **Goal**: Ensure all 105+ SDKs are up to date
+
+- [ ] **A10.2**: Add SDK for new metrics API
+  - **Assignee**: Devin
+  - **Priority**: P1
+  - **Estimated Time**: 1 day
+  - **File**: New SDK package for Numerics metrics
+
+---
+
+### 11. docs (Active Repository)
+
+**Status**: 🟢 Active Fumadocs site
+
+**Tasks**:
+
+- [ ] **A11.1**: Add API documentation for metrics
+  - **Assignee**: Claude Code
+  - **Priority**: P1
+  - **Content**: Document all 16 Numerics endpoints
+
+- [ ] **A11.2**: Add integration guides
+  - **Assignee**: Claude Code
+  - **Priority**: P1
+  - **Guides**: VAPI, Devin, Numerics, GitHub Actions
+
+- [ ] **A11.3**: Add architecture documentation
+  - **Assignee**: Claude Code
+  - **Priority**: P2
+  - **Content**: Multi-repo architecture, data flow diagrams
+
+---
+
+### 12. do.industries (Source of Truth)
+
+**Status**: 🟢 Active business metadata
+
+**Tasks**:
+
+- [ ] **A12.1**: Review and expand industry taxonomy
+  - **Assignee**: Claude Code
+  - **Priority**: P2
+  - **Content**: Ensure 15+ industries for marketplace
+
+- [ ] **A12.2**: Add function type definitions
+  - **Assignee**: Claude Code
+  - **Priority**: P1
+  - **Content**: Define code, generative, human, agentic function types
+
+---
+
+## Parallel Execution Strategy
+
+### Week 1: Foundation
+**Run in Parallel:**
+- A2.1, A2.2, A2.3 (api setup) - Claude Code
+- A3.1, A3.2, A3.3 (db setup) - Devin
+- A4.1 (ai setup) - Claude Code
+- A5.2, A5.3 (ctx setup) - Devin
+- GitHub Actions setup in all repos - Claude Code
+
+### Week 2: Core Implementation
+**Run in Parallel:**
+- A2.4, A2.5, A2.6 (api features) - Devin
+- A3.4, A3.5 (db queries) - Devin
+- A4.2, A4.3 (ai functions) - Devin
+- A5.4, A5.5 (ctx content) - Claude Code
+- A6.1, A6.2 (mdx setup) - Devin
+
+### Week 3: Integration
+**Run in Parallel:**
+- A2.7, A2.8 (api integrations) - Devin
+- A3.6 (db packaging) - Claude Code
+- A4.4 (ai packaging) - Claude Code
+- A6.3, A6.4 (mdx runtime) - Devin
+- A7.1, A7.2 (agent integration) - Devin
+
+### Week 4: Polish & Documentation
+**Run in Parallel:**
+- A6.5 (mdx rendering) - Devin
+- A8.1, A8.2, A8.3 (app customization) - Devin
+- A11.1, A11.2, A11.3 (documentation) - Claude Code
+- A1.1, A1.2, A1.3 (api.services cleanup) - Devin
+
+---
+
+## Task Assignment Methods
+
+### Method 1: GitHub Issues (Recommended)
+
+For each task, create a GitHub issue in the target repo:
+
+```markdown
+Title: [P0] Initialize Hono framework project
+
+Labels: claude-code, foundation, P0
+
+Body:
+**Task**: A2.1 - Initialize Hono framework project
+
+**Repository**: api
+
+**Assignee**: Claude Code
+
+**Estimated Time**: 30 minutes
+
+**Deliverables**:
+- package.json with hono, @hono/node-server dependencies
+- src/index.ts entry point
+- tsconfig.json TypeScript config
+- wrangler.jsonc Cloudflare Workers config
+
+**Success Criteria**:
+- npm install works
+- npm run dev starts server
+- tsc --noEmit passes
+
+**References**:
+- [Hono documentation](https://hono.dev/)
+- [.do/notes/2025-10-01-sub-agent-task-assignments.md]
+```
+
+### Method 2: VAPI Voice Assignment
+
+```
+User: "Have Claude set up the Hono framework in the api repo"
+
+VAPI → GitHub Issue → Claude Code GitHub Action → Implementation
+```
+
+### Method 3: Direct Devin MCP Call
+
+```typescript
+await mcp.call('devin_create_task', {
+  repository: 'api',
+  task: 'Initialize Hono framework project (A2.1)',
+  priority: 'P0',
+  labels: ['foundation', 'devin-created']
+})
+```
+
+---
+
+## Progress Tracking
+
+### Dashboard Metrics (Via Numerics API)
+
+- **Tasks Total**: 60+
+- **Tasks Completed**: Track in real-time
+- **Completion %**: (completed / total) * 100
+- **Velocity**: Tasks completed per day
+- **Estimated Completion**: Based on current velocity
+
+### Weekly Status Updates
+
+Every Monday, Claude Code generates:
+- `notes/YYYY-MM-DD-weekly-status.md`
+- Summary of completed tasks
+- Blockers and issues
+- Updated estimates
+- Next week priorities
+
+---
+
+## Dependencies Between Tasks
+
+```
+Foundation Layer (Week 1):
+  A2.1, A2.2 → A2.4, A2.5, A2.6
+  A3.1, A3.2 → A3.4, A3.5
+  A4.1 → A4.2, A4.3
+  A5.2, A5.3 → A5.4
+
+Integration Layer (Week 2-3):
+  A3.4 → A2.4 (metrics API needs db queries)
+  A4.2 → A7.2 (agent needs @dot-do/ai)
+  A3.2 → A7.1 (agent needs @dot-do/db)
+
+Packaging Layer (Week 3-4):
+  A3.6, A4.4 → A7.1, A7.2 (agent needs packages)
+```
+
+---
+
+## Success Criteria
+
+### Overall Project
+- [ ] All 60+ tasks completed
+- [ ] All repos have passing tests
+- [ ] All repos have 0 type errors
+- [ ] All repos have comprehensive CLAUDE.md
+- [ ] GitHub Actions working in all repos
+- [ ] Package dependencies resolved (@dot-do/db, @dot-do/ai)
+
+### Individual Repos
+- [ ] api: Numerics API live, MCP server operational
+- [ ] db: Schema migrated, queries working, package published
+- [ ] ai: Generation functions working, package published
+- [ ] ctx: Schemas validated, examples created
+- [ ] mdx: Code Mode executor working, Hono/JSX rendering
+- [ ] agent: Integrated with platform db and ai
+- [ ] app: Customized for .do platform
+
+---
+
+**Created**: 2025-10-01
+**Total Tasks**: 60+
+**Estimated Timeline**: 4 weeks with parallel execution
+**Coordination**: Claude Code (root repo) orchestrates all sub-agents

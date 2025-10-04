@@ -1,0 +1,472 @@
+# Numerics Dashboard Integration
+
+**Priority:** P0 - Critical for tracking $1M ARR progress
+**Status:** Planning
+**Target:** Week 1-2 of Q4 2025
+
+---
+
+## Overview
+
+Integrate .do platform metrics with Numerics dashboard app for real-time KPI tracking across Apple ecosystem (TV, Watch, iPhone, Mac).
+
+## Numerics JSON Widget Specification
+
+### Number Widget
+```json
+{
+  "postfix": "Visitors",
+  "data": [
+    { "value": 12450 },
+    { "value": 11280 }
+  ]
+}
+```
+- First value: current number
+- Second value: previous period (for % change calculation)
+
+### Line Graph Widget
+```json
+{
+  "postfix": "USD",
+  "data": [
+    { "value": 18923 },
+    { "value": 17736 },
+    { "value": 17663 }
+  ]
+}
+```
+- Maximum 31 data points
+- Shows trend over time
+
+### Named Line Graph Widget
+```json
+{
+  "postfix": "GMV",
+  "data": [
+    { "name": "Week 1", "value": 18923 },
+    { "name": "Week 2", "value": 24736 },
+    { "name": "Week 3", "value": 31663 }
+  ]
+}
+```
+
+### Optional Color Override
+```json
+{
+  "postfix": "Revenue",
+  "color": "#00FF00",
+  "data": [{ "value": 83500 }]
+}
+```
+
+---
+
+## Required Metrics Functions
+
+### Funnel Metrics (Top Priority)
+
+#### 1. Website Visitors
+```typescript
+// GET /api/metrics/visitors
+// MCP: metrics.visitors
+
+{
+  "postfix": "Visitors",
+  "data": [
+    { "value": 45280 },  // this period
+    { "value": 38450 }   // last period
+  ]
+}
+```
+
+#### 2. Sign-ups
+```typescript
+// GET /api/metrics/signups
+// MCP: metrics.signups
+
+{
+  "postfix": "Sign-ups",
+  "data": [
+    { "value": 1240 },
+    { "value": 980 }
+  ]
+}
+```
+
+#### 3. Active Users
+```typescript
+// GET /api/metrics/active-users
+// MCP: metrics.activeUsers
+
+{
+  "postfix": "Active Users",
+  "data": [
+    { "value": 840 },
+    { "value": 720 }
+  ]
+}
+```
+
+### Revenue Metrics (OKR Tracking)
+
+#### 4. Monthly Recurring Revenue (MRR)
+```typescript
+// GET /api/metrics/mrr
+// MCP: metrics.mrr
+
+{
+  "postfix": "USD",
+  "data": [
+    { "value": 83500 },  // December target
+    { "value": 52180 }   // November actual
+  ]
+}
+```
+
+#### 5. Annual Recurring Revenue (ARR)
+```typescript
+// GET /api/metrics/arr
+// MCP: metrics.arr
+
+{
+  "postfix": "USD",
+  "data": [
+    { "value": 1002000 },  // $1M target
+    { "value": 626160 }
+  ]
+}
+```
+
+#### 6. Gross Marketplace Volume (GMV)
+```typescript
+// GET /api/metrics/gmv
+// MCP: metrics.gmv
+
+{
+  "postfix": "USD",
+  "data": [
+    { "name": "Oct", "value": 125000 },
+    { "name": "Nov", "value": 200000 },
+    { "name": "Dec", "value": 320000 }
+  ]
+}
+```
+
+#### 7. GMV Growth Rate
+```typescript
+// GET /api/metrics/gmv-growth
+// MCP: metrics.gmvGrowth
+
+{
+  "postfix": "%",
+  "data": [
+    { "value": 68.5 },  // 60%+ target
+    { "value": 52.3 }
+  ]
+}
+```
+
+### Marketplace Metrics (KR Tracking)
+
+#### 8. Listed Services
+```typescript
+// GET /api/metrics/services-listed
+// MCP: metrics.servicesListed
+
+{
+  "postfix": "Services",
+  "data": [
+    { "value": 187 },  // 200+ target
+    { "value": 156 }
+  ]
+}
+```
+
+#### 9. Active Services (Processing Transactions)
+```typescript
+// GET /api/metrics/services-active
+// MCP: metrics.servicesActive
+
+{
+  "postfix": "Active",
+  "data": [
+    { "value": 92 },  // 100+ target
+    { "value": 78 }
+  ]
+}
+```
+
+#### 10. Service Providers
+```typescript
+// GET /api/metrics/providers
+// MCP: metrics.providers
+
+{
+  "postfix": "Providers",
+  "data": [
+    { "value": 87 },  // 100+ target
+    { "value": 72 }
+  ]
+}
+```
+
+#### 11. Average Service Rating
+```typescript
+// GET /api/metrics/service-rating
+// MCP: metrics.serviceRating
+
+{
+  "postfix": "★",
+  "data": [
+    { "value": 4.6 },  // 4.5+ target
+    { "value": 4.4 }
+  ]
+}
+```
+
+#### 12. Dispute Rate
+```typescript
+// GET /api/metrics/dispute-rate
+// MCP: metrics.disputeRate
+
+{
+  "postfix": "%",
+  "color": "#FF0000",  // Red if >5%
+  "data": [
+    { "value": 3.2 },  // <5% target
+    { "value": 4.1 }
+  ]
+}
+```
+
+### Creator Metrics (Studio Success)
+
+#### 13. Creators Publishing Services
+```typescript
+// GET /api/metrics/creators
+// MCP: metrics.creators
+
+{
+  "postfix": "Creators",
+  "data": [
+    { "value": 42 },  // 50+ target
+    { "value": 35 }
+  ]
+}
+```
+
+#### 14. Top 10 Creators Revenue
+```typescript
+// GET /api/metrics/top-creators-revenue
+// MCP: metrics.topCreatorsRevenue
+
+{
+  "postfix": "USD/mo",
+  "data": [
+    { "name": "Creator 1", "value": 8200 },
+    { "name": "Creator 2", "value": 6500 },
+    { "name": "Creator 3", "value": 5800 },
+    // ... top 10
+  ]
+}
+```
+
+### Platform Metrics
+
+#### 15. Functions Catalogued
+```typescript
+// GET /api/metrics/functions
+// MCP: metrics.functions
+
+{
+  "postfix": "Functions",
+  "data": [
+    { "value": 887 },  // 1,000+ target
+    { "value": 745 }
+  ]
+}
+```
+
+#### 16. API Calls (Daily)
+```typescript
+// GET /api/metrics/api-calls
+// MCP: metrics.apiCalls
+
+{
+  "postfix": "Calls/day",
+  "data": [
+    { "name": "Mon", "value": 45200 },
+    { "name": "Tue", "value": 48100 },
+    { "name": "Wed", "value": 52300 },
+    { "name": "Thu", "value": 49800 },
+    { "name": "Fri", "value": 51200 },
+    { "name": "Sat", "value": 38900 },
+    { "name": "Sun", "value": 35600 }
+  ]
+}
+```
+
+---
+
+## Implementation Plan
+
+### Phase 1: API Endpoints (Week 1)
+- [ ] Create `/api/metrics/*` route handlers in api repo
+- [ ] Implement data aggregation from database
+- [ ] Add caching layer (Redis/Cloudflare KV)
+- [ ] Return Numerics-compatible JSON format
+
+### Phase 2: MCP Integration (Week 1)
+- [ ] Add MCP `metrics.*` tool definitions
+- [ ] Implement RPC handlers via CapnWeb
+- [ ] Enable Claude/AI access to real-time metrics
+- [ ] Add natural language query support
+
+### Phase 3: Authentication & Security (Week 2)
+- [ ] API key authentication for Numerics
+- [ ] Rate limiting per widget
+- [ ] CORS configuration for direct device access
+- [ ] Secure metric calculation (prevent data leaks)
+
+### Phase 4: Numerics Dashboard Setup (Week 2)
+- [ ] Configure widgets in Numerics app
+- [ ] Create dashboard layouts:
+  - Apple TV: Executive dashboard (ARR, GMV, growth)
+  - Apple Watch: Quick glance (MRR, visitors, active users)
+  - iPhone: Full funnel (visitors → signups → revenue)
+  - Mac: Detailed analytics (all 16 metrics)
+- [ ] Set up alerts for KR thresholds
+
+### Phase 5: Real-time Updates (Week 3)
+- [ ] Implement WebSocket streaming for live updates
+- [ ] Trigger dashboard refreshes on key events
+- [ ] Add push notifications for milestone achievements
+
+---
+
+## API Routes
+
+```
+GET /api/metrics/visitors
+GET /api/metrics/signups
+GET /api/metrics/active-users
+GET /api/metrics/mrr
+GET /api/metrics/arr
+GET /api/metrics/gmv
+GET /api/metrics/gmv-growth
+GET /api/metrics/services-listed
+GET /api/metrics/services-active
+GET /api/metrics/providers
+GET /api/metrics/service-rating
+GET /api/metrics/dispute-rate
+GET /api/metrics/creators
+GET /api/metrics/top-creators-revenue
+GET /api/metrics/functions
+GET /api/metrics/api-calls
+```
+
+**Query Parameters:**
+- `?period=today|week|month|quarter` - Time period
+- `?compare=previous` - Include comparison data
+- `?format=numerics` - Force Numerics JSON format (default)
+
+**Authentication:**
+```
+Authorization: Bearer <api_key>
+```
+
+---
+
+## MCP Tools
+
+```typescript
+// MCP Tool Schema
+{
+  "name": "metrics",
+  "tools": {
+    "visitors": { "returns": "number", "change": "percentage" },
+    "signups": { "returns": "number", "change": "percentage" },
+    "mrr": { "returns": "currency", "change": "percentage" },
+    "arr": { "returns": "currency", "change": "percentage" },
+    "gmv": { "returns": "currency", "change": "percentage" },
+    "gmvGrowth": { "returns": "percentage" },
+    "servicesListed": { "returns": "number", "target": 200 },
+    "servicesActive": { "returns": "number", "target": 100 },
+    "providers": { "returns": "number", "target": 100 },
+    "serviceRating": { "returns": "number", "target": 4.5 },
+    "disputeRate": { "returns": "percentage", "target": 5, "alert": "above" },
+    "creators": { "returns": "number", "target": 50 },
+    "topCreatorsRevenue": { "returns": "array" },
+    "functions": { "returns": "number", "target": 1000 },
+    "apiCalls": { "returns": "timeseries" }
+  }
+}
+```
+
+---
+
+## Database Queries
+
+### Example: MRR Calculation
+```sql
+-- Calculate Monthly Recurring Revenue
+SELECT
+  SUM(price * billing_multiplier) as mrr,
+  DATE_TRUNC('month', created_at) as month
+FROM subscriptions
+WHERE status = 'active'
+  AND billing_cycle IN ('monthly', 'annual')
+GROUP BY month
+ORDER BY month DESC
+LIMIT 2;
+
+-- billing_multiplier: monthly=1, annual=1/12
+```
+
+### Example: GMV Growth
+```sql
+-- Calculate GMV month-over-month growth
+WITH monthly_gmv AS (
+  SELECT
+    DATE_TRUNC('month', completed_at) as month,
+    SUM(amount) as gmv
+  FROM transactions
+  WHERE status = 'completed'
+  GROUP BY month
+)
+SELECT
+  current.month,
+  current.gmv,
+  ((current.gmv - previous.gmv) / previous.gmv * 100) as growth_rate
+FROM monthly_gmv current
+LEFT JOIN monthly_gmv previous
+  ON previous.month = current.month - INTERVAL '1 month'
+ORDER BY current.month DESC
+LIMIT 1;
+```
+
+---
+
+## Success Metrics
+
+- [ ] All 16 metrics accessible via API in <200ms
+- [ ] Numerics widgets refreshing every 5 minutes
+- [ ] Real-time alerts when thresholds crossed
+- [ ] Zero authentication failures
+- [ ] 99.9%+ API uptime
+
+---
+
+## Related Documentation
+
+- [TODO.md](TODO.md) - Overall project plan
+- [README.md](README.md) - 2025Q4 OKRs ($1M ARR target)
+- [api/CLAUDE.md](api/CLAUDE.md) - API implementation
+- [db/CLAUDE.md](db/CLAUDE.md) - Database queries
+
+---
+
+**Created:** 2025-10-01
+**Priority:** P0 - Critical Path
+**Owner:** Claude Code (AI Project Manager)

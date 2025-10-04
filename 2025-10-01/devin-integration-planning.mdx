@@ -1,0 +1,191 @@
+# Devin AI MCP Server Integration Planning
+
+**Date**: 2025-10-01
+**Status**: Planning Complete
+**Feature**: Devin.ai integration for autonomous coding across .do repos
+
+## Summary
+
+Researched and designed comprehensive Devin.ai integration via MCP (Model Context Protocol) to enable task assignment, PR review, and autonomous coding across all .do repositories. Devin complements Claude Code by handling deep implementation work while Claude focuses on architecture and coordination.
+
+## Research Findings
+
+### Devin API
+- **Base URL**: `https://api.devin.ai/v1`
+- **Status**: Alpha (released early 2025)
+- **Authentication**: Bearer token via API key
+- **Main Capability**: Create persistent coding sessions with GitHub integration
+
+### Key Endpoints Discovered
+1. **POST /sessions** - Create new Devin session with task
+2. **GET /sessions/{id}** - Get session status and progress
+3. **POST /sessions/{id}/messages** - Send follow-up messages
+4. **GET /sessions** - List all sessions
+
+### Session Capabilities
+- Automatically creates PRs when implementation complete
+- Supports idempotent operations (safe retries)
+- Can upload files and provide context
+- Tracks progress and artifacts (PRs, code, documentation)
+
+## Implementation Design
+
+### Files Created
+1. **`DEVIN-INTEGRATION.md`** - Comprehensive integration specification
+   - Complete API reference
+   - 6 MCP tool definitions
+   - DevinClient implementation
+   - MCP server implementation
+   - Integration with VAPI and Claude Code workflows
+   - Example use cases
+
+### MCP Tools Designed
+
+#### 1. `devin_create_task`
+- Assign implementation task to Devin in specific repo
+- Parameters: repository, task, files, branch, createPR, labels, priority
+- Returns: sessionId, sessionUrl, status
+
+#### 2. `devin_get_status`
+- Check Devin session status
+- Returns: progress, pullRequest, filesChanged, linesAdded/Deleted
+
+#### 3. `devin_review_pr`
+- Have Devin review pull requests
+- Parameters: repository, prNumber, focus areas, maxComments
+- Returns: commentsPosted, issuesFound, approved status
+
+#### 4. `devin_send_message`
+- Send message to active Devin session
+- For feedback, clarification, additional requirements
+
+#### 5. `devin_list_sessions`
+- List all Devin sessions with filtering
+- Filter by: repository, status, limit
+
+#### 6. `devin_cancel_session`
+- Cancel running Devin session
+- Parameters: sessionId, reason
+
+## Devin vs Claude Code Division
+
+### Devin Strengths
+- Deep implementation work (>100 LOC features)
+- Extended sessions (hours-long tasks)
+- Production-ready code with tests
+- Multi-file complex changes
+- Full PR creation with documentation
+
+### Claude Code Strengths
+- Architecture and planning
+- Quick iterations (<50 LOC changes)
+- Cross-repo coordination
+- PR review and analysis
+- Documentation updates
+
+## Integration Workflow
+
+```
+Voice (VAPI) → Claude Code (plan) → Devin (implement) → Claude Code (review/merge)
+```
+
+### Example Flow:
+1. User: "Add recurring subscriptions to marketplace"
+2. VAPI creates GitHub issue
+3. Claude Code analyzes scope, creates plan
+4. Claude Code delegates to Devin via MCP
+5. Devin implements feature, creates PR
+6. Claude Code reviews PR
+7. Devin addresses feedback
+8. Claude Code approves and merges
+9. VAPI notifies user
+
+## Use Cases Documented
+
+### 1. Numerics Metrics API
+- Claude plans 16 endpoints
+- Devin implements all 16 with tests
+- Claude reviews and merges
+
+### 2. ctx Repository Setup
+- Claude designs structure
+- Devin creates full repo with Velite + Zod
+- Claude validates setup
+
+## Technical Architecture
+
+### DevinClient Class
+```typescript
+class DevinClient {
+  async createSession(params) - Create session with comprehensive prompt
+  async getSessionStatus(sessionId) - Poll status
+  async sendMessage(sessionId, message, files) - Feedback
+  async listSessions(filters) - List with repo filter
+  private buildPrompt(params) - Contextual prompts with .do standards
+}
+```
+
+### MCP Server
+- Built on @modelcontextprotocol/sdk
+- Stdio transport for Claude Code
+- 6 tool handlers
+- Error handling and retries
+
+## Configuration
+
+### Environment Variables
+```bash
+DEVIN_API_KEY=<api_key>
+GITHUB_TOKEN=<token>
+ANTHROPIC_API_KEY=<claude_key>
+VAPI_API_KEY=<vapi_key>
+```
+
+### .mcp.json Addition
+```json
+{
+  "mcpServers": {
+    "devin": {
+      "command": "node",
+      "args": ["dist/mcp/devin-server.js"],
+      "env": { ... }
+    }
+  }
+}
+```
+
+## Implementation Phases
+
+### Week 2
+- Phase 1: Devin Client API wrapper
+- Phase 2: MCP Server with all 6 tools
+
+### Week 3
+- Phase 3: GitHub integration and PR workflow
+- Phase 4: Claude Code coordination logic
+
+### Week 4
+- Phase 5: VAPI integration and voice updates
+
+## Success Metrics
+- Devin MCP server operational with all 6 tools
+- Successfully create sessions in all repos
+- PRs created and merged via Devin
+- <5 minute handoff time (Claude → Devin)
+- 90%+ PR approval rate on first review
+- Zero Devin sessions stuck/abandoned
+
+## Related Documentation
+- [DEVIN-INTEGRATION.md](../DEVIN-INTEGRATION.md) - Full spec
+- [VAPI-INTEGRATION.md](../VAPI-INTEGRATION.md) - Voice integration
+- [NUMERICS-INTEGRATION.md](../NUMERICS-INTEGRATION.md) - Metrics API
+
+---
+
+**Priority**: P0 - Critical
+**Next Steps**:
+1. Obtain Devin API key
+2. Implement DevinClient class
+3. Build MCP server
+4. Test with simple task
+5. Integrate with Claude Code GitHub Actions

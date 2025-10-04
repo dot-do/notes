@@ -1,0 +1,390 @@
+# GitHub App Setup Guide - repo.do
+
+Complete guide for creating and configuring the repo.do GitHub App for automatic MDX entity sync from the ctx repository to the database.
+
+## Overview
+
+The **repo.do** GitHub App automatically syncs MDX entity definitions from the `dot-do/ctx` repository to the PostgreSQL database via webhooks.
+
+**Architecture:**
+```
+GitHub ctx repo (MDX files)
+  ↓ (commit/push)
+GitHub Webhook
+  ↓ (POST)
+https://repo.do/api/webhooks/github
+  ↓ (parse & validate)
+Database (things table)
+```
+
+## Step 1: Create GitHub App
+
+1. Go to **GitHub Settings** → **Developer settings** → **GitHub Apps** → **New GitHub App**
+
+2. Fill in basic information:
+   - **GitHub App name:** `repo.do`
+   - **Homepage URL:** `https://repo.do`
+   - **Description:** `Automatic MDX entity sync from ctx repository to database`
+
+3. Configure **Callback URL:**
+   ```
+   https://repo.do/auth/github/callback
+   ```
+
+4. **Webhook Configuration:**
+   - ✅ Active (check the box)
+   - **Webhook URL:**
+     ```
+     https://repo.do/api/webhooks/github
+     ```
+   - **Webhook secret:** Generate a random secret (save for later)
+     ```bash
+     # Generate webhook secret (example)
+     openssl rand -hex 32
+     # Save this value - you'll need it for GITHUB_WEBHOOK_SECRET
+     ```
+
+5. **Repository permissions:**
+   - **Contents:** Read & write
+   - **Pull requests:** Read & write
+   - **Metadata:** Read-only (automatically added)
+
+6. **Subscribe to events:**
+   - ✅ **Push** (when commits are pushed)
+   - ✅ **Pull request** (for future PR sync back to GitHub)
+
+7. **Where can this GitHub App be installed?**
+   - Select: **Any account** (or "Only on this account" if preferred)
+
+8. Click **Create GitHub App**
+
+## Step 2: Get App Credentials
+
+After creating the app:
+
+1. **Note the App ID** (shown at the top of the app settings page)
+   - Save this value - you'll need it for `GITHUB_APP_ID`
+
+2. **Generate a Private Key:**
+   - Scroll down to **Private keys** section
+   - Click **Generate a private key**
+   - A `.pem` file will be downloaded
+   - Save this entire file contents - you'll need it for `GITHUB_APP_PRIVATE_KEY`
+
+## Step 3: Configure Environment Variables
+
+### Local Development
+
+Create or update `/Users/nathanclevenger/Projects/.do/api/.dev.vars`:
+
+```bash
+# GitHub App Integration (repo.do app for ctx/gist MDX sync)
+GITHUB_APP_WEBHOOK_SECRET=your-webhook-secret-from-step-1
+GITHUB_APP_ID=123456
+GITHUB_APP_PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA...your-private-key-here...
+-----END RSA PRIVATE KEY-----
+GITHUB_APP_CLIENT_SECRET=your-client-secret-from-step-2
+```
+
+**Note:** Keep the `-----BEGIN RSA PRIVATE KEY-----` and `-----END RSA PRIVATE KEY-----` lines.
+
+### Production (Cloudflare Workers)
+
+Deploy secrets to the api worker on repo.do:
+
+```bash
+cd /Users/nathanclevenger/Projects/.do/api
+
+# Set webhook secret
+wrangler secret put GITHUB_APP_WEBHOOK_SECRET
+# Paste your webhook secret and press Enter
+
+# Set app ID
+wrangler secret put GITHUB_APP_ID
+# Paste your app ID (e.g., 123456) and press Enter
+
+# Set private key
+wrangler secret put GITHUB_APP_PRIVATE_KEY
+# Paste your ENTIRE private key including BEGIN/END lines and press Enter
+
+# Set client secret
+wrangler secret put GITHUB_APP_CLIENT_SECRET
+# Paste your client secret and press Enter
+```
+
+## Step 4: Install GitHub App
+
+1. Go to your GitHub App settings page
+2. Click **Install App** in the left sidebar
+3. Choose the **dot-do** organization (or your account)
+4. Select **Only select repositories**
+5. Choose the **ctx** repository
+6. Click **Install**
+
+You'll be redirected to:
+```
+https://repo.do/auth/github/callback?installation_id=12345678&setup_action=install
+```
+
+You should see a success message: "✓ GitHub App Installed Successfully"
+
+## Step 5: Verify Configuration
+
+Visit the setup page to check configuration:
+```
+https://repo.do/auth/github/setup
+```
+
+You should see:
+- ✓ Webhook Secret: Configured
+- ✓ App ID: Configured
+- ✓ Private Key: Configured
+
+## Step 6: Test Webhook Integration
+
+### Test 1: Modify an Existing MDX File
+
+```bash
+cd /Users/nathanclevenger/Projects/.do/ctx
+
+# Make a small change to an example file
+echo "\nUpdated: $(date)" >> ideas/ai-code-review.mdx
+
+# Commit and push
+git add ideas/ai-code-review.mdx
+git commit -m "Test: webhook integration"
+git push
+```
+
+### Test 2: Check Webhook Delivery
+
+1. Go to GitHub App settings → **Advanced** tab
+2. Scroll to **Recent Deliveries**
+3. You should see a `push` event
+4. Click to view details:
+   - ✅ Response: 200 OK
+   - ✅ Payload processed
+
+### Test 3: Verify Database Sync
+
+Query the database to check if the entity was synced:
+
+```sql
+SELECT * FROM things
+WHERE ns = 'idea' AND id = 'ai-code-review';
+```
+
+You should see the updated entity with current timestamp in `updated_at`.
+
+### Test 4: Create a New Entity
+
+```bash
+cd /Users/nathanclevenger/Projects/.do/ctx
+
+# Create new function
+cat > functions/test-webhook.mdx <<'EOF'
+---
+title: Test Webhook
+description: Test function to verify webhook integration
+type: code
+inputs:
+  - name: message
+    type: string
+    required: true
+metadata:
+  ns: function
+  visibility: public
+tags:
+  - test
+  - webhook
+---
+
+# Test Webhook
+
+This is a test function to verify the GitHub webhook integration is working correctly.
+
+## Usage
+
+```typescript
+export function testWebhook(message: string) {
+  return `Webhook works! Message: ${message}`;
+}
+```
+EOF
+
+# Commit and push
+git add functions/test-webhook.mdx
+git commit -m "Test: create new function via webhook"
+git push
+```
+
+Check the database:
+```sql
+SELECT * FROM things
+WHERE ns = 'function' AND id = 'test-webhook';
+```
+
+### Test 5: Delete an Entity
+
+```bash
+cd /Users/nathanclevenger/Projects/.do/ctx
+
+# Delete test function
+git rm functions/test-webhook.mdx
+git commit -m "Test: delete function via webhook"
+git push
+```
+
+Verify it's removed from database:
+```sql
+SELECT * FROM things
+WHERE ns = 'function' AND id = 'test-webhook';
+-- Should return no results
+```
+
+## Webhook Event Processing
+
+The webhook handler processes the following:
+
+### Push Events
+- **Trigger:** Commits pushed to main/master branch
+- **Processing:**
+  1. Verify HMAC-SHA256 signature
+  2. Extract changed/added/removed MDX files from commits
+  3. Fetch file contents from GitHub
+  4. Parse MDX (frontmatter + content)
+  5. Validate against Zod schemas
+  6. Upsert to `things` table
+  7. Delete removed files from database
+
+### Entity Types Synced
+1. **brands/** → `ns: brand`
+2. **functions/** → `ns: function`
+3. **nouns/** → `ns: noun`
+4. **verbs/** → `ns: verb`
+5. **workflows/** → `ns: workflow`
+6. **agents/** → `ns: agent`
+7. **ideas/** → `ns: idea`
+
+### Database Schema
+```sql
+CREATE TABLE things (
+  ns TEXT NOT NULL,           -- Entity namespace
+  id TEXT NOT NULL,           -- Entity ID (slug)
+  type TEXT NOT NULL,         -- Entity type (capitalized)
+  data JSON NOT NULL,         -- Full frontmatter as JSON
+  content TEXT NOT NULL,      -- Markdown content
+  visibility TEXT DEFAULT 'public',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (ns, id)
+);
+```
+
+## Troubleshooting
+
+### Webhook Not Triggering
+
+**Check GitHub webhook deliveries:**
+1. Go to GitHub App settings → Advanced
+2. Check Recent Deliveries
+3. Look for errors in response
+
+**Common issues:**
+- Webhook URL not accessible (check Cloudflare deployment)
+- Invalid signature (wrong GITHUB_WEBHOOK_SECRET)
+- App not installed on ctx repository
+
+### Signature Verification Failing
+
+**Error:** "Invalid signature" (401)
+
+**Solution:**
+```bash
+# Ensure webhook secret matches
+wrangler secret put GITHUB_WEBHOOK_SECRET
+# Enter the EXACT secret from GitHub App settings
+```
+
+### Files Not Syncing
+
+**Check webhook logs:**
+```bash
+wrangler tail --env production
+```
+
+**Common issues:**
+- MDX format invalid (missing frontmatter `---`)
+- Schema validation failed (check required fields)
+- File not in entity directory (must be in brands/, functions/, etc.)
+
+### Database Connection Issues
+
+**Error:** "DB not configured"
+
+**Solution:**
+- Ensure D1 database binding is configured in wrangler.jsonc
+- Run `wrangler d1 create dot-do-db` if database doesn't exist
+- Update binding ID in wrangler.jsonc
+
+## GitHub Gist Integration (Coming Soon)
+
+Future enhancement: Sync standalone MDX entities from GitHub Gists.
+
+**Gist webhook events:**
+- `gist.created` - New gist created
+- `gist.updated` - Gist updated
+- `gist.deleted` - Gist deleted
+
+**Processing:**
+- Check if gist contains `.mdx` files
+- Parse and validate
+- Sync to database with `source.type: 'gist'`
+
+## Security Considerations
+
+1. **Webhook Signature Verification**
+   - Always verify HMAC-SHA256 signature
+   - Use timing-safe comparison
+   - Reject invalid signatures with 401
+
+2. **Secret Management**
+   - Never commit secrets to git
+   - Use Cloudflare Workers secrets for production
+   - Rotate secrets periodically
+
+3. **Input Validation**
+   - Validate all MDX files against Zod schemas
+   - Sanitize file paths
+   - Limit file sizes (prevent DoS)
+
+4. **Access Control**
+   - GitHub App only has access to selected repositories
+   - Private MDX files (visibility: private) only accessible to authorized users
+
+## Summary
+
+**What you created:**
+- ✅ ctx repository with 7 entity types
+- ✅ GitHub App webhook integration
+- ✅ MDX parsing and validation
+- ✅ Database sync utilities
+- ✅ OAuth callback routes
+
+**What's needed from you:**
+1. Create GitHub App via web UI
+2. Install app on dot-do/ctx repository
+3. Configure 3 environment variables
+4. Test with a commit to ctx repo
+
+**URLs:**
+- Webhook: `https://repo.do/api/webhooks/github`
+- Callback: `https://repo.do/auth/github/callback`
+- Setup: `https://repo.do/auth/github/setup`
+
+---
+
+**Created:** 2025-10-02
+**Status:** Ready for GitHub App creation
+**Next Step:** Create GitHub App via web UI using this guide

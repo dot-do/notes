@@ -1,0 +1,903 @@
+# Paid Ads Platform Implementation Plan
+
+**Date:** 2025-10-03
+**Status:** Planning Phase
+**Architecture:** Microservices (Workers) + Types Package (SDK)
+
+---
+
+## Executive Summary
+
+Following the successful implementation of the SEO/AEO platform (7 workstreams, 6 workers, ~3,000 LOC), we'll build a **Paid Ads Platform** with similar architecture:
+
+- **Foundation:** Zero-dependency types package in SDK
+- **Workers:** 6 microservices (P0/P1/P2 priorities)
+- **Integration:** RPC + HTTP + Queue interfaces
+- **Platforms:** Google Ads, Meta Ads, LinkedIn Ads, Microsoft Ads, TikTok Ads, Twitter/X Ads
+
+---
+
+## Platform Overview
+
+### Core Capabilities
+
+**Campaign Management:**
+- Multi-platform campaign creation and optimization
+- Automated bid strategies and budget management
+- A/B testing and creative rotation
+- Cross-platform performance analytics
+
+**Audience Management:**
+- Unified audience segmentation across platforms
+- Lookalike audience generation
+- Retargeting pixel management
+- Customer match and upload management
+
+**Creative Optimization:**
+- AI-powered ad copy generation
+- Dynamic creative optimization (DCO)
+- Creative performance analysis
+- Asset library management
+
+**Performance Tracking:**
+- Real-time metrics aggregation
+- Attribution modeling
+- ROI and ROAS calculation
+- Conversion tracking
+
+---
+
+## Workstream Architecture
+
+Following the SEO platform pattern: **7 parallelized workstreams**
+
+### Workstream 7 (P1 - Foundation): Ads Types Package
+
+**Package:** `@dot-do/ads-types` in SDK repository
+**Purpose:** Zero-dependency TypeScript types for all ads workers
+
+**Type Categories:**
+```typescript
+// Platform types
+- Google Ads API types (campaigns, ad groups, ads, keywords)
+- Meta Ads API types (campaigns, ad sets, ads, audiences)
+- LinkedIn Ads API types
+- Microsoft Ads API types
+- TikTok Ads API types
+- Twitter/X Ads API types
+
+// Campaign types
+- Campaign structures (hierarchies, settings, budgets)
+- Ad formats (search, display, video, shopping, etc.)
+- Bidding strategies (CPC, CPM, CPA, ROAS)
+- Targeting options (demographics, interests, behaviors)
+
+// Creative types
+- Ad copy templates
+- Asset specifications (images, videos, headlines)
+- Creative variations and testing
+- Dynamic content rules
+
+// Analytics types
+- Performance metrics (impressions, clicks, conversions)
+- Attribution models (last-click, multi-touch, data-driven)
+- ROI/ROAS calculations
+- Cost structures (spend, budget, pacing)
+
+// Audience types
+- Audience definitions (custom, lookalike, retargeting)
+- Segmentation rules
+- Match types (email, phone, device ID)
+- Exclusion lists
+
+// Automation types
+- Rules and triggers
+- Scheduling and pacing
+- Optimization goals
+- Alert configurations
+```
+
+**Key Features:**
+- Zero runtime dependencies
+- Environment-agnostic (works in Workers, Node, browsers)
+- Comprehensive JSDoc documentation
+- Compatible with all 6 ad platforms
+
+---
+
+### Workstream 1 (P0): Ads Campaign Manager
+
+**Worker:** `ads-campaigns`
+**Purpose:** Multi-platform campaign creation, management, and optimization
+
+**RPC Methods:**
+```typescript
+export class AdsCampaignService extends WorkerEntrypoint<Env> {
+  // Campaign CRUD
+  async createCampaign(platform: AdPlatform, config: CampaignConfig): Promise<Campaign>
+  async updateCampaign(campaignId: string, updates: Partial<CampaignConfig>): Promise<Campaign>
+  async pauseCampaign(campaignId: string): Promise<void>
+  async deleteCampaign(campaignId: string): Promise<void>
+
+  // Campaign optimization
+  async optimizeBids(campaignId: string, strategy: BidStrategy): Promise<BidOptimization>
+  async adjustBudget(campaignId: string, budget: Budget): Promise<void>
+  async rotatCreatives(campaignId: string, rotation: CreativeRotation): Promise<void>
+
+  // Performance
+  async getCampaignMetrics(campaignId: string, dateRange: DateRange): Promise<CampaignMetrics>
+  async getCampaignRecommendations(campaignId: string): Promise<Recommendation[]>
+
+  // Bulk operations
+  async bulkCreateCampaigns(campaigns: CampaignConfig[]): Promise<Campaign[]>
+  async bulkPauseCampaigns(campaignIds: string[]): Promise<void>
+}
+```
+
+**HTTP Endpoints:**
+```
+POST   /campaigns              - Create campaign
+GET    /campaigns/:id          - Get campaign details
+PUT    /campaigns/:id          - Update campaign
+DELETE /campaigns/:id          - Delete campaign
+POST   /campaigns/:id/pause    - Pause campaign
+POST   /campaigns/:id/optimize - Optimize campaign
+GET    /campaigns/:id/metrics  - Get performance metrics
+POST   /campaigns/bulk         - Bulk operations
+```
+
+**Features:**
+- Multi-platform support (Google, Meta, LinkedIn, Microsoft, TikTok, Twitter)
+- Automated bid optimization based on goals
+- Budget pacing and alerts
+- Creative rotation strategies
+- Performance forecasting
+- Campaign templates
+- Bulk import/export
+- Approval workflows
+
+**Bindings:**
+- KV: Campaign cache (1 hour TTL)
+- D1: Campaign storage
+- Queue: Campaign sync
+- Analytics Engine: Campaign events
+- Service Bindings: ads-audiences, ads-creatives, ads-analytics
+
+---
+
+### Workstream 2 (P0): Ads Audience Manager
+
+**Worker:** `ads-audiences`
+**Purpose:** Unified audience management across all platforms
+
+**RPC Methods:**
+```typescript
+export class AdsAudienceService extends WorkerEntrypoint<Env> {
+  // Audience CRUD
+  async createAudience(definition: AudienceDefinition): Promise<Audience>
+  async updateAudience(audienceId: string, updates: Partial<AudienceDefinition>): Promise<Audience>
+  async deleteAudience(audienceId: string): Promise<void>
+
+  // Audience building
+  async uploadCustomerList(list: CustomerList, matchType: MatchType): Promise<Audience>
+  async createLookalikeAudience(sourceAudienceId: string, similarity: number): Promise<Audience>
+  async createRetargetingAudience(pixelId: string, rules: RetargetingRules): Promise<Audience>
+
+  // Segmentation
+  async segmentAudience(audienceId: string, criteria: SegmentationCriteria): Promise<AudienceSegment[]>
+  async combineAudiences(audienceIds: string[], operator: 'AND' | 'OR' | 'NOT'): Promise<Audience>
+
+  // Insights
+  async getAudienceInsights(audienceId: string): Promise<AudienceInsights>
+  async getAudienceOverlap(audienceIds: string[]): Promise<OverlapAnalysis>
+
+  // Sync
+  async syncAudienceToPlatform(audienceId: string, platform: AdPlatform): Promise<void>
+}
+```
+
+**HTTP Endpoints:**
+```
+POST   /audiences                    - Create audience
+GET    /audiences/:id                - Get audience details
+PUT    /audiences/:id                - Update audience
+DELETE /audiences/:id                - Delete audience
+POST   /audiences/upload             - Upload customer list
+POST   /audiences/lookalike          - Create lookalike
+POST   /audiences/retargeting        - Create retargeting
+POST   /audiences/:id/segment        - Segment audience
+POST   /audiences/combine            - Combine audiences
+GET    /audiences/:id/insights       - Get insights
+POST   /audiences/:id/sync/:platform - Sync to platform
+```
+
+**Features:**
+- Customer match (email, phone, device ID hashing)
+- Lookalike modeling (similarity scores 1-10%)
+- Retargeting pixel management
+- Audience expansion recommendations
+- Privacy-compliant data handling
+- Cross-platform audience sync
+- Audience overlap analysis
+- Exclusion list management
+- Refresh scheduling (daily, weekly, monthly)
+
+**Bindings:**
+- KV: Audience cache (6 hours TTL)
+- D1: Audience definitions
+- R2: Customer list uploads
+- Queue: Audience sync jobs
+- Analytics Engine: Audience events
+- Service Bindings: ads-campaigns, ads-analytics
+
+---
+
+### Workstream 3 (P1): Ads Creative Optimizer
+
+**Worker:** `ads-creatives`
+**Purpose:** AI-powered creative generation, testing, and optimization
+
+**RPC Methods:**
+```typescript
+export class AdsCreativeService extends WorkerEntrypoint<Env> {
+  // Creative generation
+  async generateAdCopy(prompt: string, format: AdFormat, platform: AdPlatform): Promise<AdCopy>
+  async generateHeadlines(product: string, count: number): Promise<string[]>
+  async generateDescriptions(product: string, count: number): Promise<string[]>
+  async optimizeForPlatform(creative: Creative, platform: AdPlatform): Promise<Creative>
+
+  // Asset management
+  async uploadAsset(file: File, metadata: AssetMetadata): Promise<Asset>
+  async getAssetLibrary(filters: AssetFilters): Promise<Asset[]>
+  async tagAssets(assetIds: string[], tags: string[]): Promise<void>
+
+  // A/B testing
+  async createCreativeTest(variants: Creative[], allocation: number[]): Promise<CreativeTest>
+  async getTestResults(testId: string): Promise<TestResults>
+  async selectWinner(testId: string): Promise<Creative>
+
+  // Dynamic creative optimization
+  async createDCO(components: DCOComponents, rules: DCORules): Promise<DCOCampaign>
+  async getTopPerformingCreatives(campaignId: string, limit: number): Promise<Creative[]>
+
+  // Analysis
+  async analyzeCreativePerformance(creativeId: string): Promise<CreativePerformance>
+  async getCreativeRecommendations(campaignId: string): Promise<CreativeRecommendation[]>
+}
+```
+
+**HTTP Endpoints:**
+```
+POST   /creatives/generate           - Generate ad copy
+POST   /creatives/headlines          - Generate headlines
+POST   /creatives/descriptions       - Generate descriptions
+POST   /assets                       - Upload asset
+GET    /assets                       - Get asset library
+POST   /assets/tag                   - Tag assets
+POST   /tests                        - Create A/B test
+GET    /tests/:id                    - Get test results
+POST   /tests/:id/winner             - Select winner
+POST   /dco                          - Create DCO campaign
+GET    /creatives/:id/performance    - Analyze performance
+GET    /campaigns/:id/recommendations - Get recommendations
+```
+
+**Features:**
+- AI copy generation (GPT-4, Claude)
+- Multi-platform format adaptation
+- Creative variation generation
+- A/B/n testing framework
+- Statistical significance calculation
+- Asset library with tagging
+- Dynamic creative optimization (DCO)
+- Creative fatigue detection
+- Performance heatmaps
+- Compliance checking (character limits, prohibited content)
+
+**Bindings:**
+- R2: Asset storage (images, videos)
+- KV: Creative cache (30 min TTL)
+- D1: Creative metadata
+- AI: Text generation
+- Queue: Creative generation jobs
+- Analytics Engine: Creative events
+- Service Bindings: ads-campaigns, ads-analytics, ai
+
+---
+
+### Workstream 4 (P1): Ads Analytics & Attribution
+
+**Worker:** `ads-analytics`
+**Purpose:** Real-time performance tracking, attribution, and ROI analysis
+
+**RPC Methods:**
+```typescript
+export class AdsAnalyticsService extends WorkerEntrypoint<Env> {
+  // Real-time metrics
+  async trackEvent(event: AdEvent): Promise<void>
+  async getMetrics(campaignId: string, dateRange: DateRange): Promise<Metrics>
+  async getAggregateMetrics(campaignIds: string[], groupBy: string): Promise<AggregatedMetrics>
+
+  // Attribution
+  async trackConversion(conversion: Conversion): Promise<void>
+  async getAttributionReport(campaignId: string, model: AttributionModel): Promise<AttributionReport>
+  async compareAttributionModels(campaignId: string): Promise<ModelComparison>
+
+  // ROI/ROAS
+  async calculateROI(campaignId: string, dateRange: DateRange): Promise<ROIMetrics>
+  async calculateROAS(campaignId: string, dateRange: DateRange): Promise<ROASMetrics>
+  async getForecast(campaignId: string, days: number): Promise<Forecast>
+
+  // Cross-platform
+  async getCrossPlatformMetrics(campaignIds: string[]): Promise<CrossPlatformMetrics>
+  async getChannelPerformance(dateRange: DateRange): Promise<ChannelPerformance[]>
+
+  // Reporting
+  async generateReport(config: ReportConfig): Promise<Report>
+  async scheduleReport(config: ReportConfig, schedule: Schedule): Promise<void>
+  async exportMetrics(campaignId: string, format: 'csv' | 'json'): Promise<string>
+}
+```
+
+**HTTP Endpoints:**
+```
+POST   /events                     - Track event
+GET    /metrics/:campaignId        - Get campaign metrics
+POST   /metrics/aggregate          - Get aggregate metrics
+POST   /conversions                - Track conversion
+GET    /attribution/:campaignId    - Get attribution report
+POST   /attribution/compare        - Compare models
+GET    /roi/:campaignId            - Calculate ROI
+GET    /roas/:campaignId           - Calculate ROAS
+GET    /forecast/:campaignId       - Get forecast
+GET    /cross-platform             - Cross-platform metrics
+GET    /channels                   - Channel performance
+POST   /reports                    - Generate report
+POST   /reports/schedule           - Schedule report
+GET    /export/:campaignId         - Export metrics
+```
+
+**Features:**
+- Real-time event tracking (impressions, clicks, conversions)
+- Multi-touch attribution (first-click, last-click, linear, time-decay, position-based, data-driven)
+- ROI and ROAS calculations
+- Conversion value tracking
+- Cost per acquisition (CPA) analysis
+- Performance forecasting (7/14/30 day predictions)
+- Cross-platform reporting
+- Custom metric definitions
+- Automated alerts (threshold-based)
+- Data export (CSV, JSON, BigQuery)
+
+**Bindings:**
+- Analytics Engine: Event storage (90 days)
+- R2: Historical data archives
+- KV: Metrics cache (5 min TTL)
+- D1: Attribution models
+- Queue: Metric aggregation jobs
+- Service Bindings: ads-campaigns, ads-audiences, ads-creatives
+
+---
+
+### Workstream 5 (P2): Ads Automation Engine
+
+**Worker:** `ads-automation`
+**Purpose:** Rule-based automation, scheduling, and optimization
+
+**RPC Methods:**
+```typescript
+export class AdsAutomationService extends WorkerEntrypoint<Env> {
+  // Rule management
+  async createRule(rule: AutomationRule): Promise<Rule>
+  async updateRule(ruleId: string, updates: Partial<AutomationRule>): Promise<Rule>
+  async deleteRule(ruleId: string): Promise<void>
+  async toggleRule(ruleId: string, enabled: boolean): Promise<void>
+
+  // Rule execution
+  async evaluateRules(context: RuleContext): Promise<RuleEvaluation[]>
+  async executeAction(action: AutomationAction): Promise<ActionResult>
+  async getRuleHistory(ruleId: string, days: number): Promise<RuleExecution[]>
+
+  // Scheduling
+  async scheduleAction(action: ScheduledAction, schedule: Schedule): Promise<void>
+  async cancelScheduledAction(actionId: string): Promise<void>
+  async getScheduledActions(): Promise<ScheduledAction[]>
+
+  // Optimization
+  async enableAutoOptimization(campaignId: string, goals: OptimizationGoals): Promise<void>
+  async getOptimizationLog(campaignId: string, days: number): Promise<OptimizationLog[]>
+
+  // Alerts
+  async createAlert(alert: AlertConfig): Promise<Alert>
+  async getTriggeredAlerts(dateRange: DateRange): Promise<TriggeredAlert[]>
+  async acknowledgeAlert(alertId: string): Promise<void>
+}
+```
+
+**HTTP Endpoints:**
+```
+POST   /rules                      - Create rule
+GET    /rules/:id                  - Get rule details
+PUT    /rules/:id                  - Update rule
+DELETE /rules/:id                  - Delete rule
+POST   /rules/:id/toggle           - Toggle rule
+POST   /rules/evaluate             - Evaluate rules
+POST   /actions/execute            - Execute action
+GET    /rules/:id/history          - Get rule history
+POST   /schedule                   - Schedule action
+DELETE /schedule/:id               - Cancel scheduled action
+GET    /schedule                   - Get scheduled actions
+POST   /optimize/:campaignId       - Enable auto-optimization
+GET    /optimize/:campaignId/log   - Get optimization log
+POST   /alerts                     - Create alert
+GET    /alerts/triggered           - Get triggered alerts
+POST   /alerts/:id/acknowledge     - Acknowledge alert
+```
+
+**Features:**
+- Rule-based automation (IF condition THEN action)
+- Bid adjustment rules (performance-based)
+- Budget pacing automation
+- Creative rotation rules
+- Dayparting (schedule by hour/day)
+- Geo-based automation
+- Weather-triggered campaigns
+- Competitor monitoring
+- Performance alerts (email, Slack, webhook)
+- Approval workflows
+- Rollback capabilities
+
+**Bindings:**
+- D1: Rules and schedules
+- KV: Rule execution cache
+- Queue: Scheduled actions
+- Analytics Engine: Rule events
+- Service Bindings: All other ads workers
+
+---
+
+### Workstream 6 (P2): Ads Platform Integrations
+
+**Worker:** `ads-platforms`
+**Purpose:** Unified API for all ad platform SDKs and webhooks
+
+**RPC Methods:**
+```typescript
+export class AdsPlatformService extends WorkerEntrypoint<Env> {
+  // Google Ads
+  async googleAdsRequest(endpoint: string, method: string, data?: any): Promise<any>
+  async googleAdsAuth(credentials: GoogleAdsCredentials): Promise<AuthToken>
+
+  // Meta Ads
+  async metaAdsRequest(endpoint: string, method: string, data?: any): Promise<any>
+  async metaAdsAuth(credentials: MetaAdsCredentials): Promise<AuthToken>
+
+  // LinkedIn Ads
+  async linkedInAdsRequest(endpoint: string, method: string, data?: any): Promise<any>
+  async linkedInAdsAuth(credentials: LinkedInAdsCredentials): Promise<AuthToken>
+
+  // Microsoft Ads
+  async microsoftAdsRequest(endpoint: string, method: string, data?: any): Promise<any>
+  async microsoftAdsAuth(credentials: MicrosoftAdsCredentials): Promise<AuthToken>
+
+  // TikTok Ads
+  async tiktokAdsRequest(endpoint: string, method: string, data?: any): Promise<any>
+  async tiktokAdsAuth(credentials: TikTokAdsCredentials): Promise<AuthToken>
+
+  // Twitter/X Ads
+  async twitterAdsRequest(endpoint: string, method: string, data?: any): Promise<any>
+  async twitterAdsAuth(credentials: TwitterAdsCredentials): Promise<AuthToken>
+
+  // Webhooks
+  async handleWebhook(platform: AdPlatform, payload: any): Promise<void>
+  async verifyWebhook(platform: AdPlatform, signature: string, payload: any): Promise<boolean>
+
+  // Rate limiting
+  async checkRateLimit(platform: AdPlatform, endpoint: string): Promise<RateLimitStatus>
+  async waitForRateLimit(platform: AdPlatform, endpoint: string): Promise<void>
+}
+```
+
+**HTTP Endpoints:**
+```
+# Generic platform proxy
+POST   /platforms/:platform/request  - Make platform API request
+POST   /platforms/:platform/auth     - Authenticate with platform
+
+# Webhooks
+POST   /webhooks/:platform           - Receive webhook
+GET    /webhooks/:platform/verify    - Verify webhook
+
+# Rate limit info
+GET    /rate-limits/:platform        - Check rate limit status
+
+# Platform-specific helpers
+POST   /google/campaigns             - Google Ads campaign API
+POST   /meta/campaigns               - Meta Ads campaign API
+POST   /linkedin/campaigns           - LinkedIn Ads campaign API
+POST   /microsoft/campaigns          - Microsoft Ads campaign API
+POST   /tiktok/campaigns             - TikTok Ads campaign API
+POST   /twitter/campaigns            - Twitter Ads campaign API
+```
+
+**Features:**
+- Unified authentication (OAuth 2.0, API keys)
+- Token refresh automation
+- Rate limit handling (per-platform quotas)
+- Retry logic with exponential backoff
+- Webhook signature verification
+- Request/response transformation
+- Error normalization
+- SDK version management
+- Multi-account support
+- Request logging and debugging
+
+**Bindings:**
+- KV: Auth tokens (1 hour TTL)
+- KV: Rate limit counters
+- D1: Platform credentials
+- Queue: Webhook processing
+- Analytics Engine: API calls
+- Service Bindings: All other ads workers
+
+---
+
+## Implementation Timeline
+
+### Phase 1: Foundation (Week 1)
+- ✅ Workstream 7: Create ads-types package
+- ✅ Define all TypeScript types
+- ✅ Build and publish to npm/private registry
+
+### Phase 2: Core Services (Week 2-3)
+- ✅ Workstream 1: Ads Campaign Manager
+- ✅ Workstream 2: Ads Audience Manager
+- ✅ Integration between campaigns and audiences
+
+### Phase 3: Intelligence (Week 4-5)
+- ✅ Workstream 3: Ads Creative Optimizer
+- ✅ Workstream 4: Ads Analytics & Attribution
+- ✅ Integration with campaigns and audiences
+
+### Phase 4: Automation & Integration (Week 6-7)
+- ✅ Workstream 5: Ads Automation Engine
+- ✅ Workstream 6: Ads Platform Integrations
+- ✅ End-to-end testing
+
+### Phase 5: Testing & Documentation (Week 8)
+- ✅ Integration tests
+- ✅ Platform integration tests
+- ✅ Documentation
+- ✅ Deployment
+
+---
+
+## Platform Integration Details
+
+### Google Ads
+- **API:** Google Ads API v15
+- **Auth:** OAuth 2.0 + Developer Token
+- **Rate Limits:** 15,000 operations/day (standard), 50,000/day (premium)
+- **Features:** Search, Display, Video, Shopping, Performance Max
+- **Key Endpoints:**
+  - Campaign Service
+  - Ad Group Service
+  - Ad Service
+  - Keyword Service
+  - Customer Service
+
+### Meta Ads (Facebook/Instagram)
+- **API:** Marketing API v19.0
+- **Auth:** OAuth 2.0 + App Secret
+- **Rate Limits:** 200 calls/hour/user, 4,800 calls/day
+- **Features:** Feed, Stories, Reels, Messenger, Audience Network
+- **Key Endpoints:**
+  - Campaign API
+  - AdSet API
+  - Ad Creative API
+  - Custom Audience API
+  - Insights API
+
+### LinkedIn Ads
+- **API:** LinkedIn Marketing Developer Platform
+- **Auth:** OAuth 2.0
+- **Rate Limits:** 100,000 calls/day (application), 500 calls/day (user)
+- **Features:** Sponsored Content, Message Ads, Dynamic Ads, Text Ads
+- **Key Endpoints:**
+  - Campaign Group API
+  - Campaign API
+  - Creative API
+  - Targeting API
+  - Analytics API
+
+### Microsoft Ads (Bing)
+- **API:** Microsoft Advertising API v13
+- **Auth:** OAuth 2.0
+- **Rate Limits:** 1,000 calls/minute
+- **Features:** Search, Audience, Shopping, App Install
+- **Key Endpoints:**
+  - Campaign Management Service
+  - Bulk Service
+  - Reporting Service
+  - Customer Billing Service
+
+### TikTok Ads
+- **API:** TikTok Marketing API v1.3
+- **Auth:** OAuth 2.0
+- **Rate Limits:** 50 QPS per advertiser account
+- **Features:** In-Feed, TopView, Branded Effects, Branded Hashtag
+- **Key Endpoints:**
+  - Campaign API
+  - AdGroup API
+  - Ad API
+  - Targeting API
+  - Reporting API
+
+### Twitter/X Ads
+- **API:** X Ads API v12
+- **Auth:** OAuth 1.0a
+- **Rate Limits:** 1,000 requests/15 minutes
+- **Features:** Promoted Tweets, Promoted Accounts, Amplify, Takeover
+- **Key Endpoints:**
+  - Campaign API
+  - Line Item API
+  - Promoted Tweet API
+  - Targeting Criteria API
+  - Analytics API
+
+---
+
+## Data Flow Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  Ads Admin Dashboard                    │
+│            (Central orchestration & UI)                 │
+└─────────────────────┬───────────────────────────────────┘
+                      │
+        ┌─────────────┼─────────────┬─────────────┐
+        │             │             │             │
+        ▼             ▼             ▼             ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│  Campaigns   │ │  Audiences   │ │  Creatives   │ │  Analytics   │
+│   Manager    │ │   Manager    │ │  Optimizer   │ │ Attribution  │
+└──────┬───────┘ └──────┬───────┘ └──────┬───────┘ └──────┬───────┘
+       │                │                │                │
+       └────────────────┼────────────────┼────────────────┘
+                        │                │
+                ┌───────┴────────┬───────┴────────┐
+                │                │                │
+                ▼                ▼                ▼
+        ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+        │  Automation  │ │  Platforms   │ │  AI Service  │
+        │    Engine    │ │ Integration  │ │  (workers)   │
+        └──────────────┘ └──────┬───────┘ └──────────────┘
+                                │
+                ┌───────────────┼───────────────┐
+                │               │               │
+                ▼               ▼               ▼
+        ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+        │  Google Ads  │ │   Meta Ads   │ │ LinkedIn Ads │
+        │      API     │ │     API      │ │     API      │
+        └──────────────┘ └──────────────┘ └──────────────┘
+
+                ▼               ▼               ▼
+        ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+        │ Microsoft    │ │  TikTok Ads  │ │  Twitter/X   │
+        │    Ads API   │ │     API      │ │   Ads API    │
+        └──────────────┘ └──────────────┘ └──────────────┘
+```
+
+---
+
+## Technology Stack
+
+### Workers Configuration
+```typescript
+// Common bindings across all workers
+interface Env {
+  // Storage
+  DB: D1Database                    // Campaign/audience/creative data
+  CACHE: KVNamespace               // Response caching
+  ASSETS: R2Bucket                 // Creative assets
+
+  // Analytics
+  ANALYTICS: AnalyticsEngineDataset // Event tracking
+
+  // Queues
+  CAMPAIGNS_QUEUE: Queue           // Campaign operations
+  AUDIENCES_QUEUE: Queue           // Audience sync
+  CREATIVES_QUEUE: Queue           // Creative generation
+  ANALYTICS_QUEUE: Queue           // Metric aggregation
+
+  // Service bindings
+  CAMPAIGNS_SERVICE: Fetcher
+  AUDIENCES_SERVICE: Fetcher
+  CREATIVES_SERVICE: Fetcher
+  ANALYTICS_SERVICE: Fetcher
+  AUTOMATION_SERVICE: Fetcher
+  PLATFORMS_SERVICE: Fetcher
+  AI_SERVICE: Fetcher
+
+  // Secrets
+  GOOGLE_ADS_DEVELOPER_TOKEN: string
+  META_ADS_APP_SECRET: string
+  LINKEDIN_CLIENT_SECRET: string
+  MICROSOFT_CLIENT_SECRET: string
+  TIKTOK_APP_SECRET: string
+  TWITTER_API_KEY: string
+}
+```
+
+### Database Schema (D1)
+
+**Campaigns Table:**
+```sql
+CREATE TABLE campaigns (
+  id TEXT PRIMARY KEY,
+  platform TEXT NOT NULL,
+  name TEXT NOT NULL,
+  status TEXT NOT NULL,
+  budget_amount REAL,
+  budget_type TEXT,
+  bid_strategy TEXT,
+  objective TEXT,
+  targeting_config JSON,
+  config JSON,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+```
+
+**Audiences Table:**
+```sql
+CREATE TABLE audiences (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  definition JSON NOT NULL,
+  size INTEGER,
+  platforms JSON,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  last_synced_at TEXT
+);
+```
+
+**Creatives Table:**
+```sql
+CREATE TABLE creatives (
+  id TEXT PRIMARY KEY,
+  campaign_id TEXT,
+  format TEXT NOT NULL,
+  platform TEXT NOT NULL,
+  headline TEXT,
+  description TEXT,
+  assets JSON,
+  variations JSON,
+  status TEXT NOT NULL,
+  performance JSON,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (campaign_id) REFERENCES campaigns(id)
+);
+```
+
+**Rules Table:**
+```sql
+CREATE TABLE automation_rules (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  condition JSON NOT NULL,
+  action JSON NOT NULL,
+  enabled INTEGER NOT NULL DEFAULT 1,
+  execution_count INTEGER DEFAULT 0,
+  last_executed_at TEXT,
+  created_at TEXT NOT NULL
+);
+```
+
+---
+
+## Success Metrics
+
+### Performance Targets
+- **Response Time:** < 200ms (p95)
+- **Throughput:** 1,000+ RPS per worker
+- **Availability:** 99.9% uptime
+- **Error Rate:** < 0.1%
+
+### Business Metrics
+- **Campaign Creation:** < 5 seconds end-to-end
+- **Optimization Latency:** Real-time (< 1 minute)
+- **Attribution Accuracy:** 95%+ match with platform reporting
+- **Cost Efficiency:** 30% reduction in manual campaign management time
+
+### Code Quality
+- **Type Coverage:** 100% (TypeScript strict mode)
+- **Test Coverage:** 80%+ for all workers
+- **Documentation:** Comprehensive JSDoc + README for each worker
+- **Zero Breaking Changes:** Semantic versioning
+
+---
+
+## Risk Mitigation
+
+### API Rate Limits
+- **Solution:** Rate limit tracking per platform in KV, queue-based retry
+- **Fallback:** Exponential backoff, circuit breaker pattern
+
+### Cost Management
+- **Solution:** Budget alerts, spend caps per campaign
+- **Monitoring:** Real-time cost tracking, anomaly detection
+
+### Data Privacy
+- **Solution:** PII hashing for customer match, GDPR/CCPA compliance
+- **Encryption:** Customer data encrypted at rest (R2) and in transit
+
+### Platform API Changes
+- **Solution:** Version pinning, automated API compatibility tests
+- **Monitoring:** Daily platform API health checks
+
+---
+
+## Next Steps
+
+### Immediate (Week 1)
+1. Create `ads-types` package in SDK repository
+2. Define comprehensive TypeScript types for all 6 platforms
+3. Build and test types package
+4. Commit and publish
+
+### Short-term (Week 2-4)
+1. Implement P0 workers (campaigns, audiences)
+2. Integrate with Google Ads and Meta Ads APIs
+3. Create admin dashboard
+4. Integration testing
+
+### Medium-term (Week 5-8)
+1. Implement P1 workers (creatives, analytics)
+2. Add LinkedIn, Microsoft, TikTok, Twitter integrations
+3. Implement P2 workers (automation, platforms)
+4. Complete testing and documentation
+
+### Long-term (Month 3+)
+1. Advanced attribution models (data-driven)
+2. Machine learning optimization
+3. Predictive analytics
+4. Self-service UI
+
+---
+
+## Comparison with SEO Platform
+
+| Aspect | SEO Platform | Ads Platform |
+|--------|-------------|--------------|
+| Workers | 6 (crawler, schema, content, performance, tools, admin) | 6 (campaigns, audiences, creatives, analytics, automation, platforms) |
+| Workstreams | 7 (including types) | 7 (including types) |
+| External APIs | 0 (self-contained) | 6 (Google, Meta, LinkedIn, Microsoft, TikTok, Twitter) |
+| Data Volume | Medium (content analysis) | High (real-time metrics, events) |
+| Complexity | Medium (analysis + generation) | High (multi-platform + real-time) |
+| User Interaction | Low (batch processing) | High (real-time dashboards) |
+| Cost | Low (CPU-bound) | Medium-High (API calls, storage) |
+
+---
+
+## Conclusion
+
+The Paid Ads Platform follows the proven architecture from the SEO platform:
+- **Same structure:** Foundation types + 6 microservices
+- **Same patterns:** RPC + HTTP + Queue interfaces
+- **Same quality:** 100% type safety, 80%+ test coverage
+- **More integration:** 6 external ad platforms vs 0 for SEO
+
+**Estimated Effort:** 6-8 weeks for full implementation
+**Code Volume:** ~4,000-5,000 LOC across 7 workstreams
+**Risk:** Medium (external API dependencies)
+**Impact:** High (unified ad management across all platforms)
+
+---
+
+**Document Status:** Draft - Ready for Review
+**Next Action:** Create ads-types package (Workstream 7)
+**Owner:** Claude Code (AI Project Manager)

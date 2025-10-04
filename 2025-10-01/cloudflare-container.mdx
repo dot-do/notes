@@ -1,0 +1,834 @@
+# .do Multi-Repo Environment in Cloudflare Container
+
+**Priority:** P0 - Critical (Foundation for MCP-wrapped Claude Code)
+**Status:** Planning
+**Target:** Week 3-4 of Q4 2025
+
+---
+
+## Overview
+
+Deploy the `.do` multi-repo management environment as a dedicated Cloudflare Container, enabling persistent development workspace with git submodules. Then expose Claude Code functionality via MCP (Model Context Protocol) for programmatic access from AI agents, VAPI, and other systems.
+
+## Why Containers (Not Sandboxes)
+
+### Cloudflare Containers (✅ Recommended)
+- **Use Case**: Full Linux environment for development
+- **Availability**: Public beta (June 2025)
+- **Resources**: 256 MiB (dev) to 4 GiB (standard) instances
+- **Persistence**: Coupled to Durable Object for state
+- **Capabilities**: Docker images, full filesystem, npm/git/nodejs
+- **Perfect For**: Running .do workspace with all repos
+
+### Cloudflare Sandboxes (❌ Not Suitable)
+- **Use Case**: Execute untrusted AI-generated code
+- **Availability**: Experimental
+- **Limitations**: Focused on code execution, not persistent environments
+- **Perfect For**: Running AI-generated functions in isolation
+
+**Decision**: Use **Containers** for persistent multi-repo workspace
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Cloudflare Worker (Orchestrator)                    │
+│  ┌─────────────────────────────────────────┐       │
+│  │  Durable Object: .do-workspace          │       │
+│  │  - Controls container lifecycle          │       │
+│  │  - Routes requests to container          │       │
+│  │  - Manages state and persistence        │       │
+│  └─────────────────────────────────────────┘       │
+└────────────────┬────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────┐
+│  Cloudflare Container (Development Environment)      │
+│                                                       │
+│  /workspace/                                         │
+│  ├── .do/ (parent repo)                             │
+│  │   ├── README.md, TODO.md, CLAUDE.md              │
+│  │   ├── api/          (submodule)                  │
+│  │   ├── db/           (submodule)                  │
+│  │   ├── ai/           (submodule)                  │
+│  │   ├── ctx/          (submodule)                  │
+│  │   ├── mdx/          (submodule)                  │
+│  │   ├── agent/        (submodule)                  │
+│  │   ├── app/          (submodule)                  │
+│  │   ├── site/         (submodule)                  │
+│  │   ├── sdk/          (submodule)                  │
+│  │   ├── docs/         (submodule)                  │
+│  │   └── do.industries/ (submodule)                 │
+│  │                                                   │
+│  └── mcp-server/                                    │
+│      ├── claude-code-wrapper.ts (MCP server)        │
+│      ├── container-api.ts       (HTTP API)          │
+│      └── types.ts                                   │
+│                                                      │
+│  Services Running:                                   │
+│  - MCP Server (stdio/HTTP)                          │
+│  - Claude Code (via CLI)                            │
+│  - Git daemon                                       │
+│  - Node.js runtime                                  │
+└─────────────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────┐
+│  External Integrations                               │
+│  - VAPI (voice commands via MCP)                    │
+│  - GitHub (webhooks, PRs, issues)                   │
+│  - Devin (task delegation via MCP)                  │
+│  - Claude Desktop (direct MCP connection)           │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## Container Configuration
+
+### Dockerfile
+
+```dockerfile
+FROM node:20-alpine
+
+# Install system dependencies
+RUN apk add --no-cache \
+    git \
+    openssh-client \
+    bash \
+    curl \
+    jq
+
+# Install Claude Code CLI
+RUN npm install -g @anthropic/claude-code-cli
+
+# Create workspace directory
+WORKDIR /workspace
+
+# Clone .do repository with submodules
+ARG GITHUB_TOKEN
+RUN git clone --recurse-submodules https://github.com/dot-do/.do.git \
+    && cd .do \
+    && git config --global credential.helper store
+
+# Install dependencies for MCP server
+WORKDIR /workspace/mcp-server
+COPY package.json package-lock.json ./
+RUN npm install
+
+# Copy MCP server code
+COPY . .
+RUN npm run build
+
+# Expose MCP server port
+EXPOSE 3000
+
+# Start MCP server and keep container running
+CMD ["npm", "start"]
+```
+
+### Container Instance Size
+
+**Development**: `dev` (256 MiB) - Sufficient for MCP server
+**Production**: `basic` (1 GiB) - Recommended for .do workspace
+
+---
+
+## MCP Server Over Claude Code
+
+### Purpose
+Expose Claude Code functionality as MCP tools, enabling:
+- VAPI to assign tasks via voice
+- Devin to coordinate with Claude
+- External AI agents to use Claude Code
+- Programmatic access to multi-repo management
+
+### MCP Tools Exposed
+
+#### 1. `claude_code_execute_task`
+**Description:** Execute coding task in .do workspace
+
+**Parameters:**
+```typescript
+{
+  repository: string              // Which repo to work in
+  task: string                    // Task description
+  context?: {
+    files?: string[]             // Files to focus on
+    relatedIssues?: number[]     // GitHub issue numbers
+    priority?: 'P0' | 'P1' | 'P2'
+  }
+  mode?: 'plan' | 'implement' | 'review'
+  sessionId?: string              // Continue existing session
+}
+```
+
+**Example:**
+```typescript
+await mcp.call('claude_code_execute_task', {
+  repository: 'api',
+  task: 'Add /api/metrics/mrr endpoint with Numerics JSON format',
+  context: {
+    files: ['src/routes/metrics/mrr.ts'],
+    priority: 'P0'
+  },
+  mode: 'implement'
+})
+```
+
+**Returns:**
+```json
+{
+  "sessionId": "session_123",
+  "status": "completed",
+  "changes": {
+    "filesModified": ["src/routes/metrics/mrr.ts", "db/queries/revenue.ts"],
+    "filesCreated": ["tests/metrics/mrr.test.ts"],
+    "linesAdded": 156,
+    "linesDeleted": 8
+  },
+  "output": "Created MRR endpoint with Numerics format...",
+  "nextSteps": ["Run tests", "Update STATUS.md"]
+}
+```
+
+#### 2. `claude_code_review_pr`
+**Description:** Review pull request using Claude Code
+
+**Parameters:**
+```typescript
+{
+  repository: string
+  prNumber: number
+  focus?: string[]  // 'architecture', 'tests', 'security', 'performance'
+}
+```
+
+**Returns:**
+```json
+{
+  "approved": true,
+  "comments": [
+    {
+      "file": "src/routes/metrics/mrr.ts",
+      "line": 42,
+      "severity": "suggestion",
+      "message": "Consider adding input validation for date range"
+    }
+  ],
+  "summary": "PR looks good. All tests passing, documentation updated."
+}
+```
+
+#### 3. `claude_code_update_docs`
+**Description:** Update documentation (CLAUDE.md, TODO.md, STATUS.md)
+
+**Parameters:**
+```typescript
+{
+  repository: string
+  document: 'CLAUDE.md' | 'TODO.md' | 'STATUS.md' | 'README.md'
+  updates: {
+    section?: string      // Which section to update
+    content?: string      // New content
+    operation?: 'append' | 'replace' | 'insert'
+  }
+}
+```
+
+#### 4. `claude_code_create_plan`
+**Description:** Create implementation plan for feature
+
+**Parameters:**
+```typescript
+{
+  feature: string
+  repositories: string[]    // Affected repos
+  targetDate?: string
+}
+```
+
+**Returns:**
+```json
+{
+  "planFile": "notes/2025-10-01-feature-plan.md",
+  "phases": [
+    {
+      "phase": 1,
+      "duration": "2 days",
+      "tasks": ["Setup database schema", "Create API routes"],
+      "dependencies": []
+    }
+  ],
+  "totalEstimate": "1 week"
+}
+```
+
+#### 5. `claude_code_analyze_codebase`
+**Description:** Analyze codebase for patterns, issues, or insights
+
+**Parameters:**
+```typescript
+{
+  repository: string
+  analysisType: 'architecture' | 'dependencies' | 'test-coverage' | 'complexity'
+  scope?: string[]  // Specific directories or files
+}
+```
+
+#### 6. `claude_code_get_workspace_status`
+**Description:** Get current state of .do workspace
+
+**Returns:**
+```json
+{
+  "repositories": {
+    "api": {
+      "branch": "main",
+      "uncommittedChanges": 3,
+      "lastCommit": "Add MRR endpoint",
+      "openPRs": 2
+    },
+    "db": {
+      "branch": "main",
+      "uncommittedChanges": 0,
+      "lastCommit": "Migration for metrics",
+      "openPRs": 0
+    }
+  },
+  "activeSessions": ["session_123", "session_456"],
+  "containerUptime": "2 hours"
+}
+```
+
+---
+
+## MCP Server Implementation
+
+### `claude-code-wrapper.ts`
+
+```typescript
+import { Server } from '@modelcontextprotocol/sdk/server/index.js'
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
+import { exec } from 'child_process'
+import { promisify } from 'util'
+
+const execAsync = promisify(exec)
+
+const WORKSPACE_PATH = '/workspace/.do'
+
+const server = new Server(
+  {
+    name: 'claude-code-container-mcp',
+    version: '1.0.0'
+  },
+  {
+    capabilities: {
+      tools: {}
+    }
+  }
+)
+
+// Tool definitions
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [
+    {
+      name: 'claude_code_execute_task',
+      description: 'Execute coding task in .do workspace via Claude Code',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          repository: {
+            type: 'string',
+            enum: ['api', 'db', 'ai', 'ctx', 'mdx', 'agent', 'app', 'site', 'sdk', 'docs'],
+            description: 'Repository to work in'
+          },
+          task: {
+            type: 'string',
+            description: 'Detailed task description'
+          },
+          context: {
+            type: 'object',
+            properties: {
+              files: { type: 'array', items: { type: 'string' } },
+              relatedIssues: { type: 'array', items: { type: 'number' } },
+              priority: { type: 'string', enum: ['P0', 'P1', 'P2'] }
+            }
+          },
+          mode: {
+            type: 'string',
+            enum: ['plan', 'implement', 'review'],
+            description: 'Execution mode'
+          },
+          sessionId: {
+            type: 'string',
+            description: 'Continue existing session (optional)'
+          }
+        },
+        required: ['repository', 'task']
+      }
+    },
+    {
+      name: 'claude_code_review_pr',
+      description: 'Review pull request using Claude Code',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          repository: { type: 'string' },
+          prNumber: { type: 'number' },
+          focus: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['architecture', 'tests', 'security', 'performance']
+            }
+          }
+        },
+        required: ['repository', 'prNumber']
+      }
+    },
+    {
+      name: 'claude_code_update_docs',
+      description: 'Update documentation files',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          repository: { type: 'string' },
+          document: {
+            type: 'string',
+            enum: ['CLAUDE.md', 'TODO.md', 'STATUS.md', 'README.md']
+          },
+          updates: {
+            type: 'object',
+            properties: {
+              section: { type: 'string' },
+              content: { type: 'string' },
+              operation: {
+                type: 'string',
+                enum: ['append', 'replace', 'insert']
+              }
+            }
+          }
+        },
+        required: ['repository', 'document', 'updates']
+      }
+    },
+    {
+      name: 'claude_code_create_plan',
+      description: 'Create implementation plan for feature',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          feature: { type: 'string' },
+          repositories: {
+            type: 'array',
+            items: { type: 'string' }
+          },
+          targetDate: { type: 'string' }
+        },
+        required: ['feature', 'repositories']
+      }
+    },
+    {
+      name: 'claude_code_analyze_codebase',
+      description: 'Analyze codebase for patterns, issues, or insights',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          repository: { type: 'string' },
+          analysisType: {
+            type: 'string',
+            enum: ['architecture', 'dependencies', 'test-coverage', 'complexity']
+          },
+          scope: {
+            type: 'array',
+            items: { type: 'string' }
+          }
+        },
+        required: ['repository', 'analysisType']
+      }
+    },
+    {
+      name: 'claude_code_get_workspace_status',
+      description: 'Get current state of .do workspace',
+      inputSchema: {
+        type: 'object',
+        properties: {}
+      }
+    }
+  ]
+}))
+
+// Tool execution
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params
+
+  switch (name) {
+    case 'claude_code_execute_task': {
+      const { repository, task, context, mode, sessionId } = args as any
+
+      // Build Claude Code command
+      const repoPath = `${WORKSPACE_PATH}/${repository}`
+      const prompt = buildTaskPrompt(task, context, mode)
+
+      // Execute Claude Code
+      const cmd = sessionId
+        ? `claude-code --session ${sessionId} "${prompt}"`
+        : `claude-code --cwd ${repoPath} "${prompt}"`
+
+      const { stdout, stderr } = await execAsync(cmd)
+
+      // Parse output and extract changes
+      const changes = parseClaudeOutput(stdout)
+
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({
+            sessionId: sessionId || extractSessionId(stdout),
+            status: 'completed',
+            changes,
+            output: stdout,
+            errors: stderr
+          }, null, 2)
+        }]
+      }
+    }
+
+    case 'claude_code_review_pr': {
+      const { repository, prNumber, focus } = args as any
+
+      const repoPath = `${WORKSPACE_PATH}/${repository}`
+      const prompt = `Review pull request #${prNumber}. Focus on: ${focus?.join(', ') || 'general code quality'}`
+
+      const { stdout } = await execAsync(`claude-code --cwd ${repoPath} "${prompt}"`)
+
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({
+            approved: stdout.includes('LGTM') || stdout.includes('Approved'),
+            comments: parseReviewComments(stdout),
+            summary: stdout
+          }, null, 2)
+        }]
+      }
+    }
+
+    case 'claude_code_update_docs': {
+      const { repository, document, updates } = args as any
+
+      const repoPath = `${WORKSPACE_PATH}/${repository}`
+      const prompt = `Update ${document}: ${updates.operation} content in ${updates.section || 'file'}:\n\n${updates.content}`
+
+      const { stdout } = await execAsync(`claude-code --cwd ${repoPath} "${prompt}"`)
+
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({ success: true, output: stdout }, null, 2)
+        }]
+      }
+    }
+
+    case 'claude_code_create_plan': {
+      const { feature, repositories, targetDate } = args as any
+
+      const prompt = `Create implementation plan for: ${feature}\n` +
+        `Repositories: ${repositories.join(', ')}\n` +
+        (targetDate ? `Target: ${targetDate}\n` : '')
+
+      const { stdout } = await execAsync(`claude-code --cwd ${WORKSPACE_PATH} "${prompt}"`)
+
+      return {
+        content: [{
+          type: 'text',
+          text: stdout
+        }]
+      }
+    }
+
+    case 'claude_code_analyze_codebase': {
+      const { repository, analysisType, scope } = args as any
+
+      const repoPath = `${WORKSPACE_PATH}/${repository}`
+      const scopeStr = scope ? `in ${scope.join(', ')}` : ''
+      const prompt = `Analyze ${analysisType} ${scopeStr}`
+
+      const { stdout } = await execAsync(`claude-code --cwd ${repoPath} "${prompt}"`)
+
+      return {
+        content: [{
+          type: 'text',
+          text: stdout
+        }]
+      }
+    }
+
+    case 'claude_code_get_workspace_status': {
+      const repos = ['api', 'db', 'ai', 'ctx', 'mdx', 'agent', 'app', 'site', 'sdk', 'docs']
+      const status: any = { repositories: {}, activeSessions: [] }
+
+      for (const repo of repos) {
+        const repoPath = `${WORKSPACE_PATH}/${repo}`
+        try {
+          const { stdout: branch } = await execAsync(`cd ${repoPath} && git branch --show-current`)
+          const { stdout: uncommitted } = await execAsync(`cd ${repoPath} && git status --short`)
+          const { stdout: lastCommit } = await execAsync(`cd ${repoPath} && git log -1 --pretty=%B`)
+
+          status.repositories[repo] = {
+            branch: branch.trim(),
+            uncommittedChanges: uncommitted.split('\n').filter(Boolean).length,
+            lastCommit: lastCommit.trim()
+          }
+        } catch (e) {
+          status.repositories[repo] = { error: 'Not accessible' }
+        }
+      }
+
+      // Get container uptime
+      const { stdout: uptime } = await execAsync('uptime -p')
+      status.containerUptime = uptime.trim()
+
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify(status, null, 2)
+        }]
+      }
+    }
+
+    default:
+      throw new Error(`Unknown tool: ${name}`)
+  }
+})
+
+function buildTaskPrompt(task: string, context?: any, mode?: string): string {
+  let prompt = task
+
+  if (context?.files) {
+    prompt += `\n\nFocus on files: ${context.files.join(', ')}`
+  }
+
+  if (context?.priority) {
+    prompt += `\n\nPriority: ${context.priority}`
+  }
+
+  if (mode === 'plan') {
+    prompt = `Create implementation plan for: ${prompt}`
+  } else if (mode === 'review') {
+    prompt = `Review and analyze: ${prompt}`
+  }
+
+  return prompt
+}
+
+function parseClaudeOutput(output: string): any {
+  // Parse Claude Code output to extract file changes
+  return {
+    filesModified: [],
+    filesCreated: [],
+    linesAdded: 0,
+    linesDeleted: 0
+  }
+}
+
+function extractSessionId(output: string): string {
+  // Extract session ID from Claude Code output
+  return 'session_' + Date.now()
+}
+
+function parseReviewComments(output: string): any[] {
+  // Parse review comments from Claude Code output
+  return []
+}
+
+// Start server
+async function main() {
+  const transport = new StdioServerTransport()
+  await server.connect(transport)
+  console.error('Claude Code Container MCP Server running')
+}
+
+main().catch(console.error)
+```
+
+---
+
+## Cloudflare Worker + Durable Object
+
+### `worker.ts`
+
+```typescript
+import { DurableObject } from 'cloudflare:workers'
+
+export interface Env {
+  DO_WORKSPACE: DurableObjectNamespace
+  CONTAINER: Container
+}
+
+// Durable Object for persistent .do workspace
+export class DoWorkspace extends DurableObject {
+  private containerInstance: any
+
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url)
+
+    // Start container on first request
+    if (!this.containerInstance) {
+      this.containerInstance = await this.startContainer()
+    }
+
+    // Route to container
+    if (url.pathname.startsWith('/mcp')) {
+      return this.containerInstance.fetch(request)
+    }
+
+    // Health check
+    if (url.pathname === '/health') {
+      return new Response(JSON.stringify({
+        status: 'healthy',
+        container: this.containerInstance ? 'running' : 'stopped'
+      }))
+    }
+
+    return new Response('Not Found', { status: 404 })
+  }
+
+  async startContainer() {
+    // Start Cloudflare Container with .do workspace
+    const container = await this.env.CONTAINER.run({
+      image: 'dot-do/workspace:latest',
+      instanceSize: 'basic',  // 1 GiB
+      environment: {
+        GITHUB_TOKEN: this.env.GITHUB_TOKEN,
+        ANTHROPIC_API_KEY: this.env.ANTHROPIC_API_KEY
+      }
+    })
+
+    return container
+  }
+}
+
+// Worker entrypoint
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    // Get or create Durable Object
+    const id = env.DO_WORKSPACE.idFromName('default')
+    const stub = env.DO_WORKSPACE.get(id)
+
+    // Forward request to Durable Object
+    return stub.fetch(request)
+  }
+}
+```
+
+---
+
+## Deployment
+
+### Step 1: Build Docker Image
+
+```bash
+cd cloudflare-container/
+docker build -t dot-do/workspace:latest .
+docker push dot-do/workspace:latest
+```
+
+### Step 2: Deploy to Cloudflare
+
+```bash
+wrangler deploy
+```
+
+### Step 3: Configure MCP Client
+
+```json
+{
+  "mcpServers": {
+    "claude-code-container": {
+      "type": "http",
+      "url": "https://do-workspace.your-domain.workers.dev/mcp"
+    }
+  }
+}
+```
+
+---
+
+## Use Cases
+
+### 1. VAPI Voice Command
+```
+User: "Have Claude analyze test coverage across all repos"
+
+VAPI → MCP → Container:
+  claude_code_analyze_codebase({
+    repository: '*',
+    analysisType: 'test-coverage'
+  })
+
+Container → Claude Code → Response:
+  "Test coverage varies: api (78%), db (92%), ai (65%)..."
+```
+
+### 2. Devin Coordination
+```
+Devin completes implementation → Creates PR
+
+Devin → MCP → Container:
+  claude_code_review_pr({
+    repository: 'api',
+    prNumber: 124,
+    focus: ['tests', 'architecture']
+  })
+
+Container → Claude Code → Review:
+  {
+    approved: true,
+    comments: [...],
+    summary: "LGTM - all tests passing"
+  }
+```
+
+### 3. Automated Status Check
+```
+Cron → MCP → Container:
+  claude_code_get_workspace_status()
+
+Container → Response:
+  {
+    repositories: { api: {...}, db: {...} },
+    activeSessions: [],
+    containerUptime: "up 4 hours"
+  }
+```
+
+---
+
+## Success Metrics
+
+- [ ] Container successfully runs with all 12 repos
+- [ ] MCP server responds to all 6 tools
+- [ ] Claude Code executes tasks in container
+- [ ] VAPI can assign work via MCP
+- [ ] Devin can coordinate via MCP
+- [ ] <2 second MCP tool response time
+- [ ] 99.9%+ container uptime
+
+---
+
+## Related Documentation
+
+- [DEVIN-INTEGRATION.md](DEVIN-INTEGRATION.md) - Devin AI integration
+- [VAPI-INTEGRATION.md](VAPI-INTEGRATION.md) - Voice AI
+- [TODO.md](TODO.md) - Project plan
+
+---
+
+**Created:** 2025-10-01
+**Priority:** P0 - Foundation
+**Dependencies:** Cloudflare Containers access (public beta)

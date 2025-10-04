@@ -1,0 +1,351 @@
+# Durable Objects SQLite Research Findings
+
+**Date:** 2025-10-02
+**Status:** Research Complete, Ready for Implementation
+
+## Executive Summary
+
+PayloadCMS currently uses `@payloadcms/db-d1-sqlite` for Cloudflare D1 database. This research explores adding support for Durable Objects SQLite, which offers **zero-latency queries** by running SQLite in the same thread as application code.
+
+## Key Findings
+
+### 1. Durable Objects SQLite (GA April 2025)
+
+**Capabilities:**
+- Zero-latency queries (runs in same thread, no network calls)
+- 10GB storage per Durable Object
+- Point-in-time recovery (30-day history)
+- Synchronous query execution
+- Accessed via `ctx.storage.sql` API
+
+**Best Use Cases:**
+- Real-time collaboration features
+- Distributed systems requiring strong consistency
+- Ultra-low latency applications
+- Per-user/per-tenant databases
+
+### 2. D1 vs Durable Objects SQLite
+
+| Feature | D1 | DO SQLite |
+|---------|----|-----------|
+| Latency | Network latency (~5-50ms) | Zero latency (same-thread) |
+| Architecture | Managed database service | Compute + storage primitive |
+| Scaling | Automatic | Per-DO instance |
+| Use Case | Stateless apps | Stateful, real-time apps |
+| API | HTTP REST API | Storage API |
+| Multi-region | Global read replicas | Single-region (but fast) |
+
+**Important:** D1 is actually built on top of DO SQLite, but provides a managed service layer.
+
+### 3. PayloadCMS Adapter Architecture
+
+**Current Setup:**
+```
+app/
+├── src/payload.config.ts
+│   └── db: sqliteD1Adapter({ binding: env.D1 })
+└── wrangler.jsonc
+    └── d1_databases: [{ binding: "D1", ... }]
+```
+
+**Adapter Pattern:**
+- All PayloadCMS database adapters extend base patterns
+- D1 adapter extends `BaseSQLiteAdapter` + `SQLiteDrizzleAdapter`
+- Uses Drizzle ORM under the hood
+- Key files: `index.ts`, `connect.ts`, `execute.ts`, `types.ts`
+
+### 4. Critical Code: D1 Adapter Implementation
+
+**connect.ts:**
+```typescript
+export const connect: Connect = async function connect(
+  this: SQLiteD1Adapter,
+  options = { hotReload: false }
+) {
+  // Uses drizzle-orm/d1
+  this.drizzle = drizzle(this.binding, {
+    logger: this.logger || false,
+    schema: this.schema
+  })
+
+  this.client = this.drizzle.$client as any
+}
+```
+
+**execute.ts (Result Mapping):**
+```typescript
+const mapToLibSql = (query: SQLiteRaw<D1Result<unknown>>): any => {
+  const execute = query.execute
+  query.execute = async () => {
+    const result: D1Result = await execute()
+    const resultLibSQL = {
+      columns: undefined,
+      columnTypes: undefined,
+      lastInsertRowid: BigInt(result.meta.last_row_id),
+      rows: result.results as any[],
+      rowsAffected: result.meta.rows_written,
+    }
+    return Object.assign(result, resultLibSQL)
+  }
+  return query
+}
+```
+
+**Key Insight:** The adapter's main job is to:
+1. Connect Drizzle to the database binding
+2. Map database-specific result formats to libSQL format
+3. Provide transaction/migration support
+
+### 5. Drizzle Durable Objects Support
+
+**Official Support:** ✅ Full support via `durable-sqlite` driver
+
+**Key Differences from D1:**
+```typescript
+// D1 Drizzle
+import { drizzle } from 'drizzle-orm/d1'
+const db = drizzle(binding)
+
+// Durable Objects Drizzle
+import { drizzle } from 'drizzle-orm/durable-sqlite'
+const db = drizzle(storage) // DurableObjectStorage, not binding
+```
+
+**Migration Pattern:**
+```typescript
+export class PayloadDatabase extends DurableObject {
+  constructor(state: DurableObjectState, env: Env) {
+    super(state, env)
+
+    // Migrations run on cold start
+    state.blockConcurrencyWhile(async () => {
+      const db = drizzle(state.storage)
+      await migrate(db, { migrationsFolder: './drizzle' })
+    })
+  }
+}
+```
+
+**Critical:** Migrations must be bundled as .sql files with Worker code.
+
+### 6. Durable Object SQLite API
+
+**Access Pattern:**
+```typescript
+export class MyDurableObject extends DurableObject {
+  constructor(state, env) {
+    this.storage = state.storage
+    this.sql = state.storage.sql // SQLite API
+  }
+
+  async query(sql, params) {
+    return await this.sql.exec(sql, ...params)
+  }
+}
+```
+
+**Methods:**
+- `sql.exec(query, ...bindings)` - Execute SQL
+- `sql.all(query)` - Get all rows
+- `sql.get(query)` - Get single row
+- `sql.prepare(query)` - Prepared statements
+
+### 7. Result Format Comparison
+
+**D1 Result:**
+```typescript
+{
+  results: [...],
+  meta: {
+    last_row_id: number,
+    rows_written: number,
+    rows_read: number
+  }
+}
+```
+
+**DO SQLite Result:** (Need to verify - appears to be similar to D1)
+```typescript
+{
+  rows: [...],
+  lastInsertRowid: bigint,
+  rowsAffected: number
+}
+```
+
+**Question:** Do we need result mapping for DO SQLite?
+- If DO SQLite returns libSQL-compatible results natively, NO mapping needed
+- If it returns D1-like results, YES use same mapping pattern
+- **Action:** Test and verify result format
+
+## Implementation Strategy
+
+### Phase 1: Custom Adapter (Similar to D1 Adapter)
+
+**File Structure:**
+```
+app/src/db-adapters/db-do-sqlite/
+├── index.ts          # Main adapter (clone from db-d1-sqlite)
+├── connect.ts        # Connect using drizzle/durable-sqlite
+├── execute.ts        # Map results if needed
+├── types.ts          # TypeScript definitions
+└── README.md         # Usage docs
+```
+
+**Key Changes from D1 Adapter:**
+1. Import from `drizzle-orm/durable-sqlite` not `drizzle-orm/d1`
+2. Accept `DurableObjectStorage` instead of `D1Database`
+3. Update types: `SQLiteDOAdapter` instead of `SQLiteD1Adapter`
+4. Test result format and add mapping if needed
+
+### Phase 2: Durable Object Class
+
+**Create:**
+```typescript
+// src/durable-objects/PayloadDatabase.ts
+export class PayloadDatabase extends DurableObject {
+  private db: DrizzleSqliteDODatabase
+
+  constructor(state: DurableObjectState, env: Env) {
+    super(state, env)
+
+    // Initialize Drizzle
+    this.db = drizzle(state.storage)
+
+    // Run migrations on cold start
+    state.blockConcurrencyWhile(async () => {
+      await migrate(this.db, { migrationsFolder: './drizzle' })
+    })
+  }
+
+  // Expose query methods
+  async query(sql: string, params: any[]) {
+    return await this.db.execute(sql(sql), params)
+  }
+
+  async transaction(fn: (tx) => Promise<void>) {
+    return await this.db.transaction(fn)
+  }
+}
+```
+
+### Phase 3: Dual Database Support
+
+**Strategy:**
+```typescript
+// payload.config.ts
+const DATABASE_BACKEND = process.env.DATABASE_BACKEND || 'D1'
+
+const dbAdapter = DATABASE_BACKEND === 'DO_SQLITE'
+  ? doSqliteAdapter({ storage: cloudflare.env.PAYLOAD_DB.storage })
+  : sqliteD1Adapter({ binding: cloudflare.env.D1 })
+```
+
+**Benefits:**
+- A/B test performance
+- Gradual migration
+- Rollback capability
+
+### Phase 4: Migration Tooling
+
+**Script:** `scripts/migrate-d1-to-do.ts`
+```typescript
+// 1. Export all data from D1
+const d1Data = await exportFromD1()
+
+// 2. Import into DO SQLite
+const doStub = env.PAYLOAD_DB.get(id)
+await doStub.importData(d1Data)
+
+// 3. Verify data integrity
+await verifyMigration()
+```
+
+## Architecture Decisions
+
+### Decision 1: Granularity
+
+**Options:**
+1. **Single Global DO** - One PayloadDatabase for entire app
+2. **Per-User DO** - Each user gets own database instance
+3. **Hybrid** - Global metadata + per-collection DOs
+
+**Recommendation:** Start with **Single Global DO** for simplicity
+- Easiest migration from D1
+- Maintains current data model
+- Can refactor to per-user later if needed
+
+### Decision 2: Migration Strategy
+
+**Options:**
+1. **Big Bang** - Switch all at once
+2. **Dual Support** - Run both, gradually shift
+3. **Feature Flag** - A/B test per request
+
+**Recommendation:** **Dual Support** with feature flag
+- Safest approach
+- Performance comparison
+- Easy rollback
+
+### Decision 3: When to Use DO SQLite vs D1
+
+**Use DO SQLite When:**
+- ✅ Real-time collaboration needed
+- ✅ Sub-millisecond latency required
+- ✅ Strong consistency critical
+- ✅ Per-tenant isolation beneficial
+- ✅ Want point-in-time recovery
+
+**Stick with D1 When:**
+- ✅ Stateless application architecture
+- ✅ Global read replicas needed
+- ✅ Managed service preferred
+- ✅ Multi-region distribution important
+- ✅ HTTP API convenience desired
+
+**For PayloadCMS Admin:** D1 is likely sufficient unless:
+- Heavy concurrent editing (real-time)
+- Need transaction-level consistency
+- Want per-user database isolation
+
+## Open Questions
+
+1. **DO SQLite Result Format:** Does it match libSQL natively or need mapping?
+   - **Action:** Test query results
+
+2. **Migration Complexity:** Can we just copy tables or need data transformation?
+   - **Action:** Test migration with sample data
+
+3. **Performance Gains:** What's actual latency improvement for PayloadCMS?
+   - **Action:** Benchmark D1 vs DO SQLite
+
+4. **Bundle Size:** How much does .sql migration files add to Worker bundle?
+   - **Action:** Measure bundle size impact
+
+5. **Multi-tenancy:** Should we support per-tenant DOs from start?
+   - **Decision:** No, start simple with single DO
+
+## Next Steps
+
+1. ✅ Complete research (DONE)
+2. ⏭️ Create adapter skeleton
+3. ⏭️ Implement connect() with durable-sqlite
+4. ⏭️ Test result format and add mapping if needed
+5. ⏭️ Create Durable Object class
+6. ⏭️ Update wrangler.jsonc
+7. ⏭️ Test with sample PayloadCMS instance
+8. ⏭️ Performance benchmark
+9. ⏭️ Documentation and examples
+
+## References
+
+- [Cloudflare DO SQLite Blog](https://blog.cloudflare.com/sqlite-in-durable-objects/)
+- [Drizzle DO Docs](https://orm.drizzle.team/docs/connect-cloudflare-do)
+- [PayloadCMS D1 Adapter](https://github.com/payloadcms/payload/tree/main/packages/db-d1-sqlite)
+- [DO SQLite API Docs](https://developers.cloudflare.com/durable-objects/api/sqlite-storage-api/)
+
+---
+
+**Researched by:** Claude Code
+**Implementation Ready:** Yes
+**Estimated Timeline:** 9-12 days

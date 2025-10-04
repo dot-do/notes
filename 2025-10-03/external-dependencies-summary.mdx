@@ -1,0 +1,249 @@
+# External Dependencies Analysis - api.services
+
+**Analysis Date:** 2025-10-03
+**Repository:** api.services (Legacy monolith being decomposed into workers/)
+**Status:** 8/8 core microservices deployed (~13,000 LOC migrated)
+
+## Executive Summary
+
+The api.services repository relies on **19 external dependencies** across payment processing, authentication, AI/ML, email delivery, web scraping, voice AI, EDI processing, and data APIs. Of these:
+
+- **8 services** already have internal equivalents in the workers/ microservices architecture
+- **11 services** need evaluation for migration or replacement
+- **7 services** are critical paid services that generate ongoing costs
+- **4 services** can be built internally with moderate effort
+- **6 services** have free tiers or are free APIs
+
+### Cost Analysis
+
+**Current Monthly Cost Estimate:** $1,000-$8,000/mo (highly variable)
+**Optimized Monthly Cost Estimate:** $700-$5,000/mo (30-40% reduction)
+**Potential Savings:** $300-3,000/mo by migrating to Cloudflare native services
+
+## Priority 1: Immediate Cost Reduction Opportunities
+
+### 1. Browserbase → Cloudflare Browser Rendering ⭐
+- **Current Cost:** $49/mo (100 sessions)
+- **New Cost:** $5/million requests (99% cost reduction)
+- **Effort:** 2-3 days
+- **Status:** Browser Rendering binding ALREADY configured in wrangler.jsonc
+- **Impact:** Minimal code changes, massive cost savings
+
+**Action:** Migrate `api/clients/browserbase.ts` to use Cloudflare Puppeteer API
+
+### 2. Firecrawl → Internal Scraping Service ⭐
+- **Current Cost:** $200/mo (1,000 scrapes)
+- **New Cost:** $5/million requests (98% cost reduction)
+- **Effort:** 3-5 days
+- **Status:** Can use Cloudflare Browser Rendering + custom extraction
+- **Impact:** More control, dramatic cost savings at scale
+
+**Action:** Build scraping service using CF Browser Rendering
+
+## Priority 2: Evaluate Enterprise Features
+
+### WorkOS - SSO/SCIM/Audit Logs
+- **Current Cost:** Free tier or $50-500/mo
+- **Internal Alternative:** workers/auth (basic auth only)
+- **Migration Effort:** 3-5 days for full SSO/SCIM support
+- **Decision:** Keep if enterprise SSO needed, migrate if only basic auth
+
+**Action:** Audit enterprise SSO/SCIM usage. workers/auth already has GitHub OAuth + API keys.
+
+## Keep As-Is (Critical Services)
+
+### Payment Processing
+1. **Stripe** - Essential for payments, no viable alternative
+   - Cost: 2.9% + 30¢ per transaction
+   - Status: workers/webhooks handles Stripe webhooks
+   - Keep: YES
+
+### Email Delivery
+2. **Resend** - Excellent value, reliable delivery
+   - Cost: Free 3,000 emails/month, then $0.001 per email
+   - Status: workers/email fully integrated
+   - Keep: YES
+
+### AI/ML Services
+3. **OpenAI** - Best models, already abstracted via foundation packages
+   - Cost: $30/1M input tokens (GPT-4)
+   - Status: ai-generation, ai-embeddings packages provide abstraction
+   - Keep: YES (use Workers AI for simple tasks)
+
+4. **Anthropic** - Best reasoning, already abstracted
+   - Cost: $3/1M input tokens (Claude 3.5 Sonnet)
+   - Status: ai-generation package provides abstraction
+   - Keep: YES
+
+5. **Cloudflare Workers AI** - Native service, extremely cheap
+   - Cost: $0.011 per 1,000 Neurons
+   - Status: 5 embedding models, 10+ LLMs integrated
+   - Keep: YES (use for cost-sensitive workloads)
+
+### Authentication & Integrations
+6. **GitHub API** - Free tier sufficient, OAuth integration
+   - Cost: Free (5,000 requests/hour)
+   - Status: workers/webhooks handles GitHub webhooks
+   - Keep: YES
+
+## Evaluate Usage (Low Priority)
+
+### Voice AI
+- **VAPI** - Voice AI agents (support, sales, assistant)
+  - Cost: $0.05-0.10 per minute
+  - Alternative: Build with Twilio + speech-to-text + LLM + text-to-speech (10-15 days)
+  - Decision: Keep if critical, deprecate if experimental
+
+### EDI Processing
+- **Stedi** - EDI transaction processing (850, 856, 810)
+  - Cost: $0.01-0.10 per document
+  - Alternative: Build EDI parser (15-20 days)
+  - Decision: Keep if low volume, build internal if high volume
+
+### Integration Platforms
+- **Composio** - Integration platform webhooks
+  - Cost: Unknown
+  - Alternative: Build specific integrations with workers/webhooks
+  - Decision: Audit usage, replace with targeted integrations
+
+- **Zapier** - Integration catalog import
+  - Cost: Free tier (100 tasks/month)
+  - Alternative: Build specific integrations
+  - Decision: Keep for catalog import, build targeted integrations
+
+## Free Data APIs (Keep As-Is)
+
+1. **npm Registry API** - Package metadata (free)
+2. **PyPI API** - Python packages (free)
+3. **Schema.org** - Vocabulary data (free)
+4. **O*NET Web Services** - Occupation data (free with registration)
+5. **NAICS API** - Industry classifications (free)
+6. **Google AI (Gemini)** - Optional AI provider (pay-per-use)
+
+## Workers Services Available
+
+### Core Microservices (8/8 Complete)
+1. **gateway** - API routing and rate limiting (1,349 LOC)
+2. **db** - Database abstraction - PostgreSQL + ClickHouse (1,909 LOC)
+3. **auth** - GitHub OAuth + API keys (2,669 LOC)
+4. **schedule** - Cron jobs and scheduled tasks (1,925 LOC)
+5. **webhooks** - External webhooks: Stripe, WorkOS, GitHub, Resend (2,114 LOC)
+6. **email** - Transactional emails via Resend (complete)
+7. **mcp** - Model Context Protocol server (complete)
+8. **queue** - Message queue processing (complete)
+
+**Total:** ~13,000 LOC migrated from api.services monolith
+**Status:** All services production-ready with comprehensive tests
+
+## Recommended Action Plan
+
+### Week 1: Immediate Cost Reduction
+- [ ] Migrate Browserbase to Cloudflare Browser Rendering (2-3 days)
+- [ ] Build internal scraping service to replace Firecrawl (3-5 days)
+- **Expected Savings:** $200-250/mo
+
+### Week 2: Enterprise Feature Audit
+- [ ] Audit WorkOS enterprise SSO/SCIM usage
+- [ ] Evaluate VAPI voice AI usage and ROI
+- [ ] Check Stedi EDI transaction volume
+- [ ] Audit Composio integration usage
+- **Decision:** Keep, migrate, or deprecate based on usage
+
+### Week 3-4: Optional Migrations
+- [ ] Implement SSO/SCIM in workers/auth if WorkOS not needed (3-5 days)
+- [ ] Replace Composio with targeted integrations if usage is low
+- **Expected Savings:** $50-500/mo depending on migrations
+
+## Technical Implementation Notes
+
+### Cloudflare Browser Rendering Migration
+```typescript
+// Current: Browserbase
+import { BrowserbaseClient } from './api/clients/browserbase'
+const client = new BrowserbaseClient(apiKey)
+const session = await client.createSession()
+const browser = await puppeteer.connect({ browserWSEndpoint: session.wsEndpoint })
+
+// New: Cloudflare Browser Rendering
+const browser = await puppeteer.launch(env.BROWSER)
+// Same Puppeteer API, dramatically cheaper
+```
+
+### Firecrawl Replacement Architecture
+```typescript
+// Internal scraping service (new workers/scraping/)
+export class ScrapingService {
+  async scrape(url: string, options: ScrapeOptions) {
+    const browser = await puppeteer.launch(this.env.BROWSER)
+    const page = await browser.newPage()
+    await page.goto(url)
+
+    // Custom extraction logic
+    const markdown = await this.convertToMarkdown(page)
+    const structured = await this.extractStructured(page, options.schema)
+
+    return { markdown, structured }
+  }
+}
+```
+
+### AI Cost Optimization Strategy
+```typescript
+// Use Workers AI for simple tasks (10-100x cheaper)
+const isSimpleTask = tokenCount < 1000 && !requiresReasoning
+const provider = isSimpleTask ? 'cloudflare' : 'openai'
+
+// Foundation packages already support all providers
+await generateText({
+  model: provider === 'cloudflare'
+    ? '@cf/meta/llama-3.1-8b-instruct'
+    : 'gpt-4-turbo-preview',
+  prompt
+})
+```
+
+## Key Insights
+
+1. **Cloudflare Native Services = Major Savings**
+   - Browser Rendering replaces Browserbase (99% cost reduction)
+   - Workers AI replaces OpenAI for simple tasks (90-99% cost reduction)
+   - Already configured and ready to use
+
+2. **Foundation Packages Enable Flexibility**
+   - ai-generation, ai-embeddings, ai-chat, ai-models
+   - Zero duplicate code (~250 lines eliminated)
+   - Easy to switch providers based on cost/quality tradeoffs
+
+3. **Workers Architecture = Independent Scaling**
+   - 8/8 core services complete and production-ready
+   - Can add scraping, browser, and integration services
+   - Each service scales independently
+
+4. **Strategic Dependencies = Keep What Works**
+   - Stripe: No alternative for payment processing
+   - Resend: Excellent value for email delivery
+   - OpenAI/Anthropic: Best models, use Workers AI for simple tasks
+   - Free APIs: Schema.org, O*NET, NAICS, npm, PyPI
+
+## Conclusion
+
+The api.services repository can reduce external dependency costs by **30-40% ($300-3,000/mo)** by:
+1. Migrating browser automation to Cloudflare Browser Rendering
+2. Building internal scraping service
+3. Using Workers AI for simple AI tasks
+4. Evaluating enterprise features (SSO, voice, EDI)
+
+The workers/ microservices architecture provides a solid foundation with 8/8 core services complete. Additional services (scraping, browser, integrations) can be added as needed with minimal effort.
+
+**Next Steps:**
+1. Implement browser automation and scraping migrations (Week 1)
+2. Audit enterprise feature usage (Week 2)
+3. Optimize AI provider selection based on task complexity
+4. Continue monitoring costs and usage patterns
+
+---
+
+**Related Documentation:**
+- [Detailed JSON Analysis](/Users/nathanclevenger/Projects/.do/notes/2025-10-03-external-dependencies-analysis.json)
+- [Workers Architecture](/Users/nathanclevenger/Projects/.do/workers/CLAUDE.md)
+- [Root Architecture](/Users/nathanclevenger/Projects/.do/CLAUDE.md)

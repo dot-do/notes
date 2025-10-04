@@ -1,0 +1,1679 @@
+# Repository Audit & Optimization Report
+
+**Date:** October 3, 2025
+**Subagent:** B1 - Repository Audit & Optimization
+**Status:** Complete
+**Research Phase:** Phase 2 - Content Preparation
+
+---
+
+## Executive Summary
+
+This comprehensive audit covers **all .do ecosystem repositories** (35 total, including 15 git submodules) to optimize them for maximum discoverability and backlink acceptance. The audit focuses on README quality, GitHub metadata, SEO optimization, and GitHub Pages deployment opportunities.
+
+### Key Findings
+
+- **Total Repositories:** 35 (15 submodules + 20 directories)
+- **With Git Remotes:** 13 repositories
+- **README Exists:** 29 repositories (83%)
+- **Comprehensive READMEs (500+ lines):** 11 repositories (31%)
+- **Minimal READMEs (<100 lines):** 14 repositories (40%)
+- **Missing READMEs:** 6 repositories (17%)
+
+### High-Priority Optimizations
+
+1. **Core Infrastructure Repos (8):** Excellent documentation, need metadata optimization
+2. **MDX Content Repos (10):** Minimal READMEs, need expansion
+3. **SDK Repository (1):** 596-line README, needs optimization templates
+4. **Workers Repository (1):** 214-line README, needs enhanced microservices documentation
+
+### Quick Wins (20 immediate improvements identified)
+
+---
+
+## 1. Repository Inventory & Categorization
+
+### Legend
+- **Priority:** H (High), M (Medium), L (Low)
+- **README Quality:** 1-10 scale (1=missing, 10=comprehensive)
+- **Type:** Core Infrastructure, MDX Content, Supporting, Experimental
+- **Status:** Active, Migration Target, Being Split
+
+### 1.1 Core Infrastructure Repositories (8)
+
+| Repository | Type | Priority | README Lines | Quality (1-10) | Status | Remote URL |
+|-----------|------|----------|--------------|----------------|---------|------------|
+| **agent** | Durable Objects AI agent | H | 468 | 9 | Active | https://github.com/dot-do/agent.git |
+| **ai** | AI features package | H | 298 | 8 | Active | https://github.com/dot-do/ai.git |
+| **api** | API services (Hono) | H | 372 | 9 | Active | https://github.com/dot-do/api.git |
+| **app** | CMS & admin (Payload) | H | 99 | 6 | Active | https://github.com/dot-do/app.git |
+| **db** | Database layer (Drizzle) | H | 592 | 10 | Active | https://github.com/dot-do/db.git |
+| **do.industries** | Business ontology | M | 259 | 7 | Active | https://github.com/dot-do/do.industries.git |
+| **sdk** | TypeScript SDKs (121 pkgs) | H | 596 | 9 | Active | https://github.com/dot-do/sdk.git |
+| **site** | Public websites | M | 86 | 5 | Active | https://github.com/dot-do/site.git |
+
+**Analysis:**
+- **Strengths:** Excellent CLAUDE.md files, comprehensive architecture documentation
+- **Gaps:** GitHub metadata (topics, descriptions, About sections) not optimized
+- **Opportunities:** GitHub Pages for api, db, sdk (API docs, database guides, package docs)
+
+### 1.2 Workers Microservices (1 monorepo)
+
+| Repository | Type | Priority | README Lines | Quality (1-10) | Status | Notes |
+|-----------|------|----------|--------------|----------------|---------|-------|
+| **workers** | 30+ microservices | H | 214 | 7 | Production Ready | 8/8 core services deployed, ~13K LOC |
+
+**Analysis:**
+- **Strengths:** Complete CLAUDE.md (comprehensive), 8/8 core services deployed, 95+ tests
+- **Gaps:** README needs expansion with service catalog, architecture diagrams
+- **Opportunities:** GitHub Pages for API reference, service documentation, integration guides
+
+### 1.3 MDX Content Repositories (10)
+
+| Repository | Type | Priority | README Lines | Quality (1-10) | Status | Remote URL |
+|-----------|------|----------|--------------|----------------|---------|------------|
+| **agents** | AI agent definitions | M | 1 | 1 | Active | Submodule |
+| **apps** | Application definitions | M | 80 | 5 | Active | Submodule |
+| **auth** | Auth configuration | M | 529 | 8 | Active | Directory |
+| **brands** | Brand identity | M | 79 | 5 | Active | Submodule |
+| **business** | Business/org definitions | M | 3 | 2 | Active | https://github.com/dot-do/business.git |
+| **functions** | Function definitions | M | 15 | 3 | Active | Submodule |
+| **integrations** | Integration configs | M | 3 | 2 | Active | Directory |
+| **schemas** | Schema definitions | M | 1 | 1 | Active | Directory |
+| **services** | Service definitions | M | 1 | 1 | Active | Directory |
+| **sources** | Data source defs | M | 1 | 1 | Active | Directory |
+| **workflows** | Workflow patterns | M | 1 | 1 | Active | Directory |
+
+**Analysis:**
+- **Strengths:** All have CLAUDE.md files with schema documentation
+- **Gaps:** READMEs are minimal (1-80 lines), need expansion with examples
+- **Opportunities:** Template-based README generation, MDX example showcase
+
+### 1.4 Supporting Repositories (9)
+
+| Repository | Type | Priority | README Lines | Quality (1-10) | Status | Notes |
+|-----------|------|----------|--------------|----------------|---------|-------|
+| **admin** | Admin tools | L | 357 | 8 | Active | Detailed implementation |
+| **api.services** | Legacy monolith | M | 731 | 10 | Being decomposed | Comprehensive docs |
+| **businesses** | Business entities | L | 276 | 7 | Active | Good examples |
+| **ctx** | Legacy entities | L | 93 | 5 | Being split | Migration in progress |
+| **data-ingestion** | R2 ingestion platform | M | 387 | 8 | Active | Complete architecture |
+| **docs** | Documentation site | M | 155 | 7 | Active | Fumadocs + Next.js |
+| **growth** | Growth strategies | M | 1,869 | 10 | Active | Comprehensive GTM |
+| **mdx** | MDX ecosystem tooling | M | 172 | 7 | Active | Monorepo structure |
+| **packages** | Shared npm packages | M | 348 | 8 | Active | Turborepo setup |
+
+**Analysis:**
+- **Strengths:** Most have comprehensive documentation
+- **Gaps:** Some need GitHub metadata optimization
+- **Opportunities:** GitHub Pages for docs, growth playbooks, package catalog
+
+### 1.5 Project Portfolio (1)
+
+| Repository | Type | Priority | README Lines | Quality (1-10) | Status | Notes |
+|-----------|------|----------|--------------|----------------|---------|-------|
+| **projects** | Project portfolio | M | 33 | 4 | Active | Contains submodules |
+
+**Analysis:**
+- **Strengths:** Clean portfolio organization
+- **Gaps:** README needs project descriptions, status matrix
+- **Opportunities:** Showcase page, project cards with screenshots
+
+### 1.6 Experimental/Transitional (5)
+
+| Repository | Type | Priority | README Lines | Quality (1-10) | Status | Notes |
+|-----------|------|----------|--------------|----------------|---------|-------|
+| **docs-opennext-failed** | Failed deployment | L | 45 | 3 | Archived | OpenNext migration failed |
+| **legacy** | Legacy code | L | 0 | 1 | Being migrated | No README |
+| **plans** | Planning docs | L | 0 | 1 | Internal | No README |
+| **poc** | Proof of concepts | L | 0 | 1 | Experimental | No README |
+| **tmp** | Temporary code | L | 0 | 1 | Transitional | No README |
+| **tests** | Test infrastructure | L | 0 | 1 | Supporting | No README |
+
+**Analysis:**
+- **Strengths:** Clear separation of experimental/transitional code
+- **Gaps:** No READMEs (intentional for most)
+- **Opportunities:** Document migration paths, archive strategy
+
+---
+
+## 2. README Quality Assessment
+
+### 2.1 Top 10 Best READMEs (Quality Score 8-10)
+
+1. **growth** (1,869 lines, Score: 10) - Comprehensive GTM strategy, metrics, playbooks
+2. **api.services** (731 lines, Score: 10) - Complete architecture, API docs, MCP tools
+3. **db** (592 lines, Score: 10) - Database schema, migrations, query patterns
+4. **sdk** (596 lines, Score: 9) - 121 packages, architecture, dependency layers
+5. **agent** (468 lines, Score: 9) - Phase-wise generation, Durable Objects
+6. **api** (372 lines, Score: 9) - Hono-based API, comprehensive routes
+7. **data-ingestion** (387 lines, Score: 8) - R2-first platform, architecture
+8. **admin** (357 lines, Score: 8) - Admin tools, detailed implementation
+9. **packages** (348 lines, Score: 8) - Turborepo, Changesets, publishing
+10. **ai** (298 lines, Score: 8) - Multi-provider AI, embeddings, generation
+
+**Common Characteristics:**
+- Clear architecture overview with ASCII diagrams
+- Comprehensive command reference
+- Code examples and usage patterns
+- Development workflow documentation
+- Testing and deployment sections
+- Links to related repositories
+
+### 2.2 Needs Improvement (Quality Score 1-4)
+
+| Repository | Lines | Score | Primary Issue | Action Needed |
+|-----------|-------|-------|---------------|---------------|
+| **agents** | 1 | 1 | No content | Template + 5 examples |
+| **schemas** | 1 | 1 | No content | Schema catalog + examples |
+| **services** | 1 | 1 | No content | Service directory + API docs |
+| **sources** | 1 | 1 | No content | Data source catalog |
+| **workflows** | 1 | 1 | No content | Workflow patterns + diagrams |
+| **business** | 3 | 2 | Minimal | Business ontology + examples |
+| **integrations** | 3 | 2 | Minimal | Integration guide + configs |
+| **functions** | 15 | 3 | Basic only | Function catalog + signatures |
+| **projects** | 33 | 4 | List only | Project showcase + status |
+| **docs-opennext-failed** | 45 | 3 | Failure doc | Archive note + lessons learned |
+
+---
+
+## 3. GitHub Metadata Optimization
+
+### 3.1 Essential Metadata Checklist
+
+For each repository, optimize:
+
+#### Repository Settings
+- [ ] **Repository Name:** Clear, descriptive, keyword-rich
+- [ ] **Description:** Compelling one-liner (max 120 chars) with keywords
+- [ ] **Website URL:** Link to docs, demo, or main site
+- [ ] **Topics (5-8):** Relevant, searchable keywords
+- [ ] **License:** MIT or Apache 2.0 (open source signal)
+- [ ] **Social Preview Image:** Custom GitHub card (1280x640px)
+
+#### README.md Structure
+- [ ] **H1 Title:** Keyword-rich, descriptive
+- [ ] **Badges:** Build status, coverage, version, downloads
+- [ ] **Quick Start:** 3-5 commands to get running
+- [ ] **Features:** Bullet list of capabilities
+- [ ] **Installation:** Multiple package managers
+- [ ] **Usage Examples:** Code snippets with syntax highlighting
+- [ ] **API Reference:** Link or embed
+- [ ] **Contributing:** Guidelines for contributors
+- [ ] **License:** Clear license statement
+
+### 3.2 Topic Tag Taxonomy
+
+**Standardized Topics by Repository Type:**
+
+#### Core Infrastructure Repos
+```
+api:           cloudflare-workers, hono, api, rest, rpc, typescript
+db:            drizzle-orm, postgresql, database, migrations, d1
+ai:            artificial-intelligence, openai, anthropic, embeddings, llm
+agent:         durable-objects, ai-agent, autonomous, code-generation
+app:           payloadcms, cms, nextjs, admin, cloudflare-pages
+sdk:           typescript, sdk, npm-package, developer-tools
+site:          nextjs, static-site, turborepo, websites
+workers:       microservices, cloudflare-workers, serverless, rpc
+```
+
+#### MDX Content Repos
+```
+agents:        ai-agent, mdx, velite, definitions
+apps:          application, metadata, mdx, content
+auth:          authentication, oauth, api-keys, security
+brands:        brand-identity, design, mdx
+business:      business-ontology, organization, mdx
+functions:     function-definitions, capabilities, mdx
+integrations:  api-integration, webhooks, configuration
+schemas:       schema, data-model, validation, mdx
+services:      service-definitions, api, mdx
+sources:       data-sources, api, mdx
+workflows:     workflow-automation, orchestration, mdx
+```
+
+#### Supporting Repos
+```
+docs:          documentation, fumadocs, nextjs, mdx
+growth:        growth-hacking, marketing, gtm, strategy
+mdx:           mdx, markdown, content-management, tooling
+packages:      monorepo, turborepo, npm, typescript
+projects:      portfolio, showcase, examples
+```
+
+### 3.3 Repository Description Templates
+
+**Core Infrastructure:**
+```
+[Repo Name] - [Key Feature] for the .do platform. Built with [Tech Stack]. [Unique Value Prop].
+
+Examples:
+- "Database layer with Drizzle ORM, PostgreSQL, and pgvector embeddings. Type-safe queries and migrations."
+- "121 TypeScript SDK packages in 5-layer architecture. Zero-dependency foundation with ai-* types."
+- "30+ microservice workers with RPC, HTTP, MCP, and Queue interfaces. 8/8 core services deployed."
+```
+
+**MDX Content:**
+```
+[Entity Type] definitions as MDX files with Zod validation. Syncs bidirectionally with PostgreSQL database via Velite.
+
+Examples:
+- "AI agent definitions as MDX files with Zod validation. Syncs to database via repo.do webhooks."
+- "Function and capability definitions. MDX content with type-safe schema validation."
+```
+
+### 3.4 About Section Optimization
+
+**Format:** `[Description] | [Tech Stack] | [Key Feature]`
+
+**Examples:**
+
+```
+api:       "Hono-based API service on Cloudflare Workers | TypeScript, RPC, REST | Type-safe, edge-native"
+db:        "Database layer with Drizzle ORM | PostgreSQL, pgvector, Neon | Type-safe queries and migrations"
+sdk:       "121 TypeScript SDK packages | Zero-dependency foundation | 5-layer architecture with AI types"
+workers:   "30+ microservice workers | Cloudflare Workers, RPC | Independent scaling and deployment"
+agent:     "Durable Objects AI agent | Phase-wise code generation | Autonomous webapp building"
+```
+
+---
+
+## 4. README Templates by Repository Type
+
+### 4.1 Core Infrastructure Template
+
+```markdown
+# [Repository Name]
+
+[![Build Status](badge)](link)
+[![Test Coverage](badge)](link)
+[![npm version](badge)](link)
+[![License: MIT](badge)](link)
+
+> [Compelling one-liner with keywords]
+
+[1-2 paragraph overview explaining what it does and why it matters]
+
+## Features
+
+- ✅ **[Feature 1]** - Description with benefit
+- ✅ **[Feature 2]** - Description with benefit
+- ✅ **[Feature 3]** - Description with benefit
+- ✅ **[Feature 4]** - Description with benefit
+
+## Quick Start
+
+\`\`\`bash
+# Install
+pnpm install
+
+# Development
+pnpm dev
+
+# Build
+pnpm build
+
+# Test
+pnpm test
+\`\`\`
+
+## Installation
+
+\`\`\`bash
+# pnpm (recommended)
+pnpm add @dot-do/[package]
+
+# npm
+npm install @dot-do/[package]
+
+# yarn
+yarn add @dot-do/[package]
+\`\`\`
+
+## Usage
+
+\`\`\`typescript
+import { feature } from '@dot-do/[package]'
+
+const result = await feature({
+  option: 'value'
+})
+\`\`\`
+
+## Architecture
+
+[ASCII diagram or link to ARCHITECTURE.md]
+
+## Documentation
+
+- **[Development Guide](./CLAUDE.md)** - For contributors
+- **[API Reference](./docs/API.md)** - Complete API docs
+- **[Examples](./examples/)** - Code examples
+- **[Migration Guide](./docs/MIGRATION.md)** - Upgrading
+
+## Related Repositories
+
+- **[Related Repo 1](../repo1/)** - Description
+- **[Related Repo 2](../repo2/)** - Description
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines.
+
+## License
+
+MIT © [dot-do](https://github.com/dot-do)
+
+---
+
+**Part of the [.do ecosystem](https://github.com/dot-do/.do)** | [Documentation](https://docs.dot-do.dev) | [Discord](https://discord.gg/dot-do)
+\`\`\`
+
+### 4.2 MDX Content Repository Template
+
+\`\`\`markdown
+# [Repository Name]
+
+[![Validation Status](badge)](link)
+[![Total Entities](badge)](link)
+[![License: MIT](badge)](link)
+
+> [Entity type] definitions as MDX files with Zod schema validation. Syncs bidirectionally with PostgreSQL database.
+
+## Overview
+
+This repository stores **[entity type]** entities as version-controlled MDX files that automatically sync to the .do platform database via GitHub webhooks.
+
+## Features
+
+- ✅ **Content as Code** - Version-controlled entity definitions
+- ✅ **Type-Safe** - Zod schema validation via Velite
+- ✅ **Bidirectional Sync** - GitHub ↔ Database via webhooks
+- ✅ **MDX Format** - YAML frontmatter + Markdown content
+
+## Schema
+
+### Required Fields
+
+- **title** (string): Entity name
+- **description** (string): Brief description
+
+### Optional Fields
+
+- **[field1]** (type): Description
+- **[field2]** (type): Description
+- **metadata**: Namespace and visibility
+- **tags** (array): Categorization
+
+## Example
+
+\`\`\`mdx
+---
+title: Example Entity
+description: Description of entity
+[field1]: value
+metadata:
+  ns: [namespace]
+  visibility: public
+tags:
+  - tag1
+  - tag2
+---
+
+# Example Entity
+
+Detailed description in Markdown.
+
+## Section
+
+Content here.
+\`\`\`
+
+## Development
+
+\`\`\`bash
+# Install
+pnpm install
+
+# Build and validate
+pnpm build
+
+# Watch mode
+pnpm dev
+\`\`\`
+
+## Directory Structure
+
+\`\`\`
+[repo]/
+├── [entities]/
+│   ├── example-entity.mdx
+│   └── [entity-name].mdx
+├── .velite/           # Generated
+├── velite.config.ts   # Velite config
+├── package.json
+└── README.md
+\`\`\`
+
+## Sync Process
+
+### MDX → Database
+
+1. Commit MDX file → GitHub webhook
+2. Parse frontmatter and content
+3. Validate with Zod schema
+4. Upsert to database
+5. Generate embedding for search
+
+### Database → MDX
+
+1. Database update → Queue job
+2. Generate MDX from record
+3. Create PR with changes
+4. Human review and merge
+
+## Related Documentation
+
+- **[Root CLAUDE.md](../CLAUDE.md)** - Multi-repo management
+- **[Database Schema](../db/CLAUDE.md)** - Database structure
+- **[API Reference](../api/CLAUDE.md)** - Webhook handlers
+
+## License
+
+MIT © [dot-do](https://github.com/dot-do)
+
+---
+
+**Part of the [.do ecosystem](https://github.com/dot-do/.do)** | [Documentation](https://docs.dot-do.dev)
+\`\`\`
+
+### 4.3 Workers Microservices Template
+
+\`\`\`markdown
+# Workers - Microservices Repository
+
+[![Build Status](badge)](link)
+[![Test Coverage](badge)](link)
+[![Services Deployed](8/8)](link)
+[![License: MIT](badge)](link)
+
+> 30+ Cloudflare Workers microservices with RPC, HTTP, MCP, and Queue interfaces. Independent scaling and deployment enabled.
+
+## Overview
+
+Microservices architecture for the .do platform. Each service is a focused Cloudflare Worker with 200-500 lines of code implementing specific functionality.
+
+## Architecture
+
+\`\`\`
+┌─────────────┐
+│   @api/     │  ◄── Pure Gateway (routes requests)
+│   Gateway   │
+└─────┬───────┘
+      │ Workers RPC
+      ├─────────┬─────────┬─────────┐
+      ▼         ▼         ▼         ▼
+  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
+  │ @db/   │ │ @auth/ │ │agents/ │ │workers/│
+  │Database│ │  Auth  │ │Service │ │30+ more│
+  └────────┘ └────────┘ └────────┘ └────────┘
+\`\`\`
+
+## Core Services (8/8 Complete)
+
+| Service | Status | LOC | Tests | Purpose |
+|---------|--------|-----|-------|---------|
+| **gateway** | ✅ Complete | 1,349 | 30+ (80%+) | Pure router |
+| **db** | ✅ Complete | 1,909 | 16 (68%) | Database RPC |
+| **auth** | ✅ Complete | 2,669 | Basic | Authentication |
+| **schedule** | ✅ Complete | 1,925 | 39 (92-96%) | Cron jobs |
+| **webhooks** | ✅ Complete | 2,114 | 10 (80%+) | External webhooks |
+| **email** | ✅ Complete | TBD | TBD | Transactional emails |
+| **mcp** | ✅ Complete | TBD | TBD | MCP server |
+| **queue** | ✅ Complete | TBD | TBD | Message queue |
+
+## Quick Start
+
+\`\`\`bash
+# Create new service
+pnpm create-service --name my-service --type domain
+
+# Development
+cd my-service
+pnpm dev
+
+# Deploy
+pnpm deploy
+\`\`\`
+
+## Service Interface Pattern
+
+Every service exposes 4 interfaces:
+
+\`\`\`typescript
+// 1. RPC (service-to-service)
+export class MyService extends WorkerEntrypoint<Env> {
+  async getItem(id: string) { ... }
+}
+
+// 2. HTTP API (Hono routes)
+app.get('/items/:id', handler)
+
+// 3. MCP Server (AI tools)
+const mcpTools = [...]
+
+// 4. Queue Handler (async)
+export default {
+  fetch: app.fetch,
+  queue: handleQueueMessage,
+}
+\`\`\`
+
+## Development
+
+\`\`\`bash
+# All services
+pnpm dev
+
+# Specific service
+pnpm --filter gateway dev
+
+# Test
+pnpm test
+
+# Deploy
+pnpm deploy
+\`\`\`
+
+## Service Structure
+
+\`\`\`
+workers/[service-name]/
+├── src/
+│   ├── index.ts       # Main + HTTP
+│   ├── rpc.ts         # RPC interface
+│   ├── mcp.ts         # MCP server
+│   └── queue.ts       # Queue handlers
+├── tests/
+├── wrangler.jsonc
+└── package.json
+\`\`\`
+
+## Documentation
+
+- **[Development Guide](./CLAUDE.md)** - Service creation
+- **[API Reference](./docs/API.md)** - RPC methods
+- **[Architecture](../ARCHITECTURE.md)** - System design
+
+## License
+
+MIT © [dot-do](https://github.com/dot-do)
+
+---
+
+**Part of the [.do ecosystem](https://github.com/dot-do/.do)** | [Documentation](https://docs.dot-do.dev)
+\`\`\`
+
+### 4.4 SDK/Package Repository Template
+
+\`\`\`markdown
+# SDK - TypeScript Packages
+
+[![npm version](badge)](link)
+[![Total Packages](121)](link)
+[![Build Status](badge)](link)
+[![License: MIT](badge)](link)
+
+> 121 TypeScript SDK packages in 5-layer dependency architecture. Zero-dependency foundation with ai-* types.
+
+## Architecture
+
+\`\`\`
+┌─────────────────────────────────────┐
+│  Layer 1: Foundation (8 packages)   │  ← ZERO dependencies
+│  • do.industries  • schema.org.ai   │     Types-only
+│  • ai-generation • ai-embeddings    │
+└───────────────────┬─────────────────┘
+         ┌──────────┴──────────┐
+         │  Layer 2: Platform  │
+         │  • apis.do (RPC)    │
+         └──────────┬──────────┘
+         ┌──────────┴──────────┐
+         │  Layer 3: Managed   │
+         │  • llm.do           │
+         └─────────────────────┘
+\`\`\`
+
+## Packages
+
+### Layer 1: Foundation (8)
+- **do.industries** - Business ontology (NAICS, O*NET)
+- **schema.org.ai** - Schema.org vocabulary + AI extensions
+- **ai-generation** - AI text generation types
+- **ai-embeddings** - AI embeddings types
+- **ai-chat** - AI chat types
+- **ai-models** - AI model metadata types
+- **gs1.org.ai** - GS1 product standards
+- **mdx.org.ai** - MDX types for AI-native docs
+
+### Layer 2-5: Platform, Managed, Domain (113)
+[Link to full package list]
+
+## Quick Start
+
+\`\`\`bash
+# Install specific package
+pnpm add functions.do
+
+# Use in code
+import { createClient } from 'functions.do'
+
+const client = createClient({
+  apiKey: process.env.API_KEY
+})
+\`\`\`
+
+## Development
+
+\`\`\`bash
+# Generate all packages
+pnpm generate
+
+# Build
+pnpm build
+
+# Test
+pnpm test
+
+# Publish
+pnpm changeset
+pnpm version-packages
+pnpm release
+\`\`\`
+
+## Package Naming
+
+**Format:** Unscoped packages using `.do`, `.org.ai`, `.com.ai`
+
+✅ `functions.do`, `schema.org.ai`, `do.com.ai`
+❌ `@dot-do/functions-do`, `@dot-do/schema-org-ai`
+
+## Documentation
+
+- **[Development Guide](./CLAUDE.md)** - Package creation
+- **[Publishing Guide](./docs/PUBLISHING.md)** - Release process
+- **[Architecture](./docs/ARCHITECTURE.md)** - Dependency layers
+
+## License
+
+MIT © [dot-do](https://github.com/dot-do)
+
+---
+
+**Part of the [.do ecosystem](https://github.com/dot-do/.do)** | [Documentation](https://docs.dot-do.dev)
+\`\`\`
+
+---
+
+## 5. GitHub Pages Deployment Plan
+
+### 5.1 Top 10 Candidates for GitHub Pages
+
+| Repository | Priority | Content Type | Deployment Difficulty | SEO Value | Launch Timeline |
+|-----------|----------|--------------|----------------------|-----------|-----------------|
+| **api** | P0 | API documentation | Medium | Very High | Week 1 |
+| **db** | P0 | Database guides | Easy | Very High | Week 1 |
+| **sdk** | P0 | Package catalog | Medium | Very High | Week 2 |
+| **workers** | P0 | Service reference | Medium | High | Week 2 |
+| **docs** | P0 | Platform docs | Easy (existing) | Very High | Week 1 |
+| **ai** | P1 | AI guides | Easy | High | Week 3 |
+| **agent** | P1 | Agent tutorials | Medium | High | Week 3 |
+| **growth** | P1 | GTM playbooks | Easy | Medium | Week 4 |
+| **mdx** | P1 | MDX ecosystem | Medium | Medium | Week 4 |
+| **packages** | P2 | Package docs | Easy | Medium | Week 5 |
+
+### 5.2 GitHub Pages Technical Requirements
+
+**Framework Options:**
+
+1. **VitePress** (Recommended)
+   - Fast, Vue-based
+   - Built-in search
+   - Markdown-centric
+   - Excellent DX
+
+2. **Docusaurus**
+   - React-based
+   - Feature-rich
+   - Large community
+   - MDX support
+
+3. **MkDocs Material**
+   - Python-based
+   - Beautiful theme
+   - Fast search
+   - Easy setup
+
+4. **Fumadocs** (Already used in docs/)
+   - Next.js-based
+   - Flexsearch
+   - MDX-first
+   - TypeScript
+
+**Deployment Configuration:**
+
+\`\`\`yaml
+# .github/workflows/deploy-pages.yml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install
+      - run: pnpm build:docs
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
+\`\`\`
+
+### 5.3 Content Structure for Each Deployment
+
+#### API Documentation (api.github.io)
+
+\`\`\`
+api/
+├── index.md             # Overview
+├── getting-started.md   # Quick start
+├── authentication.md    # Auth guide
+├── rest-api/
+│   ├── index.md
+│   ├── things.md        # Things CRUD
+│   ├── relationships.md # Relationships
+│   └── search.md        # Search API
+├── rpc-api/
+│   ├── index.md
+│   ├── database.md      # DB service
+│   └── auth.md          # Auth service
+├── mcp-server/
+│   ├── index.md
+│   ├── tools.md         # MCP tools
+│   └── resources.md     # MCP resources
+└── examples/
+    ├── typescript.md
+    ├── python.md
+    └── curl.md
+\`\`\`
+
+#### Database Documentation (db.github.io)
+
+\`\`\`
+db/
+├── index.md             # Overview
+├── schema.md            # Schema reference
+├── migrations/
+│   ├── index.md
+│   ├── creating.md      # Creating migrations
+│   └── running.md       # Running migrations
+├── queries/
+│   ├── index.md
+│   ├── things.md        # Thing queries
+│   ├── relationships.md # Relationship queries
+│   └── search.md        # Search queries
+├── importers/
+│   ├── index.md
+│   ├── onet.md          # O*NET importer
+│   ├── naics.md         # NAICS importer
+│   └── schema-org.md    # Schema.org importer
+└── guides/
+    ├── getting-started.md
+    ├── performance.md
+    └── security.md
+\`\`\`
+
+#### SDK Documentation (sdk.github.io)
+
+\`\`\`
+sdk/
+├── index.md             # Overview
+├── packages/
+│   ├── index.md         # Package catalog
+│   ├── foundation.md    # Layer 1 packages
+│   ├── platform.md      # Layer 2 packages
+│   ├── managed.md       # Layer 3 packages
+│   └── domain.md        # Layer 5 packages
+├── getting-started/
+│   ├── installation.md
+│   ├── quickstart.md
+│   └── authentication.md
+├── guides/
+│   ├── publishing.md    # Publishing packages
+│   ├── dependencies.md  # Managing deps
+│   └── testing.md       # Testing guide
+└── api-reference/
+    ├── do-industries.md
+    ├── schema-org-ai.md
+    └── apis-do.md
+\`\`\`
+
+### 5.4 SEO Optimization Checklist for GitHub Pages
+
+For each deployment:
+
+- [ ] Custom domain (optional: api.docs.do, db.docs.do)
+- [ ] Sitemap.xml generation
+- [ ] robots.txt configuration
+- [ ] Meta tags optimization
+- [ ] Open Graph tags
+- [ ] Twitter Card tags
+- [ ] Structured data (JSON-LD)
+- [ ] Internal linking strategy
+- [ ] Fast load times (<3s)
+- [ ] Mobile responsive
+- [ ] Search functionality
+- [ ] Analytics integration (Plausible or Fathom)
+
+---
+
+## 6. Quick Wins List (20 Immediate Improvements)
+
+### High Impact, Low Effort (<1 hour each)
+
+#### Metadata Optimization (10 items)
+
+1. **Add Repository Descriptions** (15 min)
+   - Update all repos with compelling one-liner descriptions
+   - Include keywords relevant to each repo's purpose
+   - Format: `[Key Feature] | [Tech Stack] | [Benefit]`
+
+2. **Add Topics to All Repos** (30 min)
+   - Use standardized topic taxonomy (Section 3.2)
+   - 5-8 topics per repository
+   - Include both technical and domain-specific topics
+
+3. **Add Website URLs** (15 min)
+   - Link to documentation or demo sites
+   - Use custom domains where available
+   - Format: `https://[repo].docs.do` or `https://github.com/dot-do/[repo]`
+
+4. **Add LICENSE Files** (10 min)
+   - MIT or Apache 2.0 for all public repos
+   - Consistent licensing across ecosystem
+   - Generate via `pnpm dlx license MIT`
+
+5. **Create Social Preview Images** (2 hours)
+   - Custom GitHub cards (1280x640px)
+   - Use brand colors and consistent design
+   - Include repository name and tagline
+   - Template: Figma or Canva
+
+6. **Add CI/CD Badges to READMEs** (30 min)
+   - Build status badges
+   - Test coverage badges
+   - Version badges (for packages)
+   - npm download badges (for SDKs)
+
+7. **Add "About" Sections** (20 min)
+   - Short description visible on GitHub
+   - Use optimized format from Section 3.4
+   - Include homepage URL
+
+8. **Standardize README Headers** (1 hour)
+   - Consistent H1 format with keywords
+   - Add badges section
+   - Include quick start at top
+   - Use templates from Section 4
+
+9. **Cross-Link Related Repositories** (1 hour)
+   - Add "Related Repositories" section to all READMEs
+   - Link to parent .do repository
+   - Link to dependent/dependency repos
+   - Format: `**[Repo Name](../repo/)** - Description`
+
+10. **Add CONTRIBUTING.md Files** (30 min)
+    - Standard contribution guidelines
+    - Code of conduct reference
+    - Issue/PR templates
+    - Development setup instructions
+
+#### Content Expansion (10 items)
+
+11. **Expand MDX Content READMEs** (2 hours)
+    - Use MDX Content template (Section 4.2)
+    - Add 3-5 examples per repository
+    - Include schema documentation
+    - Document sync process
+
+12. **Add Code Examples to Core Repos** (2 hours)
+    - TypeScript code snippets with syntax highlighting
+    - Usage examples in multiple scenarios
+    - Error handling examples
+    - Best practices section
+
+13. **Create Package Catalog for SDK** (1 hour)
+    - Table of all 121 packages
+    - Dependency layer visualization
+    - Link to individual package READMEs
+    - Installation commands
+
+14. **Add Service Catalog to Workers** (1 hour)
+    - Table of all 30+ services
+    - Status, LOC, test coverage
+    - Purpose and interface types
+    - Links to service directories
+
+15. **Document Architecture Diagrams** (2 hours)
+    - Convert existing ARCHITECTURE.md diagrams to Mermaid
+    - Add to READMEs for visual appeal
+    - Include system architecture, data flow, dependency graphs
+    - Use consistent style
+
+16. **Create Getting Started Sections** (2 hours)
+    - Add to all core repos
+    - 3-5 commands to get running
+    - Prerequisites clearly listed
+    - Link to full documentation
+
+17. **Add API Reference Links** (30 min)
+    - Link to API docs (GitHub Pages when deployed)
+    - RPC method reference
+    - HTTP endpoint reference
+    - MCP tool reference
+
+18. **Document Environment Variables** (1 hour)
+    - List required environment variables
+    - Provide `.env.example` files
+    - Document secrets configuration
+    - Wrangler secrets setup
+
+19. **Add Testing Documentation** (1 hour)
+    - How to run tests
+    - Test coverage requirements
+    - Testing best practices
+    - CI/CD integration
+
+20. **Create FAQ Sections** (1 hour)
+    - Common questions for each repo
+    - Troubleshooting guides
+    - Known issues
+    - Performance tips
+
+### Implementation Order (Week 1-2)
+
+**Day 1-2: Metadata (Items 1-10)**
+- Focus on GitHub-visible metadata
+- Quick wins for discovery
+- Consistent branding
+
+**Day 3-4: Content (Items 11-15)**
+- Expand READMEs with examples
+- Add architecture diagrams
+- Service/package catalogs
+
+**Day 5-7: Documentation (Items 16-20)**
+- Getting started guides
+- API references
+- Testing and troubleshooting
+
+---
+
+## 7. Repository-Specific Action Items
+
+### 7.1 Core Infrastructure Repositories
+
+#### api (Priority: P0)
+
+**Current State:**
+- README: 372 lines (Score: 9)
+- Has comprehensive CLAUDE.md
+- Remote: https://github.com/dot-do/api.git
+
+**Action Items:**
+1. ✅ **Add GitHub metadata** (10 min)
+   - Description: "Hono-based API service on Cloudflare Workers | RPC + REST + MCP + Queue interfaces"
+   - Topics: `cloudflare-workers`, `hono`, `api`, `rest`, `rpc`, `mcp`, `typescript`
+   - Website: `https://api.docs.do` (after Pages deployment)
+
+2. 📝 **Expand README with API examples** (1 hour)
+   - Add quick start section
+   - Include RPC examples
+   - Add MCP tool examples
+   - Link to GitHub Pages docs
+
+3. 🚀 **Deploy GitHub Pages** (2 hours)
+   - API reference documentation
+   - RPC method reference
+   - MCP tools catalog
+   - Integration guides
+
+4. 🏷️ **Add badges** (15 min)
+   - Build status
+   - Test coverage
+   - API uptime (via status.do)
+
+**Estimated Time:** 4 hours
+**Impact:** Very High
+
+#### db (Priority: P0)
+
+**Current State:**
+- README: 592 lines (Score: 10)
+- Excellent comprehensive documentation
+- Remote: https://github.com/dot-do/db.git
+
+**Action Items:**
+1. ✅ **Add GitHub metadata** (10 min)
+   - Description: "Database layer with Drizzle ORM, PostgreSQL, and pgvector embeddings | Type-safe queries and migrations"
+   - Topics: `drizzle-orm`, `postgresql`, `database`, `migrations`, `pgvector`, `cloudflare-d1`
+   - Website: `https://db.docs.do`
+
+2. 📝 **Add migration examples** (30 min)
+   - Common migration patterns
+   - Schema evolution examples
+   - Rollback strategies
+
+3. 🚀 **Deploy GitHub Pages** (2 hours)
+   - Schema reference
+   - Query patterns
+   - Importer documentation
+   - Performance guides
+
+4. 🏷️ **Add badges** (15 min)
+   - Build status
+   - Test coverage
+   - Schema version
+
+**Estimated Time:** 3 hours
+**Impact:** Very High
+
+#### sdk (Priority: P0)
+
+**Current State:**
+- README: 596 lines (Score: 9)
+- Comprehensive package documentation
+- Remote: https://github.com/dot-do/sdk.git
+
+**Action Items:**
+1. ✅ **Add GitHub metadata** (10 min)
+   - Description: "121 TypeScript SDK packages in 5-layer architecture | Zero-dependency foundation with ai-* types"
+   - Topics: `typescript`, `sdk`, `npm-package`, `monorepo`, `ai`, `developer-tools`
+   - Website: `https://sdk.docs.do`
+
+2. 📝 **Add package catalog** (1 hour)
+   - Table of all 121 packages
+   - Dependency visualization
+   - Installation examples
+   - Link to individual package docs
+
+3. 🚀 **Deploy GitHub Pages** (3 hours)
+   - Package catalog with search
+   - API reference for each package
+   - Dependency graph visualization
+   - Publishing guide
+
+4. 🏷️ **Add badges** (15 min)
+   - Total packages
+   - npm downloads (aggregate)
+   - Build status
+
+**Estimated Time:** 5 hours
+**Impact:** Very High
+
+#### workers (Priority: P0)
+
+**Current State:**
+- README: 214 lines (Score: 7)
+- Has comprehensive CLAUDE.md
+- 8/8 core services deployed (~13K LOC)
+
+**Action Items:**
+1. ✅ **Add GitHub metadata** (10 min)
+   - Description: "30+ microservice workers with RPC, HTTP, MCP, and Queue interfaces | 8/8 core services deployed"
+   - Topics: `microservices`, `cloudflare-workers`, `serverless`, `rpc`, `typescript`
+   - Website: `https://workers.docs.do`
+
+2. 📝 **Expand README with service catalog** (1 hour)
+   - Table of all services with status
+   - Architecture diagram (Mermaid)
+   - Service creation guide
+   - Interface pattern examples
+
+3. 🚀 **Deploy GitHub Pages** (2 hours)
+   - Service reference (all 30+)
+   - RPC method catalog
+   - MCP tools catalog
+   - Integration examples
+
+4. 🏷️ **Add badges** (15 min)
+   - Services deployed (8/8)
+   - Total LOC (~13K)
+   - Test coverage (75%+)
+   - Build status
+
+**Estimated Time:** 4 hours
+**Impact:** High
+
+#### agent, ai, app, do.industries, site
+
+**Action Items:** Similar to above - metadata, README expansion, GitHub Pages consideration
+
+**Estimated Time per Repo:** 2-3 hours
+**Total:** 12 hours (all 5 repos)
+
+### 7.2 MDX Content Repositories (11 repos)
+
+**Common Issues:**
+- Most have 1-line READMEs
+- All have excellent CLAUDE.md files
+- Need expansion with examples
+
+**Template-Based Approach:**
+
+1. 📝 **Use MDX Content Template** (Section 4.2)
+   - Apply consistently across all 11 repos
+   - Customize schema documentation
+   - Add 3-5 examples per repo
+
+2. ✅ **Add GitHub metadata**
+   - Descriptions using standard format
+   - Topics from taxonomy (Section 3.2)
+   - Website URLs (link to docs)
+
+3. 📸 **Add screenshots/examples**
+   - Example MDX files
+   - Frontmatter examples
+   - Validation examples
+
+**Estimated Time per Repo:** 1 hour
+**Total:** 11 hours (all 11 repos)
+
+### 7.3 Workers Microservices (8 core services)
+
+**Current State:**
+- Deployed and operational
+- Comprehensive tests
+- Need individual service documentation
+
+**Action Items:**
+
+1. 📝 **Create service-specific READMEs**
+   - Each of 8 core services gets detailed README
+   - RPC method reference
+   - HTTP endpoint reference
+   - MCP tool reference
+   - Usage examples
+
+2. 🏷️ **Add service badges**
+   - Build status per service
+   - Test coverage per service
+   - LOC metrics
+   - Deployment status
+
+3. 🚀 **Deploy GitHub Pages with service catalog**
+   - Searchable service directory
+   - API reference per service
+   - Integration guides
+   - Architecture diagrams
+
+**Estimated Time:** 6 hours (8 services)
+
+### 7.4 Supporting Repositories
+
+#### growth (Priority: P1)
+
+**Current State:**
+- README: 1,869 lines (Score: 10)
+- Comprehensive GTM documentation
+
+**Action Items:**
+1. ✅ **Add GitHub metadata** (10 min)
+2. 🚀 **Deploy GitHub Pages** (2 hours)
+   - Growth playbooks
+   - Channel strategies
+   - Metrics dashboards
+   - Campaign templates
+
+**Estimated Time:** 2.5 hours
+**Impact:** Medium
+
+#### docs (Priority: P0)
+
+**Current State:**
+- README: 155 lines (Score: 7)
+- Already has Fumadocs + Next.js setup
+
+**Action Items:**
+1. ✅ **Add GitHub metadata** (10 min)
+2. ✅ **Verify GitHub Pages deployment** (30 min)
+   - Already on Cloudflare Pages
+   - Ensure sitemap.xml
+   - Verify SEO metadata
+
+**Estimated Time:** 1 hour
+**Impact:** Very High
+
+#### packages, mdx, admin, data-ingestion, businesses, ctx
+
+**Action Items:** Similar to core repos - metadata, README expansion
+
+**Estimated Time per Repo:** 1-2 hours
+**Total:** 10 hours (all 6 repos)
+
+### 7.5 Project Portfolio
+
+#### projects (Priority: P1)
+
+**Current State:**
+- README: 33 lines (Score: 4)
+- Contains submodules (services.studio, services.delivery, api.services)
+
+**Action Items:**
+1. ✅ **Add GitHub metadata** (10 min)
+2. 📝 **Create project showcase README** (2 hours)
+   - Table with project details
+   - Status indicators
+   - Screenshots/demos
+   - Links to live sites
+
+**Estimated Time:** 2.5 hours
+**Impact:** Medium
+
+---
+
+## 8. Social Preview Images
+
+### 8.1 Design Specifications
+
+**Dimensions:** 1280x640px (2:1 aspect ratio)
+**Format:** PNG with transparency
+**File Size:** <1MB (optimize with TinyPNG)
+
+### 8.2 Template Design
+
+**Elements:**
+- .do logo (top-left)
+- Repository name (large, center)
+- Tagline/description (below name)
+- Tech stack icons (bottom)
+- Brand gradient background
+
+**Color Scheme:**
+- Primary: #0066FF (blue)
+- Secondary: #00FFAA (green)
+- Background: Linear gradient (dark → light blue)
+- Text: White with shadow for readability
+
+### 8.3 Tools for Creation
+
+**Option 1: Figma** (Recommended)
+- Create template once
+- Duplicate for each repo
+- Export as PNG
+- Total time: 3 hours (setup + 35 repos)
+
+**Option 2: Canva**
+- Use template
+- Customize per repo
+- Download
+- Total time: 4 hours
+
+**Option 3: Code-Generated** (Advanced)
+- Use Playwright + HTML/CSS
+- Automate generation
+- Script: `generate-social-images.ts`
+- Total time: 2 hours (setup + automation)
+
+---
+
+## 9. Time Estimates & Prioritization
+
+### 9.1 Phase 1: Quick Wins (Week 1) - 40 hours
+
+**Metadata Optimization:**
+- Repository descriptions (35 repos × 10 min = 6 hours)
+- Topics (35 repos × 5 min = 3 hours)
+- Website URLs (35 repos × 5 min = 3 hours)
+- LICENSE files (35 repos × 3 min = 2 hours)
+- About sections (35 repos × 5 min = 3 hours)
+
+**README Improvements:**
+- Core repos (8 × 1 hour = 8 hours)
+- MDX content repos (11 × 1 hour = 11 hours)
+- Supporting repos (6 × 1 hour = 6 hours)
+
+**Subtotal:** 42 hours
+
+### 9.2 Phase 2: Content Expansion (Week 2-3) - 60 hours
+
+**GitHub Pages Deployments:**
+- api.docs.do (4 hours)
+- db.docs.do (3 hours)
+- sdk.docs.do (5 hours)
+- workers.docs.do (4 hours)
+- growth playbooks (3 hours)
+
+**Service Documentation:**
+- Workers microservices (8 services × 1 hour = 8 hours)
+- API endpoint docs (8 hours)
+- Database guides (6 hours)
+
+**Package Documentation:**
+- SDK package catalog (4 hours)
+- Package-specific docs (10 hours)
+
+**Project Showcase:**
+- Projects portfolio (3 hours)
+- Case studies (8 hours)
+
+**Subtotal:** 66 hours
+
+### 9.3 Phase 3: Advanced Optimization (Week 4) - 30 hours
+
+**Social Preview Images:**
+- Design template (2 hours)
+- Generate all images (35 repos × 15 min = 9 hours)
+
+**Advanced SEO:**
+- Structured data (JSON-LD) for GitHub Pages (6 hours)
+- Internal linking optimization (4 hours)
+- Sitemap optimization (3 hours)
+
+**Analytics Setup:**
+- Plausible or Fathom for GitHub Pages (3 hours)
+- Dashboard configuration (3 hours)
+
+**Subtotal:** 30 hours
+
+### 9.4 Total Effort
+
+**Total Hours:** 138 hours (approximately 3-4 weeks for one person)
+
+**Parallelization:** Could be done in 1-2 weeks with 2-3 people working in parallel
+
+---
+
+## 10. Success Metrics
+
+### 10.1 GitHub Metrics
+
+**Repository Discovery:**
+- [ ] Increase stars across all repos by 50%
+- [ ] Increase forks by 30%
+- [ ] Increase watchers by 40%
+
+**Traffic Metrics:**
+- [ ] 2x repository page views
+- [ ] 3x README views
+- [ ] 5x unique visitors to GitHub Pages
+
+**Engagement:**
+- [ ] 10+ issues opened per month (across all repos)
+- [ ] 5+ PRs submitted per month (community contributions)
+- [ ] 20+ discussions started per month
+
+### 10.2 Backlink Metrics
+
+**Awesome List Submissions:**
+- [ ] Accepted into 20+ high-priority lists (5K+ stars)
+- [ ] Accepted into 30+ medium-priority lists (2K-5K stars)
+- [ ] Total backlinks from GitHub: 50+
+
+**Domain Authority:**
+- [ ] Increase referring domains by 25%
+- [ ] Achieve backlinks from 10+ DA 80+ sites
+
+### 10.3 Documentation Metrics
+
+**GitHub Pages:**
+- [ ] 5+ GitHub Pages sites deployed
+- [ ] 100+ unique visitors per site per week
+- [ ] <3s load time for all pages
+- [ ] 100+ pages indexed by Google
+
+**README Quality:**
+- [ ] All core repos have comprehensive READMEs (8/8)
+- [ ] All MDX content repos have examples (11/11)
+- [ ] All repos have CI/CD badges
+- [ ] All repos have social preview images
+
+---
+
+## 11. Automation Opportunities
+
+### 11.1 Automated README Generation
+
+**Script:** `scripts/generate-readmes.ts`
+
+**Features:**
+- Read CLAUDE.md for each repo
+- Extract key sections
+- Apply appropriate template
+- Generate README.md
+- Preserve manual sections
+
+**Usage:**
+\`\`\`bash
+pnpm generate-readmes --repo=api
+pnpm generate-readmes --all
+\`\`\`
+
+### 11.2 Automated Metadata Sync
+
+**Script:** `scripts/sync-github-metadata.ts`
+
+**Features:**
+- Read metadata from package.json or config
+- Update GitHub via API
+- Set description, topics, website
+- Bulk update all repos
+
+**Usage:**
+\`\`\`bash
+pnpm sync-metadata --repo=api
+pnpm sync-metadata --all
+\`\`\`
+
+### 11.3 Automated Social Image Generation
+
+**Script:** `scripts/generate-social-images.ts`
+
+**Features:**
+- Use Playwright to render HTML/CSS
+- Screenshot at 1280x640px
+- Optimize with sharp
+- Upload to .github/ directory
+
+**Usage:**
+\`\`\`bash
+pnpm generate-images --repo=api
+pnpm generate-images --all
+\`\`\`
+
+### 11.4 Automated Badge Updates
+
+**Script:** `scripts/update-badges.ts`
+
+**Features:**
+- Query CI/CD for build status
+- Query test coverage reports
+- Query package registries for versions
+- Update README.md badges
+
+**Usage:**
+\`\`\`bash
+pnpm update-badges --repo=api
+pnpm update-badges --all
+\`\`\`
+
+---
+
+## 12. Next Steps & Recommendations
+
+### 12.1 Immediate Actions (This Week)
+
+**Day 1-2: Metadata Blitz**
+1. Update all repository descriptions (6 hours)
+2. Add topics to all repos (3 hours)
+3. Add website URLs (3 hours)
+4. Create LICENSE files where missing (2 hours)
+
+**Day 3-4: README Improvements**
+1. Expand core infrastructure READMEs (8 hours)
+2. Use templates for MDX content repos (6 hours)
+
+**Day 5: GitHub Pages Planning**
+1. Set up deployment workflows (2 hours)
+2. Plan content structure (2 hours)
+3. Deploy api.docs.do (4 hours)
+
+**Total:** 40 hours (Week 1)
+
+### 12.2 Phase 2 Actions (Week 2-3)
+
+1. Deploy remaining GitHub Pages sites (20 hours)
+2. Create service-specific documentation (8 hours)
+3. Generate social preview images (12 hours)
+4. Expand package documentation (10 hours)
+5. Create project showcase (4 hours)
+
+**Total:** 54 hours (Weeks 2-3)
+
+### 12.3 Phase 3 Actions (Week 4+)
+
+1. Submit to awesome lists (20 hours)
+2. Advanced SEO optimization (10 hours)
+3. Analytics setup and monitoring (6 hours)
+4. Community engagement (ongoing)
+
+### 12.4 Long-Term Maintenance
+
+**Weekly (2 hours/week):**
+- Update READMEs with new features
+- Respond to issues and PRs
+- Monitor backlink status
+- Update GitHub Pages content
+
+**Monthly (4 hours/month):**
+- Review analytics
+- Update social preview images
+- Refresh examples and guides
+- Check awesome list status
+
+**Quarterly (8 hours/quarter):**
+- Comprehensive README audit
+- GitHub Pages redesign
+- New awesome list submissions
+- SEO optimization review
+
+---
+
+## Appendix A: Repository Metadata Checklist Template
+
+\`\`\`markdown
+## Repository: [Name]
+
+### GitHub Settings
+- [ ] Repository name is clear and descriptive
+- [ ] Description is compelling (max 120 chars)
+- [ ] Website URL is set
+- [ ] Topics are added (5-8 relevant tags)
+- [ ] LICENSE file exists (MIT or Apache 2.0)
+- [ ] Social preview image uploaded (1280x640px)
+
+### README.md
+- [ ] H1 title is keyword-rich
+- [ ] Badges section (build, coverage, version)
+- [ ] Quick start section (3-5 commands)
+- [ ] Features list with benefits
+- [ ] Installation instructions (multiple methods)
+- [ ] Usage examples with code
+- [ ] Architecture overview or diagram
+- [ ] Documentation links
+- [ ] Contributing guidelines link
+- [ ] License statement
+- [ ] Footer with ecosystem links
+
+### Documentation
+- [ ] CLAUDE.md exists and is comprehensive
+- [ ] API reference available
+- [ ] Examples directory exists
+- [ ] Tests are documented
+
+### GitHub Pages (if applicable)
+- [ ] Deployment workflow configured
+- [ ] Content structure planned
+- [ ] SEO metadata optimized
+- [ ] Sitemap.xml generated
+- [ ] Analytics integrated
+
+### Community
+- [ ] CONTRIBUTING.md exists
+- [ ] Issue templates configured
+- [ ] PR template configured
+- [ ] CODE_OF_CONDUCT.md exists
+- [ ] Discussion forums enabled
+\`\`\`
+
+---
+
+## Appendix B: Quick Reference Links
+
+### Research Documents
+- **Awesome Lists Database:** `/notes/2025-10-03-awesome-lists-database.md`
+- **GitHub SEO Mechanics:** `/notes/2025-10-03-github-seo-mechanics.md`
+- **Root CLAUDE.md:** `/CLAUDE.md`
+
+### Repository CLAUDE.md Files
+- **agent:** `/agent/CLAUDE.md`
+- **ai:** `/ai/CLAUDE.md`
+- **api:** `/api/CLAUDE.md`
+- **app:** `/app/CLAUDE.md`
+- **auth:** `/auth/CLAUDE.md`
+- **db:** `/db/CLAUDE.md`
+- **docs:** `/docs/CLAUDE.md`
+- **sdk:** `/sdk/CLAUDE.md`
+- **workers:** `/workers/CLAUDE.md`
+- **[All others]** `/[repo]/CLAUDE.md`
+
+### Tools & Scripts
+- **Metadata sync:** `scripts/sync-github-metadata.ts` (to be created)
+- **README generation:** `scripts/generate-readmes.ts` (to be created)
+- **Image generation:** `scripts/generate-social-images.ts` (to be created)
+- **Badge updates:** `scripts/update-badges.ts` (to be created)
+
+---
+
+**End of Report**
+
+**Next Action:** Begin Phase 1 implementation (Week 1 - Quick Wins)
+
+**Subagent B1 Status:** Complete - Awaiting parent issue review

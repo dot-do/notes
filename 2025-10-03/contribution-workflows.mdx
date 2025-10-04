@@ -1,0 +1,1004 @@
+# Contribution Workflows & Recognition System
+
+**Date:** October 3, 2025
+**Purpose:** Complete contribution workflows, contributor ladder, and recognition system
+**Status:** Production-Ready
+
+---
+
+## Table of Contents
+
+1. [Contributor Ladder](#1-contributor-ladder)
+2. [Good First Issue Process](#2-good-first-issue-process)
+3. [Recognition & Rewards](#3-recognition--rewards)
+4. [Response Time Targets](#4-response-time-targets)
+5. [Automation Workflows](#5-automation-workflows)
+6. [Maintainer Guidelines](#6-maintainer-guidelines)
+
+---
+
+## 1. Contributor Ladder
+
+### Level 1: New Contributor
+
+**Requirements:**
+- First PR submitted (merged or in review)
+
+**Perks:**
+- 🎉 Welcome message from GitHub Actions bot
+- Listed in `CONTRIBUTORS.md`
+- Special "first-time contributor" badge on PR
+- Personalized onboarding email with resources
+
+**Mentorship:**
+- Assigned a mentor for first PR review
+- Mentor commits to respond within 24 hours
+- Guided code review with learning focus
+- Encouraged to ask questions
+
+**Next Steps:**
+- Find another good first issue
+- Join Discord #contributors channel
+- Attend monthly community call
+
+---
+
+### Level 2: Regular Contributor
+
+**Requirements:**
+- 5+ merged PRs
+- Active for 30+ days
+- Positive contribution history
+
+**Perks:**
+- 🌟 Listed in README.md contributors section
+- Discord "Contributor" role (special color)
+- Early access to beta features (opt-in)
+- Monthly contributor newsletter
+- Invited to private #contributors Discord channel
+
+**Responsibilities:**
+- Help review other contributors' PRs (optional)
+- Answer questions in Discord (optional)
+- Share feedback on new features
+
+**Recognition:**
+- Mentioned in monthly recap
+- LinkedIn recommendation available (upon request)
+
+**Next Steps:**
+- Aim for core contributor status
+- Focus on area of expertise
+- Participate in architecture discussions
+
+---
+
+### Level 3: Core Contributor
+
+**Requirements:**
+- 20+ merged PRs
+- Domain expertise in 1+ areas (workers, SDK, DB, AI, etc.)
+- Consistent contribution over 3+ months
+- Trusted by team
+
+**Perks:**
+- ⭐ Triage permissions on repositories
+- Listed in `MAINTAINERS.md`
+- Discord "Core Team" role
+- Invited to monthly planning meetings
+- Swag package (t-shirt, stickers, laptop stickers)
+- Early access to all beta features
+- Direct Slack/Discord access to core team
+
+**Responsibilities:**
+- Help triage issues (label, assign, close)
+- Review PRs in area of expertise
+- Participate in architecture discussions
+- Mentor new contributors
+- Respond to critical issues
+
+**Recognition:**
+- Quarterly blog spotlight
+- LinkedIn recommendation
+- Conference talk opportunities (if we host/sponsor)
+
+**Next Steps:**
+- Demonstrate maintainer-level commitment
+- Build trust with existing maintainers
+- Show architectural vision and judgment
+
+---
+
+### Level 4: Maintainer
+
+**Requirements:**
+- 50+ merged PRs
+- Consistent contribution over 6+ months
+- Deep expertise in multiple areas
+- Demonstrated excellent judgment
+- Trusted by all existing maintainers
+- Active in community engagement
+
+**Perks:**
+- 👑 Full commit access to repositories
+- GitHub org "Member" status
+- Listed as co-maintainer in all repos
+- Access to all private repositories
+- Invited to all team meetings (including strategic)
+- Optional paid consulting opportunities
+- Priority support from core team
+- All previous level perks
+
+**Responsibilities:**
+- Merge PRs (after review and approval)
+- Manage releases (versioning, changelogs)
+- Respond to critical issues within hours
+- Mentor core contributors
+- Help set roadmap direction
+- Participate in community management
+- Represent project publicly
+
+**Recognition:**
+- Permanent listing on website
+- Annual "Maintainer Summit" invite
+- Conference speaker opportunities
+- Optional co-authorship on papers/articles
+
+**Removal:**
+- Inactivity (6+ months) → moved to "Emeritus Maintainer"
+- Code of Conduct violation → removed
+- Resignation → moved to "Emeritus Maintainer" with honor
+
+---
+
+## 2. Good First Issue Process
+
+### 2.1 Identifying Good First Issues
+
+**Criteria:**
+- ✅ Small scope (2-4 hours to complete)
+- ✅ Well-defined (clear acceptance criteria)
+- ✅ Documented (enough context to start)
+- ✅ Low risk (won't break critical functionality)
+- ✅ Requires no deep codebase knowledge
+- ✅ Self-contained (minimal dependencies)
+
+**Examples:**
+- Documentation improvements (fix typos, add examples)
+- Test coverage gaps (add unit tests)
+- Refactoring small functions
+- Adding logging/error messages
+- Improving error handling
+- Simple bug fixes
+
+**Non-Examples:**
+- Large architectural changes
+- Multi-service refactors
+- Performance optimizations (requires profiling)
+- Security-sensitive code
+- Breaking changes
+
+### 2.2 Labeling & Documentation Template
+
+```markdown
+## Good First Issue: [Brief Description]
+
+👋 This is a great first contribution! It's small, well-defined, and you'll get a feel for our codebase.
+
+### What to do:
+1. [Step-by-step instructions]
+2. [Be very specific]
+3. [Include file paths]
+
+### Where to look:
+- **File:** `workers/gateway/src/routes.ts`
+- **Function:** `handleRequest()`
+- **Related:** #issue-123
+
+### Acceptance criteria:
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Tests added
+- [ ] Documentation updated
+
+### Mentorship:
+@mentor-username is available to help! Comment on this issue to get started, and they'll guide you through the process.
+
+### Resources:
+- [Contributing Guide](https://github.com/dot-do/.do/blob/main/CONTRIBUTING.md)
+- [Development Setup](https://docs.do/development)
+- [Code Style Guide](https://docs.do/code-style)
+- [Similar PR Example](https://github.com/dot-do/.do/pull/123)
+
+### Questions?
+- Ask in this issue
+- Ask in Discord #help
+- Email: contribute@do.com
+
+**Estimated time:** 2-4 hours
+```
+
+### 2.3 Mentorship Process
+
+**Mentor Assignment:**
+- Every good first issue has an assigned mentor
+- Mentor name and GitHub handle in issue description
+- Mentor commits to respond within 24 hours
+
+**Mentor Responsibilities:**
+- Answer questions patiently
+- Provide helpful guidance (not full solutions)
+- Review PR within 3 days
+- Give constructive feedback
+- Celebrate completion
+
+**Mentor Response Template:**
+```markdown
+Hi @contributor! Welcome!
+
+I'll be your mentor for this issue. Here's how I can help:
+- Answer any questions about the codebase
+- Review your PR and provide feedback
+- Help if you get stuck
+
+To get started:
+1. [Specific first step]
+2. [Second step]
+3. [Third step]
+
+Feel free to ask questions anytime! No question is too small. 🙌
+```
+
+### 2.4 Target: 50+ Good First Issues
+
+**By Area:**
+- **workers/** (10 issues)
+  - Add tests for uncovered functions
+  - Improve error messages
+  - Add input validation
+  - Refactor helper functions
+
+- **sdk/** (10 issues)
+  - Add JSDoc comments
+  - Create examples for packages
+  - Improve TypeScript types
+  - Add package READMEs
+
+- **Documentation** (15 issues)
+  - Fix typos and grammar
+  - Add code examples
+  - Create tutorials
+  - Improve API docs
+
+- **Tests** (10 issues)
+  - Add unit tests (specific functions listed)
+  - Add integration tests
+  - Improve test coverage
+  - Fix flaky tests
+
+- **Bug Fixes** (5 issues)
+  - Small, well-defined bugs
+  - Reproduction steps provided
+  - Fix is straightforward
+
+### 2.5 Issue Lifecycle
+
+```
+Created
+  ↓
+Labeled "good first issue" + mentor assigned
+  ↓
+Contributor claims issue (comments)
+  ↓
+Mentor responds within 24 hours
+  ↓
+Contributor works on it
+  ↓
+Contributor submits PR
+  ↓
+Mentor reviews within 3 days
+  ↓
+Iterate (contributor updates based on feedback)
+  ↓
+PR merged
+  ↓
+🎉 Celebration + recognition
+  ↓
+Issue closed automatically
+```
+
+---
+
+## 3. Recognition & Rewards
+
+### 3.1 Immediate Recognition
+
+**First PR Merged:**
+```markdown
+🎉 Congratulations on your first merged PR, @contributor!
+
+Welcome to the .do community! Here's what happens next:
+- Your name has been added to CONTRIBUTORS.md
+- You've earned the "Contributor" badge
+- Join us in Discord: https://discord.gg/dotdo
+
+Looking for your next contribution? Check out more [Good First Issues](link)!
+
+Thanks for helping make .do better! 🚀
+```
+
+**5 PRs Merged:**
+```markdown
+🌟 Awesome work, @contributor! You've merged 5 PRs!
+
+You're now a **Regular Contributor**. Your perks:
+- Listed in README.md
+- Discord "Contributor" role
+- Early access to beta features
+- Monthly contributor newsletter
+
+Keep up the great work! 🙌
+```
+
+**10 PRs Merged:**
+```markdown
+🚀 Incredible! You've hit 10 merged PRs, @contributor!
+
+You're making a real impact. We've highlighted your contributions in this month's recap: [link to blog post]
+
+Thank you for your dedication! 💪
+```
+
+**20 PRs Merged:**
+```markdown
+⭐ Amazing milestone, @contributor! 20 PRs merged!
+
+You're now a **Core Contributor**! You've earned:
+- Triage permissions on repositories
+- Listed in MAINTAINERS.md
+- Discord "Core Team" role
+- Invited to monthly planning meetings
+- Swag package (check your email!)
+
+We're so grateful for your contributions. You're truly making .do better! 🎉
+```
+
+### 3.2 Monthly Recognition
+
+**Contributor of the Month**
+
+**Selection Criteria:**
+- Most impactful contribution (quality > quantity)
+- Exemplary community participation
+- Mentorship of others
+- Chosen by maintainer vote
+
+**Reward:**
+- 📝 Featured blog post highlighting contribution
+- 🐦 Twitter thread spotlight
+- 💬 Discord announcement with special role (temp)
+- 📦 Swag package (if not already received)
+- 💼 LinkedIn recommendation from maintainers
+- 🎤 Invited to present at next community call
+
+**Blog Post Template:**
+```markdown
+# Contributor of the Month: [Name]
+
+**[Month Year]**
+
+This month, we're thrilled to recognize @contributor as our Contributor of the Month!
+
+## What They Did
+[Description of contribution and impact]
+
+## Why It Matters
+[Explanation of why this contribution was impactful]
+
+## Their Story
+[Brief interview: Why did you contribute? What did you learn?]
+
+## Recognition
+- [X] merged PRs
+- [Y] issues resolved
+- [Z] people helped
+
+## Thank You!
+Thank you, @contributor, for making .do better. We're lucky to have you in the community!
+
+Want to be featured next month? Check out [Good First Issues](link) and start contributing!
+```
+
+### 3.3 Quarterly Recognition
+
+**Top 5 Contributors**
+
+Listed in quarterly review blog post with:
+- Name and GitHub handle
+- Number of PRs merged
+- Areas of contribution
+- Notable achievements
+- Thank you message
+
+**Special Discord Role:**
+- "Top Contributor Q1 2025" (temporary, 3 months)
+- Displayed prominently in member list
+
+**Early Access:**
+- First to try upcoming features
+- Invited to beta programs
+- Provide feedback before public release
+
+### 3.4 Annual Recognition
+
+**Contributor Hall of Fame**
+
+**Website Page:**
+- Permanent listing on do.com/contributors
+- Name, photo (optional), bio
+- Link to GitHub, Twitter, website
+- Notable contributions highlighted
+
+**Annual Summit:**
+- Invite to virtual (or in-person if possible) contributor summit
+- Travel stipend for in-person (if budget allows)
+- Exclusive merch package
+- Direct time with core team
+
+**Thank You Video:**
+- Team records video thanking top contributors
+- Shared on YouTube, Twitter, Discord
+- Personalized messages for top 10
+
+### 3.5 Swag Packages
+
+**Core Contributor Package ($50 value):**
+- .do t-shirt (custom design)
+- Sticker pack (10 stickers)
+- Laptop stickers (holographic)
+- Thank you card (handwritten)
+- Exclusive pin/badge
+
+**Maintainer Package ($100 value):**
+- .do hoodie (premium quality)
+- Contributor shirt
+- Large sticker pack (25 stickers)
+- Notebook and pen
+- Water bottle
+- Exclusive "Maintainer" pin
+- Thank you card from entire team
+
+**Special Occasion Packages:**
+- First PR: Sticker pack
+- 10 PRs: T-shirt
+- 20 PRs: Full swag package
+- 50 PRs: Maintainer package
+- 100 PRs: Custom item (ask contributor)
+
+### 3.6 Non-Material Recognition
+
+**LinkedIn Recommendations:**
+- Written by maintainers
+- Highlight specific contributions
+- Available upon request
+
+**Conference Speaking:**
+- Submit talks on behalf of contributor
+- Provide speaker training
+- Cover travel expenses (if budget allows)
+
+**Co-Authorship:**
+- Research papers about .do
+- Blog posts and articles
+- Conference submissions
+
+**Resume Bullet Points:**
+- Suggest achievements for resume
+- Provide reference letters
+- Verify contributions
+
+---
+
+## 4. Response Time Targets
+
+### 4.1 Issues
+
+| Priority | Triage | First Response | Resolution Target |
+|----------|--------|----------------|-------------------|
+| **P0 (Critical)** | <4 hours | <8 hours | <24 hours |
+| **P1 (High)** | <24 hours | <48 hours | <7 days |
+| **P2 (Medium)** | <48 hours | <72 hours | <30 days |
+| **P3 (Low)** | <72 hours | <1 week | Best effort |
+
+**Triage:** Label, assign priority, assign to team member
+**First Response:** Acknowledge, ask clarifying questions, provide initial guidance
+**Resolution:** Fix merged, documented, released
+
+### 4.2 Pull Requests
+
+| Metric | Target | Ideal |
+|--------|--------|-------|
+| **First Review** | <7 days | <3 days |
+| **Follow-up Review** | <48 hours | <24 hours |
+| **Merge Decision** | <14 days | <7 days |
+| **Stale Warning** | 30 days | - |
+| **Close Stale** | 60 days | - |
+
+**First Review:** Maintainer provides initial feedback
+**Follow-up Review:** Maintainer reviews updated PR
+**Merge Decision:** Approve and merge, or request major changes
+**Stale Warning:** Comment if no activity for 30 days
+**Close Stale:** Close with kind message if no response for 60 days total
+
+### 4.3 Discussions
+
+| Category | Response Target | Follow-up |
+|----------|----------------|-----------|
+| **Q&A** | <24 hours | Mark answer within 7 days |
+| **Ideas** | <72 hours | Triage within 7 days |
+| **General** | Best effort | Encourage community |
+| **Bug Reports** | <48 hours | Create issue if confirmed |
+| **Announcements** | N/A | Respond to questions <24h |
+
+### 4.4 Discord
+
+| Channel | Response Target | Coverage |
+|---------|----------------|----------|
+| **#help** | <2 hours business hours | Team + community |
+| **#general** | Best effort | Community-driven |
+| **#contributors** | <4 hours | Core team |
+| **#troubleshooting** | <1 hour (critical) | Team + community |
+
+**Business Hours:** Monday-Friday, 9am-5pm EST
+
+### 4.5 Escalation Path
+
+**Stale Issues (30 days no update):**
+```markdown
+Hi! This issue has been inactive for 30 days.
+
+**Status check:**
+- Is this still relevant?
+- Do you need help moving forward?
+- Should we close this issue?
+
+Please respond within 30 days, or we'll automatically close this issue. You can always reopen it later!
+```
+
+**Stale PRs (30 days no update):**
+```markdown
+Hi @contributor! This PR has been inactive for 30 days.
+
+We still want to merge this! **What's blocking you?**
+- Need help with review feedback?
+- Ran into technical issues?
+- No longer interested?
+
+Let us know how we can help, or we'll close this in 30 days (you can always reopen).
+```
+
+**Auto-Close (60 days total):**
+```markdown
+This [issue/PR] has been automatically closed due to inactivity (60 days).
+
+**Still relevant?** Feel free to reopen this or create a new issue. We're happy to help!
+
+Thanks for your contribution! 🙏
+```
+
+---
+
+## 5. Automation Workflows
+
+### 5.1 Auto-Label PRs by File Paths
+
+**GitHub Actions:** `.github/workflows/auto-label.yml`
+
+```yaml
+name: Auto-Label PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v4
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yml
+```
+
+**Configuration:** `.github/labeler.yml`
+
+```yaml
+# Area labels
+'area:workers':
+  - workers/**
+
+'area:sdk':
+  - sdk/**
+
+'area:db':
+  - db/**
+
+'area:ai':
+  - ai/**
+
+'area:api':
+  - api/**
+
+'area:docs':
+  - '**/*.md'
+  - docs/**
+
+'area:tests':
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+
+# Type labels
+'type:feature':
+  - head-branch: ['feature/*', 'feat/*']
+
+'type:fix':
+  - head-branch: ['fix/*', 'bugfix/*']
+
+'type:docs':
+  - head-branch: ['docs/*']
+
+'type:refactor':
+  - head-branch: ['refactor/*']
+```
+
+### 5.2 Auto-Assign Reviewers (CODEOWNERS)
+
+**File:** `.github/CODEOWNERS`
+
+```
+# Default reviewers for entire repo
+* @maintainer1 @maintainer2
+
+# Workers microservices
+/workers/ @maintainer1 @maintainer3
+
+# SDK packages
+/sdk/ @maintainer2 @maintainer4
+
+# Database layer
+/db/ @maintainer1 @maintainer5
+
+# Documentation
+*.md @technical-writer
+/docs/ @technical-writer
+
+# AI integration
+/ai/ @maintainer2 @maintainer6
+
+# GitHub workflows
+/.github/ @maintainer1
+```
+
+### 5.3 Auto-Close Stale Issues
+
+**GitHub Actions:** `.github/workflows/stale.yml`
+
+```yaml
+name: Close Stale Issues and PRs
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Daily at midnight
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v8
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # Issues
+          stale-issue-message: |
+            This issue has been inactive for 30 days and will be closed in 30 days if there's no further activity.
+
+            If this is still relevant, please comment to keep it open. Thanks!
+          close-issue-message: |
+            This issue was automatically closed due to inactivity (60 days total).
+
+            Feel free to reopen if still relevant!
+          days-before-issue-stale: 30
+          days-before-issue-close: 30
+          stale-issue-label: 'stale'
+          exempt-issue-labels: 'pinned,security,good first issue'
+
+          # Pull Requests
+          stale-pr-message: |
+            This PR has been inactive for 30 days and will be closed in 30 days if there's no further activity.
+
+            We'd still love to merge this! What's blocking you? Let us know how we can help.
+          close-pr-message: |
+            This PR was automatically closed due to inactivity (60 days total).
+
+            Feel free to reopen or create a new PR. Thanks for contributing!
+          days-before-pr-stale: 30
+          days-before-pr-close: 30
+          stale-pr-label: 'stale'
+          exempt-pr-labels: 'pinned,security'
+```
+
+### 5.4 Auto-Thank First-Time Contributors
+
+**GitHub Actions:** `.github/workflows/welcome.yml`
+
+```yaml
+name: Welcome First-Time Contributors
+
+on:
+  pull_request_target:
+    types: [opened]
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Welcome first-time contributors
+        uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          issue-message: |
+            👋 **Thanks for opening your first issue!**
+
+            A maintainer will review your issue within 48 hours. In the meantime:
+            - Join our [Discord](https://discord.gg/dotdo) to chat with the community
+            - Check out our [Contributing Guide](https://github.com/dot-do/.do/blob/main/CONTRIBUTING.md)
+            - Browse [Good First Issues](https://github.com/orgs/dot-do/issues?q=is:open+is:issue+label:%22good+first+issue%22)
+
+            We appreciate your contribution! 🎉
+
+          pr-message: |
+            👋 **Thanks for your first contribution!**
+
+            A maintainer will review your PR within 7 days. In the meantime:
+            - Make sure all CI checks pass ✅
+            - Join our [Discord](https://discord.gg/dotdo) to chat 💬
+            - Read our [Code Review Guidelines](https://github.com/dot-do/.do/blob/main/CONTRIBUTING.md#code-review) 📖
+
+            We're excited to work with you! 🚀
+```
+
+### 5.5 Auto-Link Related Issues
+
+**GitHub Actions:** `.github/workflows/link-issues.yml`
+
+```yaml
+name: Link Related Issues
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  link:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Link issues
+        uses: kin/actions-link-issues@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          # Automatically links issues mentioned in PR body
+          # "Closes #123" → links and auto-closes
+          # "Related to #456" → links without closing
+```
+
+---
+
+## 6. Maintainer Guidelines
+
+### 6.1 Code Review Checklist
+
+**Before Review:**
+- [ ] Read PR description thoroughly
+- [ ] Check CI status (tests, linter, types)
+- [ ] Review related issues
+- [ ] Consider architectural impact
+
+**During Review:**
+- [ ] Check code quality and style
+- [ ] Verify tests added/updated
+- [ ] Review documentation updates
+- [ ] Check for breaking changes
+- [ ] Look for security issues
+- [ ] Consider performance impact
+
+**Feedback Style:**
+- ✅ Be kind and encouraging
+- ✅ Explain the "why" behind suggestions
+- ✅ Link to docs or examples
+- ✅ Offer to help if needed
+- ✅ Celebrate good work
+
+- ❌ Don't be dismissive
+- ❌ Don't use sarcasm
+- ❌ Don't assume knowledge
+- ❌ Don't forget to say thanks
+
+**After Review:**
+- [ ] Approve or request changes clearly
+- [ ] Set expectations for next steps
+- [ ] Respond to questions quickly (<48h)
+
+### 6.2 Review Comment Templates
+
+**Approve:**
+```markdown
+Looks great, @contributor! 🎉
+
+This is exactly what we needed. I especially like [specific thing].
+
+Merging now. Thanks for your contribution!
+```
+
+**Request Changes (Constructive):**
+```markdown
+Thanks for this PR, @contributor! This is a great start.
+
+I have a few suggestions to make this even better:
+
+1. **[Issue description]**
+   [Clear explanation of issue]
+
+   **Suggestion:**
+   ```typescript
+   // Better approach
+   ```
+
+   **Why:** [Explanation]
+
+2. **[Another issue]**
+   [Explanation and suggestion]
+
+Let me know if you have questions! I'm here to help. 🙌
+
+Once these are addressed, we'll merge this. Great work!
+```
+
+**Request Changes (Major):**
+```markdown
+Thanks for the PR, @contributor!
+
+I've identified some larger architectural concerns:
+
+**Main Issues:**
+1. [Issue 1 with explanation]
+2. [Issue 2 with explanation]
+
+**Suggested Approach:**
+[Alternative solution with example]
+
+This is a bigger change than initially scoped. Let's discuss in the issue thread before continuing. What do you think?
+
+I appreciate your effort! Let's work together to find the best solution. 💪
+```
+
+### 6.3 Merge Message Template
+
+```markdown
+Merged! 🎉
+
+Thanks for your contribution, @contributor. Your changes are now in the `main` branch.
+
+**What's Next:**
+- Your name has been added to [CONTRIBUTORS.md](link)
+- Check out more [Good First Issues](link)
+- Join our monthly [Community Call](link)
+
+We'd love to have you continue contributing! Feel free to reach out anytime. 🙌
+
+**Merged as:** [commit hash]
+```
+
+### 6.4 Handling Difficult Situations
+
+**Poor Code Quality:**
+```markdown
+Thanks for the PR, @contributor!
+
+I see you're trying to [goal], which is great. However, the current approach has some issues:
+
+[List specific issues]
+
+**Here's how to improve this:**
+1. [Specific actionable step]
+2. [Another step]
+3. [Another step]
+
+**Resources:**
+- [Link to style guide]
+- [Link to similar good example]
+
+Don't worry - everyone writes code like this at first! Let me know if you need help improving it. I'm happy to guide you through it. 🙌
+```
+
+**Abandoned PR:**
+```markdown
+Hi @contributor!
+
+This PR has been inactive for a while. We still want to merge this!
+
+**Options:**
+1. Let me know if you're still working on this
+2. If you're too busy, I can finish it and credit you
+3. If you're not interested, we'll close it (no hard feelings!)
+
+What would you prefer? Thanks for your contribution! 🙏
+```
+
+**Disagreement on Approach:**
+```markdown
+I appreciate your perspective, @contributor!
+
+I understand where you're coming from. Here's my thinking:
+
+[Your reasoning]
+
+**That said, you make a good point about [their concern].**
+
+How about this compromise:
+[Alternative approach]
+
+What do you think? I'm open to discussion. The goal is to find the best solution together. 💡
+```
+
+---
+
+## Success Metrics
+
+### Month 3 Targets:
+- 30+ new contributors
+- 10+ regular contributors
+- 3+ core contributors
+- 50+ merged external PRs
+- 20+ good first issues completed
+- <48 hour issue response time
+- <7 day PR review time
+
+### Month 6 Targets:
+- 75+ new contributors
+- 25+ regular contributors
+- 8+ core contributors
+- 150+ merged external PRs
+- 40+ good first issues completed
+- <24 hour issue response time
+- <3 day PR review time
+
+### Month 12 Targets:
+- 150+ new contributors
+- 50+ regular contributors
+- 15+ core contributors
+- 4+ maintainers
+- 200+ merged external PRs
+- 50+ good first issues completed
+- <12 hour issue response time
+- <2 day PR review time
+
+---
+
+**Document Status:** ✅ Complete - Production Ready
+**Last Updated:** October 3, 2025
+**Subagent:** D4 - Contribution Workflows

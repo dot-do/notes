@@ -1,0 +1,569 @@
+# WS-003: @api/ Gateway Implementation Plan
+
+**Status:** BLOCKED - Waiting for WS-001 and WS-002
+**Date:** 2025-10-02
+**Agent:** Backend Engineer C
+
+## Dependency Status
+
+### WS-001 (@db/) - ⚠️ PARTIALLY COMPLETE
+- ✅ Package structure exists
+- ✅ wrangler.jsonc configured
+- ❌ WorkerEntrypoint RPC service NOT implemented
+- ❌ NOT deployed to staging
+- **Blocker:** Need `DatabaseService` class with RPC methods
+
+### WS-002 (@auth/) - ❌ NOT STARTED
+- ❌ No standalone service repository
+- ❌ Auth logic exists in api.services but not extracted
+- ❌ No RPC service implementation
+- ❌ NOT deployed to staging
+- **Blocker:** Need `AuthService` class with token validation
+
+## Required Before Starting WS-003
+
+1. **WS-001 Completion Requirements:**
+   ```typescript
+   // @db/src/index.ts
+   export class DatabaseService extends WorkerEntrypoint<Env> {
+     async getThing(ns: string, id: string): Promise<Thing | null>
+     async createThing(data: NewThing): Promise<Thing>
+     async updateThing(ns: string, id: string, updates: Partial<NewThing>): Promise<Thing>
+     async deleteThing(ns: string, id: string): Promise<void>
+     async getRelationships(fromNs: string, fromId: string): Promise<Relationship[]>
+     async fullTextSearch(query: string, options?: SearchOptions): Promise<Thing[]>
+     async vectorSearch(embedding: number[], options?: SearchOptions): Promise<Thing[]>
+     async hybridSearch(query: string, embedding: number[], options?: HybridSearchOptions): Promise<Thing[]>
+   }
+   ```
+   - Deployed to: `db-service` (Cloudflare Workers)
+   - Accessible via: Service Binding `DB_SERVICE`
+   - Performance: <10ms p95 for RPC calls
+
+2. **WS-002 Completion Requirements:**
+   ```typescript
+   // @auth/src/index.ts
+   export class AuthService extends WorkerEntrypoint<Env> {
+     async validateToken(token: string): Promise<User | null>
+     async validateApiKey(key: string): Promise<User | null>
+     async getUserById(id: string): Promise<User | null>
+     async createSession(userId: string): Promise<Session>
+     async getSession(sessionId: string): Promise<Session | null>
+     async deleteSession(sessionId: string): Promise<void>
+   }
+   ```
+   - Deployed to: `auth-service` (Cloudflare Workers)
+   - Accessible via: Service Binding `AUTH_SERVICE`
+   - Performance: <5ms p95 for token validation
+
+## Implementation Plan
+
+### Phase 1: Routing Configuration (Day 1)
+
+**Files to Create:**
+1. `@api/src/routes/domain-routing.ts` - Domain → Service mapping
+2. `@api/src/routes/path-routing.ts` - Path → Service mapping
+3. `@api/src/routes/service-registry.ts` - Central service registry
+
+**Domain Routing Table:**
+```typescript
+// @api/src/routes/domain-routing.ts
+export const DOMAIN_ROUTES: Record<string, string> = {
+  // Agent domains
+  'agents.do': 'AGENTS_SERVICE',
+  'agents.api.services': 'AGENTS_SERVICE',
+
+  // Workflow domains
+  'workflows.do': 'WORKFLOWS_SERVICE',
+  'workflows.api.services': 'WORKFLOWS_SERVICE',
+
+  // Function domains
+  'functions.do': 'FUNCTIONS_SERVICE',
+  'fn.do': 'FUNCTIONS_SERVICE',
+
+  // MCP domains
+  'mcp.do': 'MCP_SERVICE',
+  'mcp.api.services': 'MCP_SERVICE',
+
+  // Container domains
+  'containers.do': 'CONTAINERS_SERVICE',
+  'run.do': 'CONTAINERS_SERVICE',
+
+  // Database domains
+  'db.do': 'DB_SERVICE',
+  'database.api.services': 'DB_SERVICE',
+
+  // Auth domains
+  'auth.do': 'AUTH_SERVICE',
+  'login.do': 'AUTH_SERVICE',
+
+  // Search domains
+  'search.do': 'SEARCH_SERVICE',
+  'find.do': 'SEARCH_SERVICE',
+
+  // AI domains
+  'ai.do': 'AI_SERVICE',
+  'generate.do': 'AI_SERVICE',
+
+  // Code domains
+  'code.do': 'CODE_EXEC_SERVICE',
+  'exec.do': 'CODE_EXEC_SERVICE',
+
+  // Claude domains
+  'claude.do': 'CLAUDE_CODE_SERVICE',
+  'claude-code.do': 'CLAUDE_CODE_SERVICE',
+
+  // Integration domains
+  'integrations.do': 'INTEGRATIONS_SERVICE',
+  'connect.do': 'INTEGRATIONS_SERVICE',
+
+  // Marketplace domains
+  'marketplace.do': 'MARKETPLACE_SERVICE',
+  'store.do': 'MARKETPLACE_SERVICE',
+
+  // Experiments domains
+  'experiments.do': 'EXPERIMENTS_SERVICE',
+  'ab.do': 'EXPERIMENTS_SERVICE',
+
+  // Landing page domains
+  'landing.do': 'LANDING_SERVICE',
+  'pages.do': 'LANDING_SERVICE',
+
+  // VAPI domains
+  'voice.do': 'VAPI_SERVICE',
+  'vapi.do': 'VAPI_SERVICE',
+
+  // Stripe domains
+  'payments.do': 'STRIPE_SERVICE',
+  'billing.do': 'STRIPE_SERVICE',
+
+  // WorkOS domains
+  'sso.do': 'WORKOS_SERVICE',
+  'workos.do': 'WORKOS_SERVICE',
+
+  // GitHub domains
+  'github.do': 'GITHUB_SERVICE',
+  'git.do': 'GITHUB_SERVICE',
+
+  // Slack domains
+  'slack.do': 'SLACK_SERVICE',
+
+  // Docs domains
+  'docs.do': 'DOCS_SERVICE',
+  'documentation.do': 'DOCS_SERVICE',
+
+  // SDK domains
+  'sdk.do': 'SDK_SERVICE',
+  'client.do': 'SDK_SERVICE',
+
+  // Playground domains
+  'playground.do': 'PLAYGROUND_SERVICE',
+  'play.do': 'PLAYGROUND_SERVICE',
+
+  // Graph domains
+  'graphs.do': 'GRAPHS_SERVICE',
+  'graph.do': 'GRAPHS_SERVICE',
+
+  // Crawl domains
+  'crawl.do': 'CRAWL_SERVICE',
+  'scrape.do': 'CRAWL_SERVICE',
+
+  // Sandbox domains
+  'sandbox.do': 'SANDBOXES_SERVICE',
+  'sandboxes.do': 'SANDBOXES_SERVICE',
+
+  // Main gateway
+  'api.do': 'API_SERVICE',
+  'api.services': 'API_SERVICE',
+}
+```
+
+**Path Routing Table:**
+```typescript
+// @api/src/routes/path-routing.ts
+export const PATH_ROUTES: Array<[RegExp, string]> = [
+  // Core data operations
+  [/^\/things/, 'THINGS_SERVICE'],
+  [/^\/relationships/, 'RELATIONSHIPS_SERVICE'],
+
+  // Search
+  [/^\/search/, 'SEARCH_SERVICE'],
+
+  // Auth
+  [/^\/auth/, 'AUTH_SERVICE'],
+  [/^\/login/, 'AUTH_SERVICE'],
+  [/^\/logout/, 'AUTH_SERVICE'],
+
+  // AI operations
+  [/^\/ai/, 'AI_SERVICE'],
+  [/^\/generate/, 'AI_SERVICE'],
+  [/^\/embeddings/, 'EMBEDDINGS_SERVICE'],
+
+  // Queue and events
+  [/^\/queue/, 'QUEUE_SERVICE'],
+  [/^\/events/, 'EVENTS_SERVICE'],
+
+  // Batch operations
+  [/^\/batch/, 'BATCH_SERVICE'],
+
+  // Code execution
+  [/^\/execute/, 'CODE_EXEC_SERVICE'],
+  [/^\/run/, 'CODE_EXEC_SERVICE'],
+
+  // Claude Code
+  [/^\/claude-code/, 'CLAUDE_CODE_SERVICE'],
+
+  // Integrations
+  [/^\/vapi/, 'VAPI_SERVICE'],
+  [/^\/stripe/, 'STRIPE_SERVICE'],
+  [/^\/workos/, 'WORKOS_SERVICE'],
+  [/^\/github/, 'GITHUB_SERVICE'],
+  [/^\/slack/, 'SLACK_SERVICE'],
+  [/^\/webhooks/, 'WEBHOOKS_SERVICE'],
+
+  // Documentation
+  [/^\/docs/, 'DOCS_SERVICE'],
+  [/^\/markdown/, 'MARKDOWN_SERVICE'],
+
+  // SDK
+  [/^\/sdk/, 'SDK_SERVICE'],
+
+  // Playground
+  [/^\/playground/, 'PLAYGROUND_SERVICE'],
+
+  // Domain services
+  [/^\/agents/, 'AGENTS_SERVICE'],
+  [/^\/workflows/, 'WORKFLOWS_SERVICE'],
+  [/^\/functions/, 'FUNCTIONS_SERVICE'],
+  [/^\/ideas/, 'IDEAS_SERVICE'],
+
+  // Marketplace
+  [/^\/marketplace/, 'MARKETPLACE_SERVICE'],
+
+  // Experiments
+  [/^\/experiments/, 'EXPERIMENTS_SERVICE'],
+  [/^\/landing/, 'LANDING_SERVICE'],
+
+  // Pricing and billing
+  [/^\/pricing/, 'PRICING_SERVICE'],
+  [/^\/billing/, 'BILLING_SERVICE'],
+
+  // EPCIS
+  [/^\/epcis/, 'EPCIS_SERVICE'],
+
+  // Graphs
+  [/^\/graphs/, 'GRAPHS_SERVICE'],
+
+  // Crawl
+  [/^\/crawl/, 'CRAWL_SERVICE'],
+
+  // Containers
+  [/^\/containers/, 'CONTAINERS_SERVICE'],
+
+  // Sandboxes
+  [/^\/sandboxes/, 'SANDBOXES_SERVICE'],
+
+  // Recursion
+  [/^\/forEach/, 'RECURSION_SERVICE'],
+]
+```
+
+### Phase 2: Middleware Implementation (Day 2)
+
+**Files to Create:**
+1. `@api/src/middleware/auth.ts` - Authentication via @auth/ service
+2. `@api/src/middleware/rate-limit.ts` - Rate limiting with Durable Objects
+3. `@api/src/middleware/cors.ts` - CORS headers
+4. `@api/src/middleware/logging.ts` - Request logging
+
+**Auth Middleware:**
+```typescript
+// @api/src/middleware/auth.ts
+import { Context, Next } from 'hono'
+
+export const authMiddleware = ({ optional = false } = {}) => {
+  return async (c: Context, next: Next) => {
+    const token = c.req.header('Authorization')?.replace('Bearer ', '')
+
+    if (!token && optional) {
+      return await next()
+    }
+
+    if (!token) {
+      return c.json({ error: 'Unauthorized' }, 401)
+    }
+
+    // Call @auth/ service via RPC
+    const auth = c.env.AUTH_SERVICE as AuthService
+    const user = await auth.validateToken(token)
+
+    if (!user) {
+      return c.json({ error: 'Invalid token' }, 401)
+    }
+
+    c.set('user', user)
+    await next()
+  }
+}
+```
+
+**Rate Limit Middleware:**
+```typescript
+// @api/src/middleware/rate-limit.ts
+import { Context, Next } from 'hono'
+import { DurableObjectNamespace } from '@cloudflare/workers-types'
+
+export const rateLimitMiddleware = async (c: Context, next: Next) => {
+  const RATE_LIMITER = c.env.RATE_LIMITER as DurableObjectNamespace
+
+  // Use IP or user ID as key
+  const user = c.get('user')
+  const key = user?.id || c.req.header('CF-Connecting-IP') || 'anonymous'
+
+  const id = RATE_LIMITER.idFromName(key)
+  const stub = RATE_LIMITER.get(id)
+
+  const allowed = await stub.checkLimit()
+
+  if (!allowed) {
+    return c.json({ error: 'Rate limit exceeded' }, 429)
+  }
+
+  await next()
+}
+```
+
+### Phase 3: Gateway Entry Point (Day 2-3)
+
+**Main Gateway Implementation:**
+```typescript
+// @api/src/index.ts
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { DOMAIN_ROUTES } from './routes/domain-routing'
+import { PATH_ROUTES } from './routes/path-routing'
+import { authMiddleware } from './middleware/auth'
+import { rateLimitMiddleware } from './middleware/rate-limit'
+
+const app = new Hono<{ Bindings: Env }>()
+
+// Global middleware (applies to ALL requests)
+app.use('*', cors())
+app.use('*', rateLimitMiddleware)
+app.use('*', authMiddleware({ optional: true }))
+
+// Pure routing logic (NO business logic)
+app.all('*', async (c) => {
+  const url = new URL(c.req.url)
+
+  // Try domain-based routing first
+  const domainService = DOMAIN_ROUTES[url.hostname]
+  if (domainService) {
+    const service = c.env[domainService]
+    if (!service) {
+      console.error(`Service binding not found: ${domainService}`)
+      return c.json({ error: 'Service not available' }, 503)
+    }
+    return await service.fetch(c.req.raw)
+  }
+
+  // Try path-based routing
+  for (const [pattern, serviceName] of PATH_ROUTES) {
+    if (pattern.test(url.pathname)) {
+      const service = c.env[serviceName]
+      if (!service) {
+        console.error(`Service binding not found: ${serviceName}`)
+        return c.json({ error: 'Service not available' }, 503)
+      }
+      return await service.fetch(c.req.raw)
+    }
+  }
+
+  return c.notFound()
+})
+
+export default app
+```
+
+### Phase 4: Service Bindings Configuration (Day 3)
+
+**Update wrangler.jsonc:**
+```jsonc
+{
+  "name": "api-gateway",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Service bindings to ALL microservices
+  "services": [
+    // Foundation services
+    { "binding": "DB_SERVICE", "service": "db-service" },
+    { "binding": "AUTH_SERVICE", "service": "auth-service" },
+
+    // Core services
+    { "binding": "THINGS_SERVICE", "service": "things-service" },
+    { "binding": "RELATIONSHIPS_SERVICE", "service": "relationships-service" },
+    { "binding": "SEARCH_SERVICE", "service": "search-service" },
+    { "binding": "QUEUE_SERVICE", "service": "queue-service" },
+    { "binding": "EVENTS_SERVICE", "service": "events-service" },
+    { "binding": "AI_SERVICE", "service": "ai-service" },
+    { "binding": "EMBEDDINGS_SERVICE", "service": "embeddings-service" },
+    { "binding": "BATCH_SERVICE", "service": "batch-service" },
+    { "binding": "CODE_EXEC_SERVICE", "service": "code-exec-service" },
+    { "binding": "CLAUDE_CODE_SERVICE", "service": "claude-code-service" },
+
+    // Integration services
+    { "binding": "VAPI_SERVICE", "service": "vapi-service" },
+    { "binding": "STRIPE_SERVICE", "service": "stripe-service" },
+    { "binding": "WORKOS_SERVICE", "service": "workos-service" },
+    { "binding": "GITHUB_SERVICE", "service": "github-service" },
+    { "binding": "SLACK_SERVICE", "service": "slack-service" },
+    { "binding": "WEBHOOKS_SERVICE", "service": "webhooks-service" },
+    { "binding": "DOCS_SERVICE", "service": "docs-service" },
+    { "binding": "MARKDOWN_SERVICE", "service": "markdown-service" },
+    { "binding": "SDK_SERVICE", "service": "sdk-service" },
+    { "binding": "PLAYGROUND_SERVICE", "service": "playground-service" },
+
+    // Domain services
+    { "binding": "AGENTS_SERVICE", "service": "agents-service" },
+    { "binding": "WORKFLOWS_SERVICE", "service": "workflows-service" },
+    { "binding": "FUNCTIONS_SERVICE", "service": "functions-service" },
+    { "binding": "IDEAS_SERVICE", "service": "ideas-service" },
+    { "binding": "MARKETPLACE_SERVICE", "service": "marketplace-service" },
+    { "binding": "EXPERIMENTS_SERVICE", "service": "experiments-service" },
+    { "binding": "LANDING_SERVICE", "service": "landing-service" },
+    { "binding": "PRICING_SERVICE", "service": "pricing-service" },
+    { "binding": "BILLING_SERVICE", "service": "billing-service" },
+    { "binding": "EPCIS_SERVICE", "service": "epcis-service" },
+    { "binding": "GRAPHS_SERVICE", "service": "graphs-service" },
+    { "binding": "CRAWL_SERVICE", "service": "crawl-service" },
+    { "binding": "CONTAINERS_SERVICE", "service": "containers-service" },
+    { "binding": "SANDBOXES_SERVICE", "service": "sandboxes-service" },
+    { "binding": "RECURSION_SERVICE", "service": "recursion-service" }
+  ],
+
+  // Durable Object for rate limiting
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "RATE_LIMITER",
+        "class_name": "RateLimiter",
+        "script_name": "rate-limiter"
+      }
+    ]
+  },
+
+  // Analytics for monitoring
+  "analytics_engine_datasets": [
+    {
+      "binding": "ANALYTICS"
+    }
+  ],
+
+  // Observability
+  "observability": {
+    "enabled": true
+  }
+}
+```
+
+### Phase 5: Testing (Day 3-4)
+
+**Test Files:**
+1. `@api/tests/routing.test.ts` - Domain and path routing tests
+2. `@api/tests/middleware.test.ts` - Auth, rate limit, CORS tests
+3. `@api/tests/integration.test.ts` - End-to-end integration tests
+4. `@api/tests/performance.test.ts` - Routing overhead benchmarks
+
+**Example Test:**
+```typescript
+// @api/tests/routing.test.ts
+import { describe, it, expect, beforeEach } from 'vitest'
+import app from '../src/index'
+
+describe('Gateway Routing', () => {
+  it('should route domain to correct service', async () => {
+    const req = new Request('https://agents.do/list')
+    const res = await app.fetch(req, mockEnv)
+
+    expect(res.status).toBe(200)
+    expect(mockEnv.AGENTS_SERVICE.fetch).toHaveBeenCalledWith(req)
+  })
+
+  it('should route path to correct service', async () => {
+    const req = new Request('https://api.services/things/123')
+    const res = await app.fetch(req, mockEnv)
+
+    expect(res.status).toBe(200)
+    expect(mockEnv.THINGS_SERVICE.fetch).toHaveBeenCalledWith(req)
+  })
+
+  it('should return 401 for protected routes without auth', async () => {
+    const req = new Request('https://api.services/things', {
+      method: 'POST'
+    })
+    const res = await app.fetch(req, mockEnv)
+
+    expect(res.status).toBe(401)
+  })
+})
+```
+
+### Phase 6: Deployment (Day 4-5)
+
+**Deployment Steps:**
+1. Deploy gateway to staging: `wrangler deploy --env staging`
+2. Configure custom domains in Cloudflare Dashboard
+3. Test all domain and path routes
+4. Monitor performance metrics
+5. Deploy to production: `wrangler deploy --env production`
+
+## Performance Requirements
+
+- **Routing Overhead:** <1ms (p95)
+- **Auth Middleware:** <5ms (p95) - includes RPC to @auth/
+- **Rate Limit Check:** <2ms (p95) - includes DO call
+- **Total Latency:** <10ms (p95) before forwarding to service
+
+## Success Criteria
+
+✅ All domain routes working (30+ domains)
+✅ All path routes working (30+ paths)
+✅ Authentication middleware validates via @auth/ RPC
+✅ Rate limiting implemented with Durable Objects
+✅ CORS headers configured correctly
+✅ Deployed to staging as `api-gateway`
+✅ Routing overhead <1ms (p95)
+✅ All tests passing (80%+ coverage)
+✅ NO business logic in gateway (pure routing only)
+✅ Integration tests with real @db/ and @auth/ services passing
+
+## Anti-Patterns to AVOID
+
+❌ NO business logic in gateway
+❌ NO database queries (use @db/ service)
+❌ NO authentication logic (use @auth/ service)
+❌ NO data transformation (services do this)
+❌ NO caching logic (services handle this)
+❌ NO AI operations (services do this)
+
+The gateway is a PURE ROUTER - it only routes requests to the appropriate service.
+
+## Next Steps After Completion
+
+1. Document gateway API in README.md
+2. Create performance monitoring dashboard
+3. Set up alerts for routing failures
+4. Document service binding requirements for new services
+5. Create runbook for adding new routes/domains
+
+## Blockers Summary
+
+**Cannot proceed until:**
+1. ✅ WS-001 (@db/) is deployed with RPC service
+2. ✅ WS-002 (@auth/) is deployed with RPC service
+3. ✅ Both services accessible via Service Bindings
+4. ✅ Integration tests can call both services
+
+**Estimated time after unblocked:** 4-5 days

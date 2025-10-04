@@ -1,0 +1,853 @@
+# MDXUI MagicUI Background Integration
+## Deep Dive Technical Specification (USER PRIORITY)
+
+**Date:** October 3, 2025
+**Related:** [Main Plan](2025-10-03-mdxui-simplification-plan.md) | [GitHub Issue #7](https://github.com/dot-do/.do/issues/7)
+**Status:** Specification - Ready for Implementation
+**Priority:** ⭐ HIGH - User explicitly prioritized "especially the background"
+
+---
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [MagicUI Background Components](#magicui-background-components)
+3. [Integration Strategy](#integration-strategy)
+4. [Component API Design](#component-api-design)
+5. [Performance Optimization](#performance-optimization)
+6. [Accessibility Considerations](#accessibility-considerations)
+7. [Implementation Plan](#implementation-plan)
+
+---
+
+## Overview
+
+**MagicUI** provides 20+ animated background components built with React, TypeScript, Tailwind CSS, and Framer Motion. These backgrounds add visual flair, depth, and interactivity to web applications. Our integration will make these backgrounds **seamlessly available** to all mdxui components with zero configuration.
+
+### Why Backgrounds Matter
+
+User emphasis: **"especially the background"**
+
+Animated backgrounds:
+- Create **memorable first impressions**
+- Add **depth and dimensionality**
+- Provide **visual interest** without distraction
+- Enhance **brand identity**
+- Support **dark mode** aesthetically
+
+### Integration Goals
+
+1. **Zero Config:** Works out of the box with all mdxui components
+2. **Simple API:** Single prop to add background (`background="particles"`)
+3. **Performance:** Optimized animations, no jank
+4. **Responsive:** Adapts to all screen sizes
+5. **Accessible:** Doesn't interfere with screen readers
+6. **Theme-Aware:** Respects light/dark mode
+
+---
+
+## MagicUI Background Components
+
+### Complete Catalog (10 Priority Backgrounds)
+
+#### 1. **Warp Background** (Time Warping Effect)
+**Visual:** Distorted grid with time-warp animation
+**Best For:** Hero sections, futuristic themes
+**Performance:** Medium (canvas-based)
+
+**Effect:** Creates a warped space-time grid effect
+
+**Props:**
+```typescript
+interface WarpBackgroundProps {
+  color?: string      // Grid color
+  cellSize?: number   // Grid cell size
+  speed?: number      // Animation speed
+  intensity?: number  // Warp intensity
+}
+```
+
+---
+
+#### 2. **Animated Grid Pattern** (SVG Grid)
+**Visual:** Pulsating grid lines
+**Best For:** Tech/SaaS hero sections
+**Performance:** High (SVG-based)
+
+**Effect:** Animated grid with pulse animation
+
+**Props:**
+```typescript
+interface AnimatedGridProps {
+  color?: string         // Line color
+  lineWidth?: number     // Line thickness
+  spacing?: number       // Grid spacing
+  duration?: number      // Animation duration
+  className?: string
+}
+```
+
+---
+
+#### 3. **Particles** (Interactive Particle System)
+**Visual:** Floating particles with mouse interaction
+**Best For:** Landing pages, portfolios
+**Performance:** Medium (canvas + mouse tracking)
+
+**Effect:** Particles that respond to cursor movement
+
+**Props:**
+```typescript
+interface ParticlesProps {
+  quantity?: number       // Number of particles
+  size?: number          // Particle size
+  color?: string         // Particle color
+  refresh?: boolean      // Regenerate particles
+  mouseMove?: boolean    // Mouse interaction
+  ease?: number          // Movement easing
+  className?: string
+}
+```
+
+---
+
+#### 4. **Shine Border** (Animated Border Glow)
+**Visual:** Glowing animated border
+**Best For:** Cards, featured sections
+**Performance:** High (CSS-based)
+
+**Effect:** Rotating gradient border
+
+**Props:**
+```typescript
+interface ShineBorderProps {
+  borderRadius?: number
+  borderWidth?: number
+  duration?: number
+  color?: string | string[]
+  className?: string
+}
+```
+
+---
+
+#### 5. **Flickering Grid** (Glitch Effect)
+**Visual:** Grid with random flicker/glitch
+**Best For:** Cyberpunk themes, error states
+**Performance:** High (SVG + CSS)
+
+**Effect:** Grid lines that randomly flicker
+
+**Props:**
+```typescript
+interface FlickeringGridProps {
+  squareSize?: number
+  gridGap?: number
+  flickerChance?: number    // 0-1 probability
+  color?: string
+  maxOpacity?: number
+  className?: string
+}
+```
+
+---
+
+#### 6. **Retro Grid** (80s Aesthetic)
+**Visual:** Neon grid, synthwave style
+**Best For:** Retro themes, gaming sites
+**Performance:** High (SVG-based)
+
+**Effect:** Classic tron-style grid
+
+**Props:**
+```typescript
+interface RetroGridProps {
+  angle?: number         // Perspective angle
+  lineColor?: string     // Grid line color
+  lineOpacity?: number
+  className?: string
+}
+```
+
+---
+
+#### 7. **Ripple** (Water Ripple Effect)
+**Visual:** Circular ripples from center
+**Best For:** Call-to-action sections
+**Performance:** Medium (canvas-based)
+
+**Effect:** Expanding concentric circles
+
+**Props:**
+```typescript
+interface RippleProps {
+  mainCircleSize?: number
+  mainCircleOpacity?: number
+  numCircles?: number
+  className?: string
+}
+```
+
+---
+
+#### 8. **Dot Pattern** (Animated Dots)
+**Visual:** Grid of pulsating dots
+**Best For:** Subtle backgrounds
+**Performance:** High (CSS grid)
+
+**Effect:** Dots with fade animation
+
+**Props:**
+```typescript
+interface DotPatternProps {
+  width?: number
+  height?: number
+  dotSize?: number
+  dotColor?: string
+  backgroundColor?: string
+  className?: string
+}
+```
+
+---
+
+#### 9. **Striped Pattern** (Moving Stripes)
+**Visual:** Diagonal animated stripes
+**Best For:** Loading states, transitions
+**Performance:** High (CSS animation)
+
+**Effect:** Diagonal stripes scrolling
+
+**Props:**
+```typescript
+interface StripedPatternProps {
+  stripeColor?: string
+  stripeWidth?: number
+  angle?: number
+  speed?: number
+  className?: string
+}
+```
+
+---
+
+#### 10. **Light Rays** (Volumetric Light)
+**Visual:** Radial light beams
+**Best For:** Hero sections, dramatic effect
+**Performance:** Medium (SVG gradients)
+
+**Effect:** Rays emanating from center
+
+**Props:**
+```typescript
+interface LightRaysProps {
+  rayCount?: number
+  rayWidth?: number
+  rayColor?: string
+  rayOpacity?: number
+  rotationSpeed?: number
+  className?: string
+}
+```
+
+---
+
+## Integration Strategy
+
+### Wrapper Architecture
+
+Each MagicUI background will be wrapped in a **mdxui container** that:
+1. Handles positioning (absolute, full coverage)
+2. Manages z-index (behind content)
+3. Provides theme integration
+4. Ensures accessibility
+5. Optimizes performance
+
+### Background Container Component
+
+```typescript
+/**
+ * Universal background container
+ * Wraps any MagicUI background component
+ */
+interface BackgroundContainerProps {
+  /**
+   * Which background to render
+   */
+  type: BackgroundType
+
+  /**
+   * Background-specific props
+   */
+  config?: Record<string, any>
+
+  /**
+   * Theme mode
+   */
+  mode?: 'light' | 'dark'
+
+  /**
+   * Reduce motion (accessibility)
+   */
+  reduceMotion?: boolean
+
+  /**
+   * z-index value
+   * @default -10
+   */
+  zIndex?: number
+
+  /**
+   * Opacity
+   * @default 1
+   */
+  opacity?: number
+
+  /**
+   * Blur background content
+   */
+  blur?: number
+
+  /**
+   * Children (content in foreground)
+   */
+  children?: React.ReactNode
+}
+
+type BackgroundType =
+  | 'warp'
+  | 'particles'
+  | 'grid'
+  | 'shine-border'
+  | 'flickering-grid'
+  | 'retro-grid'
+  | 'ripple'
+  | 'dots'
+  | 'stripes'
+  | 'light-rays'
+  | 'none'
+```
+
+### Usage in Components
+
+```typescript
+// Any component can accept background prop
+interface HeroSectionProps {
+  // ... other props
+  background?: BackgroundType | BackgroundConfig
+}
+
+type BackgroundConfig = {
+  type: BackgroundType
+  opacity?: number
+  config?: Record<string, any>
+}
+
+// Implementation:
+<HeroSection background="particles">
+  <h1>My Headline</h1>
+</HeroSection>
+
+// Or with config:
+<HeroSection
+  background={{
+    type: 'particles',
+    opacity: 0.5,
+    config: { quantity: 100, color: '#3b82f6' }
+  }}
+>
+  <h1>My Headline</h1>
+</HeroSection>
+```
+
+### MDX API
+
+```mdx
+<!-- Simple usage -->
+<HeroSection background="warp">
+# Transform Your Workflow
+...
+</HeroSection>
+
+<!-- With configuration -->
+<HeroSection background="particles" backgroundOpacity={0.7}>
+# Build Faster
+...
+</HeroSection>
+```
+
+---
+
+## Component API Design
+
+### Background Registry
+
+```typescript
+/**
+ * Background component registry
+ * Maps type string to React component
+ */
+export const BACKGROUND_REGISTRY: Record<
+  BackgroundType,
+  React.ComponentType<any>
+> = {
+  warp: WarpBackgroundWrapper,
+  particles: ParticlesWrapper,
+  grid: AnimatedGridWrapper,
+  'shine-border': ShineBorderWrapper,
+  'flickering-grid': FlickeringGridWrapper,
+  'retro-grid': RetroGridWrapper,
+  ripple: RippleWrapper,
+  dots: DotPatternWrapper,
+  stripes: StripedPatternWrapper,
+  'light-rays': LightRaysWrapper,
+  none: () => null
+}
+```
+
+### Theme-Aware Background Wrapper
+
+```typescript
+/**
+ * Wraps MagicUI component with theme awareness
+ */
+function createBackgroundWrapper<T>(
+  Component: React.ComponentType<T>,
+  defaultProps: (theme: 'light' | 'dark') => Partial<T>
+) {
+  return function BackgroundWrapper(props: T & { mode?: 'light' | 'dark' }) {
+    const { mode = 'light', ...rest } = props
+    const themeProps = defaultProps(mode)
+
+    return (
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <Component {...themeProps} {...(rest as T)} />
+      </div>
+    )
+  }
+}
+
+// Example: Particles wrapper
+const ParticlesWrapper = createBackgroundWrapper(
+  Particles,
+  (mode) => ({
+    color: mode === 'dark' ? '#ffffff' : '#000000',
+    quantity: 100,
+    ease: 80,
+    size: 0.4
+  })
+)
+```
+
+### Default Theme Configurations
+
+```typescript
+/**
+ * Default config for each background type per theme
+ */
+export const BACKGROUND_THEME_DEFAULTS: Record<
+  BackgroundType,
+  {
+    light: Record<string, any>
+    dark: Record<string, any>
+  }
+> = {
+  particles: {
+    light: { color: '#000000', quantity: 100, ease: 80 },
+    dark: { color: '#ffffff', quantity: 100, ease: 80 }
+  },
+  grid: {
+    light: { color: '#e5e7eb', lineWidth: 1 },
+    dark: { color: '#374151', lineWidth: 1 }
+  },
+  warp: {
+    light: { color: '#3b82f6', cellSize: 40 },
+    dark: { color: '#60a5fa', cellSize: 40 }
+  },
+  // ... other backgrounds
+}
+```
+
+---
+
+## Performance Optimization
+
+### Lazy Loading
+
+Only load background components when needed:
+
+```typescript
+/**
+ * Lazy load background components
+ */
+const LazyBackgrounds = {
+  warp: lazy(() => import('./backgrounds/WarpBackground')),
+  particles: lazy(() => import('./backgrounds/Particles')),
+  grid: lazy(() => import('./backgrounds/AnimatedGrid')),
+  // ... others
+}
+
+function BackgroundContainer({ type, ...props }: BackgroundContainerProps) {
+  const BackgroundComponent = LazyBackgrounds[type]
+
+  if (!BackgroundComponent) return null
+
+  return (
+    <Suspense fallback={null}>
+      <BackgroundComponent {...props} />
+    </Suspense>
+  )
+}
+```
+
+### Animation Optimization
+
+1. **Use `will-change`:** Hint browser about animated properties
+2. **GPU Acceleration:** Prefer `transform` and `opacity`
+3. **Request Animation Frame:** Smooth 60fps animations
+4. **Throttle/Debounce:** Mouse movement handlers
+
+```typescript
+// Optimized particle update loop
+function useOptimizedAnimation(updateFn: () => void) {
+  const frameRef = useRef<number>()
+
+  useEffect(() => {
+    function animate() {
+      updateFn()
+      frameRef.current = requestAnimationFrame(animate)
+    }
+
+    frameRef.current = requestAnimationFrame(animate)
+
+    return () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current)
+      }
+    }
+  }, [updateFn])
+}
+```
+
+### Intersection Observer
+
+Only animate backgrounds when visible:
+
+```typescript
+function BackgroundContainer({ children, ...props }: BackgroundContainerProps) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0.1 }
+    )
+
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={ref}>
+      {isVisible && <BackgroundComponent {...props} />}
+      {children}
+    </div>
+  )
+}
+```
+
+---
+
+## Accessibility Considerations
+
+### Reduced Motion
+
+Respect `prefers-reduced-motion`:
+
+```typescript
+function useReducedMotion() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setPrefersReducedMotion(mediaQuery.matches)
+
+    const handleChange = () => setPrefersReducedMotion(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handleChange)
+
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  return prefersReducedMotion
+}
+
+// Usage:
+function BackgroundContainer(props: BackgroundContainerProps) {
+  const prefersReducedMotion = useReducedMotion()
+
+  // Disable animations if user prefers reduced motion
+  if (prefersReducedMotion) {
+    return <div className="absolute inset-0 -z-10 bg-gray-100" />
+  }
+
+  return <AnimatedBackground {...props} />
+}
+```
+
+### ARIA Attributes
+
+```typescript
+// Backgrounds are decorative, hide from screen readers
+<div
+  className="absolute inset-0 -z-10"
+  role="presentation"
+  aria-hidden="true"
+>
+  <BackgroundComponent />
+</div>
+```
+
+### Focus Management
+
+Ensure backgrounds don't interfere with keyboard navigation:
+
+```css
+/* Backgrounds should never receive focus */
+.background-container {
+  pointer-events: none; /* Allow clicks to pass through */
+}
+
+.background-container > * {
+  pointer-events: auto; /* Re-enable for interactive backgrounds */
+}
+```
+
+---
+
+## Implementation Plan
+
+### Phase 1: Core Integration (Days 1-2)
+
+**Tasks:**
+- [ ] Create `@mdxui/backgrounds` sub-package
+- [ ] Set up build system and dependencies
+- [ ] Implement `BackgroundContainer` wrapper
+- [ ] Create background registry
+- [ ] Set up lazy loading system
+
+**Deliverables:**
+- Core infrastructure
+- Theme-aware wrappers
+- Performance optimization utilities
+
+---
+
+### Phase 2: Wrap MagicUI Components (Day 3)
+
+**Tasks:**
+- [ ] Wrap **Particles** (priority #1)
+- [ ] Wrap **Warp Background**
+- [ ] Wrap **Animated Grid**
+- [ ] Wrap **Shine Border**
+- [ ] Wrap **Flickering Grid**
+- [ ] Wrap **Retro Grid**
+- [ ] Wrap **Ripple**
+- [ ] Wrap **Dot Pattern**
+- [ ] Wrap **Striped Pattern**
+- [ ] Wrap **Light Rays**
+
+**Deliverables:**
+- 10 production-ready background components
+- Theme defaults for light/dark mode
+- TypeScript types for all props
+
+---
+
+### Phase 3: Component Integration (Day 4)
+
+**Tasks:**
+- [ ] Add `background` prop to `HeroSection`
+- [ ] Add `background` prop to `FeaturesSection`
+- [ ] Add `background` prop to all page-level components
+- [ ] Test MDX children API with backgrounds
+- [ ] Test props API with backgrounds
+
+**Deliverables:**
+- All components support backgrounds
+- MDX and props APIs both work
+- Integration tests passing
+
+---
+
+### Phase 4: Examples & Documentation (Day 5)
+
+**Tasks:**
+- [ ] Create landing page example with each background
+- [ ] Create comparison showcase (all backgrounds side-by-side)
+- [ ] Write background selection guide
+- [ ] Document performance best practices
+- [ ] Create accessibility guide
+
+**Deliverables:**
+- Example sites demonstrating all backgrounds
+- Comprehensive documentation
+- Performance guidelines
+- Accessibility best practices
+
+---
+
+## Testing Strategy
+
+### Visual Regression Tests
+
+```typescript
+describe('MagicUI Backgrounds', () => {
+  it('renders Particles background correctly', async () => {
+    const { container } = render(
+      <HeroSection background="particles">
+        <h1>Test</h1>
+      </HeroSection>
+    )
+
+    // Wait for animation frame
+    await waitFor(() => {
+      expect(container.querySelector('canvas')).toBeInTheDocument()
+    })
+
+    // Visual snapshot
+    expect(container).toMatchSnapshot()
+  })
+
+  it('respects dark mode', async () => {
+    const { container } = render(
+      <ThemeProvider theme="dark">
+        <HeroSection background="particles">
+          <h1>Test</h1>
+        </HeroSection>
+      </ThemeProvider>
+    )
+
+    // Check particles color matches dark theme
+    const canvas = container.querySelector('canvas')
+    expect(canvas).toHaveAttribute('data-theme', 'dark')
+  })
+})
+```
+
+### Performance Tests
+
+```typescript
+describe('Background Performance', () => {
+  it('maintains 60fps animation', async () => {
+    const fpsCounter = new FPSCounter()
+
+    render(
+      <HeroSection background="particles">
+        <h1>Performance Test</h1>
+      </HeroSection>
+    )
+
+    // Measure FPS over 5 seconds
+    await new Promise(resolve => setTimeout(resolve, 5000))
+
+    const averageFPS = fpsCounter.getAverage()
+    expect(averageFPS).toBeGreaterThanOrEqual(55) // Allow slight variance
+  })
+
+  it('lazy loads background components', async () => {
+    const { container } = render(
+      <HeroSection background="warp">
+        <h1>Lazy Load Test</h1>
+      </HeroSection>
+    )
+
+    // Initially, background shouldn't be loaded
+    expect(container.querySelector('.warp-background')).not.toBeInTheDocument()
+
+    // After Suspense resolves
+    await waitFor(() => {
+      expect(container.querySelector('.warp-background')).toBeInTheDocument()
+    })
+  })
+})
+```
+
+### Accessibility Tests
+
+```typescript
+describe('Background Accessibility', () => {
+  it('respects prefers-reduced-motion', () => {
+    // Mock media query
+    window.matchMedia = jest.fn().mockImplementation(query => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn()
+    }))
+
+    const { container } = render(
+      <HeroSection background="particles">
+        <h1>Test</h1>
+      </HeroSection>
+    )
+
+    // Should render static background instead
+    expect(container.querySelector('canvas')).not.toBeInTheDocument()
+    expect(container.querySelector('.static-background')).toBeInTheDocument()
+  })
+
+  it('is hidden from screen readers', () => {
+    const { container } = render(
+      <HeroSection background="grid">
+        <h1>Test</h1>
+      </HeroSection>
+    )
+
+    const background = container.querySelector('.background-container')
+    expect(background).toHaveAttribute('aria-hidden', 'true')
+    expect(background).toHaveAttribute('role', 'presentation')
+  })
+})
+```
+
+---
+
+## Success Metrics
+
+### Performance Targets
+- ✅ **FPS:** Maintain 60fps on desktop, 30fps on mobile
+- ✅ **Bundle Size:** <50KB per background (gzipped)
+- ✅ **Load Time:** <100ms to first render
+- ✅ **CPU Usage:** <10% on modern devices
+
+### User Experience
+- ✅ **Zero Config:** Works with single `background="type"` prop
+- ✅ **Theme Aware:** Auto-adjusts colors for light/dark mode
+- ✅ **Responsive:** Looks good on all screen sizes
+- ✅ **Accessible:** Respects motion preferences
+
+### Developer Experience
+- ✅ **Simple API:** Intuitive props, great TypeScript support
+- ✅ **Customizable:** Easy to override defaults
+- ✅ **Documented:** Clear examples and guides
+- ✅ **Tested:** Comprehensive test coverage
+
+---
+
+## Future Enhancements
+
+1. **Custom Backgrounds:** Allow users to create custom backgrounds
+2. **Animation Controls:** Play/pause/speed controls
+3. **Interactive Modes:** Mouse tracking, scroll-triggered animations
+4. **3D Backgrounds:** Three.js integration for 3D effects
+5. **Generative Art:** AI-generated backgrounds
+
+---
+
+**End of Specification**
+
+This integration will make **MagicUI backgrounds** a flagship feature of mdxui, providing **beautiful, performant, accessible** animated backgrounds with **zero configuration**. Priority implementation given user emphasis on backgrounds.

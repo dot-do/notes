@@ -1,0 +1,267 @@
+# External Dependencies Quick Reference
+
+## Legend
+- 🔴 **Critical** - Essential, no viable alternative
+- 🟡 **Evaluate** - Audit usage, potential migration
+- 🟢 **Migrate** - Internal alternative available
+- 🔵 **Free** - Free tier or free API
+- 💰 **Paid** - Paid service with ongoing costs
+
+---
+
+## Payment & Financial
+
+| Service | Status | Cost | Action |
+|---------|--------|------|--------|
+| Stripe | 🔴 Critical | 2.9% + 30¢ | Keep |
+
+## Authentication & Identity
+
+| Service | Status | Cost | Action |
+|---------|--------|------|--------|
+| WorkOS | 🟡 Evaluate | Free-$500/mo | Audit SSO/SCIM usage |
+| GitHub OAuth | 🔵 Free | Free | Keep |
+
+## Email & Communication
+
+| Service | Status | Cost | Action |
+|---------|--------|------|--------|
+| Resend | 🔴 Critical | Free-$50/mo | Keep (via workers/email) |
+
+## AI & Machine Learning
+
+| Service | Status | Cost | Action |
+|---------|--------|------|--------|
+| OpenAI | 🔴 Critical | $500-5,000/mo | Keep + use Workers AI for simple tasks |
+| Anthropic | 🔴 Critical | $200-2,000/mo | Keep |
+| Cloudflare Workers AI | 🔴 Critical | $10-100/mo | Use for cost-sensitive tasks |
+| Google AI (Gemini) | 🔵 Free | Pay-per-use | Optional provider |
+
+## Web Scraping & Browser Automation
+
+| Service | Status | Cost | Action |
+|---------|--------|------|--------|
+| Browserbase | 🟢 Migrate | $49/mo | Replace with CF Browser Rendering |
+| Firecrawl | 🟢 Migrate | $200/mo | Build internal scraping service |
+| CF Browser Rendering | 🔵 Free | $5/million | Use for browser automation |
+
+## Voice AI
+
+| Service | Status | Cost | Action |
+|---------|--------|------|--------|
+| VAPI | 🟡 Evaluate | $50-500/mo | Keep if critical, deprecate if experimental |
+
+## EDI & B2B
+
+| Service | Status | Cost | Action |
+|---------|--------|------|--------|
+| Stedi | 🟡 Evaluate | $50-500/mo | Keep if low volume, build parser if high |
+
+## Integration Platforms
+
+| Service | Status | Cost | Action |
+|---------|--------|------|--------|
+| Composio | 🟡 Evaluate | Unknown | Audit usage, build targeted integrations |
+| Zapier | 🔵 Free | Free tier | Keep for catalog import |
+
+## Data APIs (All Free)
+
+| Service | Status | Cost | Action |
+|---------|--------|------|--------|
+| npm Registry | 🔵 Free | Free | Keep |
+| PyPI | 🔵 Free | Free | Keep |
+| Schema.org | 🔵 Free | Free | Keep |
+| O*NET | 🔵 Free | Free | Keep |
+| NAICS | 🔵 Free | Free | Keep |
+
+---
+
+## Cost Breakdown
+
+### Current Monthly Cost: $1,000-$8,000
+- OpenAI: $500-5,000
+- Anthropic: $200-2,000
+- WorkOS: $0-500
+- Firecrawl: $200
+- VAPI: $50-500
+- Stedi: $50-500
+- Resend: $0-50
+- Browserbase: $49
+- Others: Variable
+
+### Optimized Monthly Cost: $700-$5,000 (30-40% reduction)
+- OpenAI: $300-3,000 (offload simple tasks to Workers AI)
+- Anthropic: $200-2,000
+- Workers AI: $10-100
+- CF Browser Rendering: $5-50 (replaces Browserbase + Firecrawl)
+- WorkOS: $0-500 (evaluate)
+- VAPI: $0-500 (evaluate)
+- Stedi: $0-500 (evaluate)
+- Resend: $0-50
+- Others: Variable
+
+**Potential Savings:** $300-3,000/mo
+
+---
+
+## Immediate Actions (Week 1)
+
+### 1. Browserbase Migration (2-3 days)
+```bash
+# Current files
+api/clients/browserbase.ts
+mcp/tools/browser.ts
+code/crawlee.ts
+
+# Action
+# Migrate to Cloudflare Browser Rendering (already configured in wrangler.jsonc)
+# Replace BrowserbaseClient with puppeteer.launch(env.BROWSER)
+```
+
+**Savings:** $49/mo → ~$5/mo (90%+ reduction)
+
+### 2. Firecrawl Migration (3-5 days)
+```bash
+# Current files
+api/clients/firecrawl.ts
+mcp/tools/scraping.ts
+
+# Action
+# Build workers/scraping service using CF Browser Rendering
+# Implement markdown conversion and structured extraction
+```
+
+**Savings:** $200/mo → ~$10/mo (95%+ reduction)
+
+---
+
+## Workers Services Available
+
+| Service | Status | LOC | Purpose |
+|---------|--------|-----|---------|
+| gateway | ✅ Complete | 1,349 | API routing, rate limiting |
+| db | ✅ Complete | 1,909 | PostgreSQL + ClickHouse |
+| auth | ✅ Complete | 2,669 | GitHub OAuth + API keys |
+| schedule | ✅ Complete | 1,925 | Cron jobs |
+| webhooks | ✅ Complete | 2,114 | Stripe, WorkOS, GitHub, Resend |
+| email | ✅ Complete | - | Resend integration |
+| mcp | ✅ Complete | - | Model Context Protocol |
+| queue | ✅ Complete | - | Message queue |
+
+**Total:** 8/8 core services complete (~13,000 LOC migrated)
+
+---
+
+## Foundation Packages (AI Abstraction)
+
+| Package | Purpose | Status |
+|---------|---------|--------|
+| ai-generation | Text generation across providers | ✅ Complete |
+| ai-embeddings | Vector embeddings (5 models) | ✅ Complete |
+| ai-chat | Chat interfaces | ✅ Complete |
+| ai-models | Model configuration | ✅ Complete |
+
+**Benefits:**
+- Zero duplicate code (~250 lines eliminated)
+- Provider-agnostic API
+- Easy cost optimization (switch providers)
+
+---
+
+## Environment Variables Reference
+
+### Required Secrets (via `wrangler secret put`)
+```bash
+# Payment
+STRIPE_SECRET_KEY
+STRIPE_WEBHOOK_SECRET
+
+# Authentication
+AUTH_SECRET
+GITHUB_CLIENT_ID
+GITHUB_CLIENT_SECRET
+WORKOS_API_KEY
+WORKOS_CLIENT_ID
+WORKOS_WEBHOOK_SECRET
+
+# Email
+# (None - Resend API key configured in workers/email)
+
+# AI
+OPENAI_API_KEY
+OPENAI_WEBHOOK_SECRET
+ANTHROPIC_API_KEY
+GOOGLE_API_KEY
+CLOUDFLARE_API_TOKEN
+
+# Browser/Scraping (to be removed after migration)
+BROWSERBASE_API_KEY
+FIRECRAWL_API_KEY
+
+# Voice (evaluate)
+VAPI_TOKEN
+VAPI_WEBHOOK_SECRET
+
+# EDI (evaluate)
+STEDI_WEBHOOK_SECRET
+
+# Integrations (evaluate)
+COMPOSIO_API_KEY
+```
+
+### Bindings (in wrangler.jsonc)
+```jsonc
+{
+  "ai": { "binding": "AI" },  // Cloudflare Workers AI
+  "browser": { "binding": "BROWSER" },  // Browser Rendering
+  "durable_objects": {
+    "bindings": [
+      { "name": "CLAUDE_CODE_DO", ... },
+      // ... 10 total DOs
+    ]
+  }
+}
+```
+
+---
+
+## Quick Decision Tree
+
+```
+Is it payment processing?
+├─ YES → Keep Stripe (no alternative)
+└─ NO → Continue
+
+Is it email delivery?
+├─ YES → Keep Resend (excellent value)
+└─ NO → Continue
+
+Is it AI generation?
+├─ Simple task? → Use Cloudflare Workers AI
+├─ Advanced reasoning? → Use OpenAI/Anthropic
+└─ Batch processing? → Use Batch APIs
+
+Is it browser automation?
+├─ YES → Use Cloudflare Browser Rendering
+└─ NO → Continue
+
+Is it web scraping?
+├─ YES → Build internal service with CF Browser Rendering
+└─ NO → Continue
+
+Is it authentication?
+├─ Basic auth? → Use workers/auth
+├─ Enterprise SSO? → Evaluate WorkOS usage
+└─ NO → Continue
+
+Is it data import?
+├─ Free API? → Keep using API
+└─ Paid service? → Evaluate volume and cost
+```
+
+---
+
+**See Also:**
+- [Detailed Analysis (JSON)](/Users/nathanclevenger/Projects/.do/notes/2025-10-03-external-dependencies-analysis.json)
+- [Summary Report](/Users/nathanclevenger/Projects/.do/notes/2025-10-03-external-dependencies-summary.md)
+- [Workers Architecture](/Users/nathanclevenger/Projects/.do/workers/CLAUDE.md)

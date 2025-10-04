@@ -1,0 +1,142 @@
+# Stream 6 Deliverables: React-ink + MCP Outputs
+
+## Files Created
+
+### React-ink Output (4 files)
+
+```
+packages/mdxe/src/outputs/react-ink/
+├── renderer.ts          # Core rendering engine (181 lines)
+├── components.tsx       # CLI component library (452 lines)
+├── index.ts            # Public API (36 lines)
+└── renderer.test.ts    # Test suite (101 lines)
+```
+
+### MCP Output (8 files)
+
+```
+packages/mdxe/src/outputs/mcp/
+├── protocol.ts         # MCP server (263 lines)
+├── tools.ts           # DB + MDX tools (259 lines)
+├── resources.ts       # Resource providers (273 lines)
+├── server.ts          # Server factory (98 lines)
+├── index.ts           # Public API (31 lines)
+├── protocol.test.ts   # Protocol tests (94 lines)
+├── tools.test.ts      # Tool tests (151 lines)
+└── resources.test.ts  # Resource tests (204 lines)
+```
+
+### Examples (5 files)
+
+```
+packages/mdxe/examples/
+├── react-ink/
+│   ├── example.ts              # 5 working examples (379 lines)
+│   └── README.md              # Documentation (338 lines)
+└── mcp/
+    ├── server.ts               # Complete server (243 lines)
+    ├── client-example.md      # Usage examples (366 lines)
+    └── README.md              # Integration guide (323 lines)
+```
+
+## Quick Reference
+
+### React-ink API
+
+```typescript
+// Render MDX to CLI
+import { renderMdxToInk, defaultInkComponents } from 'mdxe/outputs/react-ink'
+
+const result = await renderMdxToInk(mdxContent, {
+  components: defaultInkComponents,
+  scope: { data },
+})
+
+await result.waitUntilExit()
+```
+
+### MCP Server API
+
+```typescript
+// Create MCP server
+import { createMDXEServer } from 'mdxe/outputs/mcp'
+
+const server = await createMDXEServer({
+  database: dbAdapter,
+  collections: collectionAdapter,
+})
+
+await server.connectStdio()
+```
+
+## File Locations
+
+### Implementation
+- React-ink: `/Users/nathanclevenger/Projects/.do/mdx/packages/mdxe/src/outputs/react-ink/`
+- MCP: `/Users/nathanclevenger/Projects/.do/mdx/packages/mdxe/src/outputs/mcp/`
+
+### Examples
+- React-ink: `/Users/nathanclevenger/Projects/.do/mdx/packages/mdxe/examples/react-ink/`
+- MCP: `/Users/nathanclevenger/Projects/.do/mdx/packages/mdxe/examples/mcp/`
+
+### Documentation
+- Implementation Summary: `/Users/nathanclevenger/Projects/.do/notes/2025-10-03-stream-6-react-ink-mcp-outputs.md`
+- This File: `/Users/nathanclevenger/Projects/.do/notes/2025-10-03-stream-6-deliverables.md`
+
+## Statistics
+
+| Category | Files | Lines |
+|----------|-------|-------|
+| React-ink Implementation | 4 | 770 |
+| MCP Implementation | 8 | 1,373 |
+| Examples | 5 | 1,649 |
+| Tests | 3 | 550 |
+| **Total** | **20** | **4,342** |
+
+## Testing
+
+```bash
+# Run all tests
+cd /Users/nathanclevenger/Projects/.do/mdx
+pnpm build
+pnpm --filter mdxe test
+
+# Run React-ink example
+node packages/mdxe/examples/react-ink/example.ts
+
+# Run MCP server
+node packages/mdxe/examples/mcp/server.ts
+```
+
+## Integration
+
+### Claude Desktop
+
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "mdxe": {
+      "command": "node",
+      "args": [
+        "/Users/nathanclevenger/Projects/.do/mdx/packages/mdxe/examples/mcp/server.ts"
+      ]
+    }
+  }
+}
+```
+
+## Next Steps
+
+1. Build package: `pnpm build`
+2. Run tests: `pnpm test`
+3. Test examples
+4. Review documentation
+5. Continue to Stream 7 (Publishing CLI)
+
+---
+
+**Stream:** 6 of 8  
+**Status:** ✅ Complete  
+**Date:** 2025-10-03

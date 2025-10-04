@@ -1,0 +1,415 @@
+# AI-* Packages Migration Plan
+
+**Date:** 2025-10-03
+**Status:** Planning Phase
+**Goal:** Consolidate all ai-* packages into the packages/ repository
+
+## Current State Analysis
+
+### Packages Found
+
+| Package | Current Location | Target Location | Status |
+|---------|-----------------|-----------------|--------|
+| **@dot-do/ai-functions** | `ai/packages/ai-functions/` | `packages/ai-functions/` | ⚠️ Needs migration |
+| **@dot-do/ai-workflows** | `ai/packages/ai-workflows/` | `packages/ai-workflows/` | ⚠️ Needs migration |
+| **@dot-do/ai-database** | `packages/ai-database/` | `packages/ai-database/` | ✅ Already correct |
+
+### Duplicate Issues
+
+**PROBLEM:** Nested duplicates found in `packages/packages/`:
+- `packages/packages/ai-functions/` - Duplicate (wrong location)
+- `packages/packages/ai-workflows/` - Duplicate (wrong location)
+
+These appear to be from a previous incomplete migration attempt. They should be **deleted** after verifying the originals in `ai/packages/` are canonical.
+
+## Package Details
+
+### 1. @dot-do/ai-functions
+
+**Purpose:** Generic AI-powered template literal functions for text generation, lists, research, and more
+
+**Current Location:** `ai/packages/ai-functions/`
+
+**Key Features:**
+- Template literal AI functions (ai, list, research, extract, code, etc.)
+- No filesystem dependencies (edge-runtime compatible)
+- Pure functions with full TypeScript support
+- Stream support for real-time responses
+- Zod-based schema validation
+
+**Dependencies:**
+```json
+{
+  "@ai-sdk/openai": "^1.3.22",
+  "@google/genai": "^1.1.0",
+  "@mendable/firecrawl-js": "^1.25.1",
+  "ai": "^4.3.16",
+  "dedent": "^1.6.0",
+  "github-slugger": "^2.0.0",
+  "gray-matter": "^4.0.3",
+  "lru-cache": "^11.1.0",
+  "object-hash": "^3.0.0",
+  "p-queue": "^8.1.0",
+  "react": "^18.2.0",
+  "react-dom": "^18.2.0",
+  "remark-gfm": "^4.0.1",
+  "remark-parse": "^11.0.0",
+  "typescript": "^5.8.3",
+  "unified": "^11.0.5",
+  "vitest": "^3.1.4",
+  "yaml": "^2.8.0",
+  "zod": "^3.21.4"
+}
+```
+
+**Files:** 19 total (functions/, utils/, index.ts, etc.)
+
+### 2. @dot-do/ai-workflows
+
+**Purpose:** Event-driven workflow orchestration with AI context support
+
+**Current Location:** `ai/packages/ai-workflows/`
+
+**Key Features:**
+- Event-driven architecture
+- Shared context between steps
+- AI-enhanced event handlers
+- React Ink CLI components
+- TypeScript support with timeouts
+
+**Dependencies:**
+```json
+{
+  "react": "^18.2.0",
+  "ink": "^4.4.1",
+  "esbuild": "^0.19.0",
+  "@dot-do/ai-functions": "workspace:*"  // ⚠️ Requires ai-functions
+}
+```
+
+**Dependency:** **Depends on @dot-do/ai-functions** (must move together)
+
+**Files:** 15 total (event-system.ts, ai-template-functions.ts, input-prompt.tsx, etc.)
+
+### 3. @dot-do/ai-database
+
+**Purpose:** Unified database abstraction for Cloudflare D1 and Durable Objects SQLite with PayloadCMS integration
+
+**Current Location:** `packages/ai-database/` ✅
+
+**Status:** Already in correct location, no migration needed
+
+**Dependencies:**
+```json
+{
+  "@cloudflare/workers-types": "^4.20251001.0",
+  "drizzle-orm": "^0.44.6"
+}
+```
+
+## Migration Plan
+
+### Phase 1: Verification (CURRENT)
+
+**Completed:**
+- [x] Located all ai-* packages
+- [x] Documented current locations
+- [x] Identified dependencies
+- [x] Found duplicate packages
+
+**Remaining:**
+- [ ] Verify which copies are canonical (ai/packages/ vs packages/packages/)
+- [ ] Check for any external imports/references to these packages
+
+### Phase 2: Pre-Migration Checks
+
+**Tasks:**
+1. Search entire codebase for imports of these packages
+   ```bash
+   grep -r "@dot-do/ai-functions" . --include="*.ts" --include="*.tsx"
+   grep -r "@dot-do/ai-workflows" . --include="*.ts" --include="*.tsx"
+   ```
+
+2. Check pnpm-workspace.yaml in all repos
+   ```bash
+   find . -name "pnpm-workspace.yaml" -exec cat {} \;
+   ```
+
+3. Verify git status of packages to ensure no uncommitted changes
+   ```bash
+   cd ai/packages/ai-functions && git status
+   cd ai/packages/ai-workflows && git status
+   ```
+
+### Phase 3: Package Migration
+
+**Steps for each package:**
+
+#### 3.1 Migrate ai-functions
+
+```bash
+# 1. Move package to correct location
+git mv ai/packages/ai-functions packages/ai-functions
+
+# 2. Update package.json repository field
+# FROM: "directory": "packages/ai-functions"
+# TO:   "directory": "packages/ai-functions"
+# (No change needed - already says packages/)
+
+# 3. Commit move
+git add .
+git commit -m "chore: move @dot-do/ai-functions to packages/ repo
+
+- Migrated from ai/packages/ai-functions to packages/ai-functions
+- Part of ai-* packages consolidation into packages/ monorepo
+- No code changes, only directory restructure"
+```
+
+#### 3.2 Migrate ai-workflows
+
+```bash
+# 1. Move package to correct location
+git mv ai/packages/ai-workflows packages/ai-workflows
+
+# 2. Update package.json repository field
+# FROM: "directory": "packages/ai-workflows"
+# TO:   "directory": "packages/ai-workflows"
+# (No change needed - already says packages/)
+
+# 3. Update dependency reference (stays as workspace:*)
+# Dependency on ai-functions will still work
+
+# 4. Commit move
+git add .
+git commit -m "chore: move @dot-do/ai-workflows to packages/ repo
+
+- Migrated from ai/packages/ai-workflows to packages/ai-workflows
+- Depends on @dot-do/ai-functions (also migrated)
+- Part of ai-* packages consolidation into packages/ monorepo
+- No code changes, only directory restructure"
+```
+
+### Phase 4: Cleanup Duplicates
+
+```bash
+# Delete duplicate/nested packages
+rm -rf packages/packages/ai-functions
+rm -rf packages/packages/ai-workflows
+
+# Commit cleanup
+git add .
+git commit -m "chore: remove duplicate ai-* packages from packages/packages/
+
+- Removed packages/packages/ai-functions (duplicate)
+- Removed packages/packages/ai-workflows (duplicate)
+- Canonical versions now at packages/ai-functions and packages/ai-workflows"
+```
+
+### Phase 5: Update Workspace Configurations
+
+#### Update packages/pnpm-workspace.yaml
+
+**Current:**
+```yaml
+packages:
+  - 'packages/*'
+```
+
+**Proposed:**
+```yaml
+packages:
+  - 'packages/*'
+  - 'ai-*'
+  - 'mdx-*'
+  - 'payload-*'
+```
+
+This ensures all packages at the root level are included.
+
+#### Update ai/ repo if needed
+
+Check `ai/pnpm-workspace.yaml` and remove references to the moved packages.
+
+### Phase 6: Update Imports and References
+
+**Search and update any imports:**
+
+```bash
+# Find all imports (should use workspace:* so no changes needed)
+grep -r "from '@dot-do/ai-functions'" . --include="*.ts" --include="*.tsx"
+grep -r "from '@dot-do/ai-workflows'" . --include="*.ts" --include="*.tsx"
+
+# Check package.json dependencies
+find . -name "package.json" -exec grep -l "@dot-do/ai-" {} \;
+```
+
+**Expected:** No code changes needed if using `workspace:*` protocol.
+
+### Phase 7: Verification
+
+```bash
+# 1. Clean install in packages/ repo
+cd packages/
+rm -rf node_modules pnpm-lock.yaml
+pnpm install
+
+# 2. Build all packages
+pnpm run build
+
+# 3. Run tests
+pnpm test
+
+# 4. Type check
+pnpm run check-types
+
+# 5. Verify package linking
+pnpm list @dot-do/ai-functions
+pnpm list @dot-do/ai-workflows
+pnpm list @dot-do/ai-database
+```
+
+### Phase 8: Update Documentation
+
+**Files to update:**
+
+1. **packages/CLAUDE.md**
+   - Add ai-functions to package list
+   - Add ai-workflows to package list
+   - Update examples
+
+2. **ai/CLAUDE.md**
+   - Note packages have moved to packages/ repo
+   - Update cross-references
+
+3. **Root CLAUDE.md**
+   - Update packages/ section
+   - Note consolidation complete
+
+4. **packages/README.md**
+   - Add descriptions of ai-* packages
+   - Update usage examples
+
+## Migration Checklist
+
+### Pre-Migration
+- [ ] Verify canonical package locations (ai/packages/ vs packages/packages/)
+- [ ] Search for all imports/references
+- [ ] Check git status (no uncommitted changes)
+- [ ] Backup packages/ and ai/ repos
+
+### Migration
+- [ ] Move ai/packages/ai-functions → packages/ai-functions
+- [ ] Move ai/packages/ai-workflows → packages/ai-workflows
+- [ ] Verify packages/ai-database stays in place
+- [ ] Delete packages/packages/ai-functions
+- [ ] Delete packages/packages/ai-workflows
+
+### Post-Migration
+- [ ] Update pnpm-workspace.yaml in packages/
+- [ ] Update pnpm-workspace.yaml in ai/ (if exists)
+- [ ] Clean install and rebuild
+- [ ] Run all tests
+- [ ] Update CLAUDE.md in packages/
+- [ ] Update CLAUDE.md in ai/
+- [ ] Update root CLAUDE.md
+- [ ] Update README.md in packages/
+- [ ] Commit and push all changes
+
+### Verification
+- [ ] Verify builds work
+- [ ] Verify tests pass
+- [ ] Verify package linking works
+- [ ] Verify no broken imports
+- [ ] Test in consuming projects
+
+## Risks and Mitigation
+
+### Risk 1: Breaking Changes
+
+**Risk:** Moving packages might break imports in other repos
+
+**Mitigation:**
+- Using `workspace:*` protocol means pnpm will resolve correctly
+- Test before committing
+- Can revert with `git mv` back if issues
+
+### Risk 2: Lost Git History
+
+**Risk:** `git mv` might not preserve history perfectly
+
+**Mitigation:**
+- Git tracks moves automatically
+- Use `git log --follow` to see history
+- Can use `--find-renames` flag if needed
+
+### Risk 3: Duplicate Confusion
+
+**Risk:** Multiple copies might cause confusion
+
+**Mitigation:**
+- Delete duplicates immediately after migration
+- Document canonical location clearly
+- Update all references
+
+### Risk 4: Dependency Issues
+
+**Risk:** ai-workflows depends on ai-functions, might break
+
+**Mitigation:**
+- Move both packages together
+- Both use `workspace:*` protocol
+- Test after migration before committing
+
+## Rollback Plan
+
+If issues occur:
+
+```bash
+# 1. Revert git commits
+git revert <commit-hash>
+
+# 2. Or restore from backup
+cp -r /backup/ai/packages/ai-functions ai/packages/
+cp -r /backup/ai/packages/ai-workflows ai/packages/
+
+# 3. Clean and reinstall
+rm -rf node_modules pnpm-lock.yaml
+pnpm install
+
+# 4. Verify everything works
+pnpm build && pnpm test
+```
+
+## Expected Benefits
+
+1. **Centralized Package Management** - All @dot-do packages in one repo
+2. **Simplified Maintenance** - Single workspace for all shared code
+3. **Clearer Dependencies** - Workspace protocol makes deps explicit
+4. **Better Organization** - Logical grouping of related packages
+5. **Easier Discovery** - One place to find all packages
+6. **Consistent Tooling** - Same build/test/lint config across packages
+
+## Timeline
+
+**Estimated Duration:** 2-4 hours
+
+- Phase 1: Verification (30 min) ✅
+- Phase 2: Pre-checks (30 min)
+- Phase 3: Migration (30 min)
+- Phase 4: Cleanup (15 min)
+- Phase 5: Workspace config (15 min)
+- Phase 6: Update refs (30 min)
+- Phase 7: Verification (30 min)
+- Phase 8: Docs (30 min)
+
+## Related Documentation
+
+- [packages/CLAUDE.md](../packages/CLAUDE.md) - Packages repo docs
+- [ai/CLAUDE.md](../ai/CLAUDE.md) - AI repo docs
+- [Root CLAUDE.md](../CLAUDE.md) - Multi-repo architecture
+
+---
+
+**Status:** Planning Complete - Ready for Execution
+**Next Step:** Phase 2 - Pre-Migration Checks
+**Managed By:** Claude Code

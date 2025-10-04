@@ -1,0 +1,1011 @@
+# Question-Based Digital Experimentation Platform - Research Findings
+
+**Date:** 2025-10-03
+**Status:** Comprehensive Research Complete
+**Next Phase:** Implementation Planning
+
+---
+
+## Table of Contents
+
+1. [Executive Summary](#executive-summary)
+2. [The Mom Test Methodology](#the-mom-test-methodology)
+3. [Multi-Channel Experimentation](#multi-channel-experimentation)
+4. [Question-Based Testing Platforms](#question-based-testing-platforms)
+5. [Experimentation Platform Architecture](#experimentation-platform-architecture)
+6. [Implementation Recommendations](#implementation-recommendations)
+7. [Technical Specifications](#technical-specifications)
+8. [References](#references)
+
+---
+
+## Executive Summary
+
+### Research Objectives
+
+Investigate how to implement experimentation via mom testing on:
+- Ads (Meta, Google, TikTok, LinkedIn)
+- Outbound emails
+- Social media posts
+- Onboarding flows
+- Waitlists
+- And other digital channels
+
+### Key Findings
+
+1. **The Mom Test** provides a proven framework for asking questions that elicit genuine, actionable feedback by focusing on past behaviors rather than opinions about future hypotheticals
+
+2. **Multi-channel experimentation** is most effective when combining:
+   - Pre-validation through surveys (mom test questions)
+   - A/B testing of variants on actual channels
+   - Statistical analysis of results
+
+3. **Question-based platforms** share common features:
+   - Conditional branching / skip logic
+   - Multiple question types (multiple choice, scale, text, behavioral)
+   - Analytics and segmentation
+   - Integration with A/B testing tools
+
+4. **Experimentation architecture** should be:
+   - Warehouse-native (compute in your data warehouse)
+   - Feature-flag integrated (every flag can become an experiment)
+   - Multi-protocol (RPC, HTTP, MCP, Queue)
+   - Statistically rigorous (p-values, confidence intervals, lift calculation)
+
+---
+
+## The Mom Test Methodology
+
+### Core Principles
+
+**Source:** "The Mom Test" by Rob Fitzpatrick
+
+#### Rule 1: Talk About Their Life, Not Your Idea
+- Focus on user's current problems and experiences
+- Avoid pitching your product
+- Ask about their workflow, pain points, and existing solutions
+
+**Bad Question:** "Would you use a tool that helps you manage projects?"
+**Good Question:** "Tell me about the last time you struggled to keep a project on track. What happened?"
+
+#### Rule 2: Ask About Specifics in the Past, Not Opinions About the Future
+- Past behavior is the best predictor of future behavior
+- Concrete examples reveal truth
+- Hypotheticals lead to polite lies
+
+**Bad Question:** "Would you pay $50/month for this?"
+**Good Question:** "How much are you currently spending on project management tools? What convinced you to pay for them?"
+
+#### Rule 3: Talk Less, Listen More
+- 80% listening, 20% questioning
+- Follow-up questions dig deeper
+- Silence often reveals the most
+
+### Scaling Through Digital Surveys
+
+**Traditional Mom Test:** One-on-one interviews (45-60 minutes each)
+
+**Digital Scaling Strategies:**
+
+1. **Survey-Based Mom Test**
+   - Transform interview questions into survey format
+   - Use conditional branching to dig deeper based on responses
+   - Capture specific examples through text fields
+   - Segment respondents for follow-up interviews
+
+2. **AI-Powered Validation**
+   - Automated question quality checking
+   - Flag opinion-based questions
+   - Suggest behavioral alternatives
+   - Analyze response patterns for genuine pain points
+
+3. **Integration with A/B Testing**
+   - Pre-qualify with mom test survey
+   - Segment high-intent vs explorers
+   - Test variants only with qualified segments
+   - Validate hypotheses before building
+
+### Mom Test Question Patterns
+
+#### Pattern: Past Behavior
+```
+Structure: "Tell me about the last time you [relevant action]"
+Purpose: Uncover actual usage patterns
+Example: "Describe the last time you tried to share project updates with your team"
+```
+
+#### Pattern: Commitment Evidence
+```
+Structure: "What have you tried/paid for to solve this?"
+Purpose: Validate problem severity
+Example: "What tools or solutions have you purchased to address this problem?"
+```
+
+#### Pattern: Workflow Discovery
+```
+Structure: "Walk me through your process for [task]"
+Purpose: Understand current state
+Example: "Take me through your typical day managing client communications"
+```
+
+#### Pattern: Pain Point Quantification
+```
+Structure: "How much time/money does [problem] cost you?"
+Purpose: Measure impact
+Example: "Estimate how many hours per week you spend manually updating status reports"
+```
+
+---
+
+## Multi-Channel Experimentation
+
+### 1. Ad Experimentation (Meta, Google)
+
+#### Current State of Ad Platforms (2025 Research)
+
+**Meta (Facebook/Instagram):**
+- Native A/B testing in Ads Manager
+- Built-in audience splitting
+- **Critical Issue:** Divergent delivery problem
+  - Targeting algorithms send different ads to different user types
+  - "Winner" may have won because it was shown to more responsive users, not because the creative was better
+  - Makes it impossible to truly isolate creative effectiveness
+
+**Google Ads:**
+- Experiments feature for campaign testing
+- Similar algorithmic targeting challenges
+- Recommendation: Use for broad testing, validate with surveys
+
+**Research Citation:** Journal of Marketing (2025) - "Online A/B testing in digital advertising may not deliver reliable insights"
+
+#### Best Practices for Ad Testing
+
+1. **Pre-Validation Strategy**
+   ```
+   Step 1: Survey target audience with mom test questions
+   Step 2: Identify genuine pain points and language
+   Step 3: Create ad variants using validated messaging
+   Step 4: Deploy to controlled segments
+   Step 5: Measure with clear conversion tracking
+   ```
+
+2. **Question-Based Pre-Testing**
+   - Ask: "What was the last ad that made you click? Why?"
+   - Ask: "What problems are you actively trying to solve right now?"
+   - Ask: "What words would you use to describe your biggest challenge?"
+   - Use responses to craft ad copy that resonates
+
+3. **Hybrid Approach**
+   - Use platform A/B testing for broad reach
+   - Run parallel survey to understand why variants perform differently
+   - Iterate based on qualitative insights, not just metrics
+
+#### Platforms & Tools
+
+- **Meta Ads Manager** - Native A/B testing, audience insights
+- **Google Ads Experiments** - Campaign-level testing
+- **Madgicx** - Advanced Facebook ad testing strategies
+- **Optimizely** - Cross-platform ad experimentation
+
+### 2. Email Campaign Experimentation
+
+#### Key Testing Opportunities
+
+**Subject Lines** (Highest ROI)
+- Open rate impact: 47% difference between best and worst
+- Test variables: Length, urgency, personalization, question vs statement
+- Sample size: Minimum 100 per variant for significance
+
+**Email Content**
+- Message framing (problem-focused vs solution-focused)
+- Call-to-action placement and wording
+- Visual design and layout
+- Personalization depth
+
+**Send Time & Frequency**
+- Day of week
+- Time of day
+- Cadence (daily, weekly, triggered)
+
+#### Question-Based Email Testing
+
+**Pre-Validation Survey Pattern:**
+```
+1. "What email newsletters do you currently read regularly?"
+   → Reveals actual engagement, not intent
+
+2. "Think about the last marketing email that made you click. What was it about?"
+   → Identifies effective triggers
+
+3. "What makes you immediately delete a marketing email?"
+   → Uncovers dealbreakers
+
+4. "How do you prefer companies to communicate with you?"
+   → Validates channel choice
+```
+
+**A/B Testing Framework:**
+```
+Control Group: Traditional email
+Variant A: Mom test-validated pain point messaging
+Variant B: Mom test-validated solution messaging
+Measure: Open rate, click rate, conversion rate, unsubscribe rate
+```
+
+#### Email Testing Platforms
+
+- **Mailchimp** - Built-in A/B testing with multivariate options
+- **SurveyMonkey + Email** - Survey-first approach
+- **Campaign Monitor** - Advanced segmentation and testing
+- **Salesforce Marketing Cloud** - Enterprise-grade testing
+
+### 3. Social Media Post Testing
+
+#### Platform-Specific Strategies
+
+**LinkedIn**
+- **Key Finding:** Employee advocacy posts outperform branded posts
+- Test: Personal voice vs corporate voice
+- Test: Question format vs statement format
+- Optimal: Ask genuine questions that spark discussion
+
+**Instagram**
+- Visual testing is critical
+- Test: Carousel vs single image vs video
+- Test: Caption length and style
+- Test: Hashtag strategies
+
+**TikTok**
+- Culture-driven, not content calendar-driven
+- Test: Trend participation timing
+- Test: Audio choices and editing style
+- Test: Hook variations in first 3 seconds
+
+**Twitter/X**
+- Thread vs single tweet
+- Question vs statement
+- Text-only vs image vs video
+
+#### Social Media Testing Tools
+
+- **Buffer** - Schedule and test across platforms, built-in analytics
+- **Hootsuite** - Multi-platform testing and management
+- **Sprout Social** - Advanced analytics and testing
+- **Meta Business Suite** - Native Facebook/Instagram testing
+
+#### Mom Test Questions for Social Content
+
+```
+"Which social media posts have you saved or shared recently? Why?"
+→ Reveals what content actually resonates vs what people say they want
+
+"When was the last time a brand's social post made you visit their website?"
+→ Validates conversion potential
+
+"What types of posts do you engage with vs scroll past?"
+→ Identifies content that drives action
+```
+
+### 4. Onboarding Flow Optimization
+
+#### Testing Methodology
+
+**A/B Testing Approaches:**
+- **Flow Variation Testing:** Compare completely different onboarding sequences
+- **Control Group Experiments:** Test one variation against no onboarding
+- **Multivariate Testing:** Test multiple variables simultaneously
+
+**Key Metrics:**
+- Completion rate (finished onboarding)
+- Time to value (first meaningful action)
+- Retention rate (30-day, 90-day)
+- Feature adoption (key features used)
+
+#### Question-Based Onboarding Optimization
+
+**Pre-Launch Survey:**
+```
+"Walk me through the first time you tried [similar product]. What was confusing?"
+→ Identify friction points before building
+
+"What would need to happen in the first 5 minutes for you to keep using a new tool?"
+→ Define critical first impressions
+
+"Think about tools you've abandoned. What made you stop using them?"
+→ Uncover dealbreakers
+```
+
+**In-Flow Testing:**
+```
+Step 1: Gather user context (job role, use case, goal)
+Step 2: Personalize onboarding based on answers
+Step 3: Test different tutorial lengths
+Step 4: Measure completion and retention
+```
+
+#### Onboarding Testing Platforms
+
+- **Appcues** - No-code onboarding builder with A/B testing
+- **Userpilot** - Advanced segmentation and experimentation
+- **CleverTap** - Mobile-first onboarding optimization
+- **Maze** - User testing for onboarding flows
+
+### 5. Waitlist Experimentation
+
+#### Waitlist as Validation Mechanism
+
+**Traditional Approach:** Email signup for "early access"
+**Problem:** Low-quality leads, no validation of actual interest
+
+**Question-Based Approach:** Quiz-powered waitlist
+- Validates product-market fit BEFORE building
+- Pre-qualifies leads for higher conversion
+- Generates insights for product direction
+- Fails fast if concept doesn't resonate
+
+#### Waitlist Testing Framework
+
+**Survey-First Waitlist:**
+```
+Landing Page
+↓
+Mom Test Questions (5-7 targeted questions)
+↓
+Email Signup (only if qualified based on answers)
+↓
+Segment for targeted updates
+```
+
+**Example Questions:**
+```
+1. "How are you currently solving [problem]?" (Validate problem exists)
+2. "How much does [problem] cost you per month?" (Quantify pain)
+3. "What have you tried that didn't work?" (Validate need for alternative)
+4. "If this launched tomorrow at $X/month, would you be willing to be a beta tester?" (Validate pricing)
+5. "What's your timeline for finding a solution?" (Qualify urgency)
+```
+
+#### Waitlist Platforms with Quiz Capabilities
+
+- **ScoreApp** - Quiz-based lead qualification with segmentation
+- **Waitlister** - Pre-launch campaigns with question forms
+- **Prefinery** - Viral waitlists with custom fields
+- **LaunchList** - Referral-powered waitlists
+- **KickoffLabs** - Landing page builder with quiz integration
+
+#### Benefits of Question-Based Waitlists
+
+1. **Higher Quality Leads:** Only interested parties complete full quiz
+2. **Product Validation:** Answer patterns reveal if problem is real
+3. **Messaging Insights:** Use language from responses in marketing
+4. **Segment Before Launch:** Know who to contact first
+5. **Fail Fast:** If quiz has low completion, pivot before building
+
+### 6. Landing Page Experimentation
+
+#### Testing Strategies
+
+**Headline Variations:**
+- Problem-focused vs solution-focused
+- Question vs statement
+- Specific vs general
+
+**Value Proposition:**
+- Feature list vs benefit storytelling
+- Social proof placement
+- Trust signals (testimonials, logos, stats)
+
+**Call-to-Action:**
+- Button copy ("Start Free Trial" vs "See How It Works")
+- Button color and size
+- Form length (email only vs full signup)
+
+#### Mom Test Integration
+
+**Survey Popup Pattern:**
+```
+User lands on page
+↓
+Offer value ("Want to see if this is right for you?")
+↓
+3-5 mom test questions
+↓
+Personalized landing page based on answers
+↓
+Targeted CTA
+```
+
+**Exit Intent Survey:**
+```
+User about to leave
+↓
+"Quick question before you go..."
+↓
+Ask: "What were you hoping to find that you didn't?"
+↓
+Capture insights for iteration
+```
+
+---
+
+## Question-Based Testing Platforms
+
+### Survey Platform Comparison
+
+| Platform | Conditional Logic | Multi-Step | AI Features | A/B Testing | Price |
+|----------|------------------|------------|-------------|-------------|-------|
+| Qualtrics | ✅ Advanced | ✅ Yes | ✅ Analysis | ✅ Yes | $$$$ |
+| SurveyMonkey | ✅ Skip Logic | ✅ Yes | ⚠️ Basic | ✅ Yes | $$ |
+| Typeform | ✅ Logic Jumps | ✅ Yes | ❌ No | ✅ Yes | $$ |
+| Google Forms | ⚠️ Basic | ✅ Yes | ❌ No | ❌ No | Free |
+| Userpilot | ✅ Advanced | ✅ Yes | ✅ Insights | ✅ Yes | $$$ |
+| VWO | ✅ Yes | ✅ Yes | ⚠️ Basic | ✅ Native | $$$ |
+| Custom (Zod) | ✅ Full Control | ✅ Yes | ✅ Custom | ✅ Custom | Dev Time |
+
+### Key Features Required
+
+#### 1. Conditional Branching (Skip Logic)
+
+**Definition:** Dynamic survey paths based on respondent inputs
+
+**Example Flow:**
+```
+Q1: "Do you currently use project management software?"
+├─ Yes → Q2: "Which tools do you use?"
+│         └─ Q3: "What frustrates you about them?"
+└─ No → Q2: "How do you track projects now?"
+          └─ Q3: "What would motivate you to start using a tool?"
+```
+
+**Benefits:**
+- Higher completion rates (only relevant questions shown)
+- Better data quality (fewer "not applicable" responses)
+- Personalized experience
+- Deeper insights from segmented paths
+
+**Implementation Requirements:**
+- Rules engine (if/then/else logic)
+- Condition evaluation (equals, contains, greater than, etc.)
+- Multiple condition types (single answer, multiple answers, score-based)
+- Branch preview and testing
+
+#### 2. Question Types
+
+**Essential Types:**
+1. **Multiple Choice** - Select one from list
+2. **Checkbox** - Select multiple from list
+3. **Scale** - 1-5, 1-10, Likert scale
+4. **Text** - Short answer, long answer
+5. **Behavioral** - Specific past action description
+6. **Ranking** - Order items by priority
+7. **Matrix** - Multiple questions, same scale
+
+**Mom Test-Specific Types:**
+8. **Past Action** - "Describe the last time you..."
+9. **Commitment Evidence** - "What have you paid for to solve this?"
+10. **Workflow Mapping** - "Walk through your process for..."
+
+#### 3. Analytics & Insights
+
+**Quantitative Metrics:**
+- Response rate per question
+- Drop-off rate (abandonment points)
+- Average completion time
+- Answer distribution (charts, graphs)
+- Cross-tabulation (answer correlations)
+
+**Qualitative Analysis:**
+- Text response categorization
+- Sentiment analysis
+- Keyword extraction
+- Common themes identification
+
+**Segmentation:**
+- Cohort analysis (by answer patterns)
+- Persona clustering
+- High-intent vs low-intent
+- Qualified vs unqualified leads
+
+---
+
+## Experimentation Platform Architecture
+
+### Architecture Patterns from Leading Platforms
+
+#### 1. Warehouse-Native Experimentation (Statsig, Eppo)
+
+**Core Concept:** Run statistical analysis directly in your data warehouse
+
+**Benefits:**
+- User-level data never leaves warehouse (privacy, security)
+- Leverage existing data and metrics
+- No vendor lock-in
+- Real-time or near-real-time results
+- Use existing dbt models and business logic
+
+**Architecture:**
+```
+Client SDK (assigns variants)
+    ↓
+Logs events to your warehouse
+    ↓
+Warehouse-native compute
+    ↓
+Statistical analysis (SQL queries)
+    ↓
+Results dashboard
+```
+
+**Statsig Implementation:**
+- Deploy analysis engine in Snowflake/BigQuery/Databricks
+- Run on top of your exposures and metrics tables
+- Integrates with Statsig's SDK for real-time assignment
+- Battle-tested statistics engine (same as Statsig cloud)
+
+**Eppo Implementation:**
+- Similar warehouse-native approach
+- Warehouse-first design from day one
+- Privacy-first (no PII to vendor)
+- Works with any SQL warehouse
+
+#### 2. Feature Flag Integration (GrowthBook, Split.io)
+
+**Core Concept:** Every feature flag can become an experiment
+
+**How It Works:**
+```
+Feature Flag Definition
+    ↓
+Add Experiment Config
+    ↓
+Automatic Randomization
+    ↓
+Metrics Tracking
+    ↓
+Statistical Analysis
+```
+
+**GrowthBook Architecture:**
+```
+GrowthBook UI (define features)
+    ↓
+JSON published to CDN
+    ↓
+Client SDK reads JSON
+    ↓
+Feature evaluation + variant assignment
+    ↓
+Events sent to your data warehouse
+    ↓
+GrowthBook queries warehouse for results
+```
+
+**Key Features:**
+- MIT license (open source)
+- Warehouse-native analytics
+- Visual feature flag editor
+- Built-in A/B test analysis
+- No vendor lock-in
+
+**Split.io Architecture:**
+```
+Split Cloud (feature definitions)
+    ↓
+Real-time synchronization
+    ↓
+SDK evaluates features
+    ↓
+Events logged
+    ↓
+Split analytics dashboard
+```
+
+**Key Features:**
+- Real-time flag updates
+- Automatic experiment tracking
+- Advanced targeting rules
+- Performance monitoring
+- Enterprise-grade reliability
+
+#### 3. Assignment Strategies
+
+**Hash-Based (Deterministic):**
+```typescript
+function assignVariant(userId: string, experimentId: string, weights: number[]) {
+  const hash = md5(userId + experimentId) // Cryptographic hash
+  const bucket = hash % 100
+  // Assign based on bucket and weights
+}
+```
+
+**Benefits:**
+- Same user always gets same variant
+- Works across devices (if same userId)
+- No state storage needed
+- Reproducible assignments
+
+**Weighted Random:**
+```typescript
+function assignVariant(weights: number[]) {
+  const totalWeight = weights.reduce((a, b) => a + b)
+  const random = Math.random() * totalWeight
+  // Assign based on cumulative weights
+}
+```
+
+**Benefits:**
+- True random distribution
+- Good for anonymous users
+- Simple implementation
+
+**Sticky (Session-Based):**
+```typescript
+function assignVariant(sessionId: string) {
+  // Store in cookie or localStorage
+  // Return cached assignment if exists
+}
+```
+
+**Benefits:**
+- Consistent within session
+- Works for anonymous users
+- No backend state
+
+#### 4. Statistical Methods
+
+**Z-Test for Proportions (Conversion Rate):**
+```
+Used for: Binary outcomes (converted or not)
+Formula: z = (p1 - p2) / sqrt(p_pooled * (1 - p_pooled) * (1/n1 + 1/n2))
+Output: p-value, confidence interval, lift percentage
+Minimum sample: 30+ per variant
+```
+
+**T-Test for Means (Revenue, Time on Site):**
+```
+Used for: Continuous metrics
+Formula: t = (mean1 - mean2) / sqrt(se1^2 + se2^2)
+Output: p-value, confidence interval, percent difference
+Minimum sample: 30+ per variant
+```
+
+**Bayesian Methods (Probability-Based):**
+```
+Used for: Continuous monitoring, early stopping
+Output: Probability variant B beats variant A
+Benefit: No fixed sample size needed, can stop early
+Tools: GrowthBook's Bayesian engine
+```
+
+**Significance Thresholds:**
+- p-value < 0.05 (95% confidence)
+- p-value < 0.01 (99% confidence)
+- Minimum detectable effect (MDE): 5-10% lift
+
+---
+
+## Implementation Recommendations
+
+### Recommended Architecture for .do Platform
+
+Based on existing infrastructure and research findings:
+
+#### Phase 1: Enhance Current Experiments System
+
+**Database Extensions:**
+```sql
+-- Add to experiments table
+ALTER TABLE experiments
+  ADD COLUMN survey_config JSONB DEFAULT '{}',
+  ADD COLUMN pre_launch BOOLEAN DEFAULT false,
+  ADD COLUMN channel TEXT CHECK (channel IN ('ads', 'email', 'social', 'onboarding', 'waitlist', 'landing'));
+
+-- New tables
+CREATE TABLE experiment_questions (
+  id TEXT PRIMARY KEY,
+  experiment_ns TEXT NOT NULL,
+  experiment_id TEXT NOT NULL,
+  order_index INTEGER NOT NULL,
+  question_text TEXT NOT NULL,
+  question_type TEXT NOT NULL,
+  options JSONB,
+  required BOOLEAN DEFAULT true,
+  branching_rules JSONB,
+  mom_test_compliant BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  FOREIGN KEY (experiment_ns, experiment_id) REFERENCES experiments(ns, id)
+);
+
+CREATE TABLE experiment_responses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  experiment_ns TEXT NOT NULL,
+  experiment_id TEXT NOT NULL,
+  question_id TEXT NOT NULL,
+  user_id TEXT,
+  session_id TEXT,
+  response_value JSONB NOT NULL,
+  response_text TEXT,
+  response_at TIMESTAMPTZ DEFAULT NOW(),
+  context JSONB,
+  FOREIGN KEY (experiment_ns, experiment_id) REFERENCES experiments(ns, id),
+  FOREIGN KEY (question_id) REFERENCES experiment_questions(id)
+);
+```
+
+**API Endpoints:**
+```typescript
+// Question management
+POST   /experiments/:id/questions
+GET    /experiments/:id/questions
+PUT    /experiments/:id/questions/:qid
+DELETE /experiments/:id/questions/:qid
+
+// Response tracking
+POST   /experiments/:id/respond
+GET    /experiments/:id/responses
+GET    /experiments/:id/insights
+
+// Distribution
+POST   /experiments/:id/distribute
+GET    /experiments/:id/analytics
+```
+
+#### Phase 2: Microservice Migration
+
+Move experiments from api.services monolith to workers/experiments/:
+
+```
+workers/experiments/
+├── src/
+│   ├── index.ts        # RPC + HTTP entry point
+│   ├── allocation.ts   # Variant assignment strategies
+│   ├── questions.ts    # Question builder and branching logic
+│   ├── responses.ts    # Response tracking and storage
+│   ├── analytics.ts    # Results aggregation and statistics
+│   ├── mom-test.ts     # AI-powered question validation
+│   ├── types.ts        # TypeScript types
+│   ├── schemas.ts      # Zod validation schemas
+│   └── mcp.ts          # MCP tools for AI agents
+├── tests/
+│   ├── allocation.test.ts
+│   ├── questions.test.ts
+│   └── analytics.test.ts
+├── wrangler.jsonc
+└── package.json
+```
+
+**Service Bindings:**
+```jsonc
+{
+  "services": [
+    { "binding": "DB", "service": "db" },
+    { "binding": "AI", "service": "ai" },
+    { "binding": "EMAIL", "service": "email" },
+    { "binding": "ANALYTICS", "service": "analytics" }
+  ]
+}
+```
+
+#### Phase 3: Integration Points
+
+**With Existing Services:**
+- `workers/email/` - Survey distribution via Resend
+- `workers/db/` - Question and response storage
+- `workers/ai/` - Mom Test validation, insights generation
+- `workers/analytics/` - ClickHouse for fast aggregations
+- `workers/gateway/` - Routing and authentication
+
+**With External Platforms:**
+- Meta Ads Manager API (ad deployment)
+- Google Ads API (campaign testing)
+- Resend API (email surveys)
+- VAPI (voice surveys - future)
+
+---
+
+## Technical Specifications
+
+### Question Schema Design
+
+```typescript
+interface Question {
+  id: string
+  experimentId: string
+  orderIndex: number
+  questionText: string
+  questionType: 'multiple_choice' | 'checkbox' | 'scale' | 'text' | 'behavioral' | 'ranking' | 'matrix'
+  options?: {
+    id: string
+    text: string
+    value: any
+  }[]
+  required: boolean
+  branchingRules?: {
+    conditions: {
+      type: 'equals' | 'contains' | 'greater_than' | 'less_than'
+      value: any
+    }[]
+    nextQuestionId: string | 'END'
+  }[]
+  momTestCompliant: boolean
+  validationRules?: {
+    minLength?: number
+    maxLength?: number
+    pattern?: string
+    customValidator?: string
+  }
+}
+```
+
+### Response Storage Schema
+
+```typescript
+interface Response {
+  id: string
+  experimentId: string
+  questionId: string
+  userId?: string
+  sessionId?: string
+  responseValue: any // Flexible JSON
+  responseText?: string // For text answers
+  responseAt: Date
+  context: {
+    userAgent?: string
+    device?: string
+    location?: string
+    referrer?: string
+    variantId?: string // If allocated to variant
+  }
+}
+```
+
+### Branching Logic Engine
+
+```typescript
+interface BranchingEngine {
+  /**
+   * Evaluate branching rules and determine next question
+   */
+  getNextQuestion(
+    currentQuestion: Question,
+    response: Response,
+    allQuestions: Question[]
+  ): Question | null
+
+  /**
+   * Validate question flow for dead ends and loops
+   */
+  validateFlow(questions: Question[]): {
+    valid: boolean
+    errors: string[]
+    warnings: string[]
+  }
+
+  /**
+   * Preview survey path based on hypothetical answers
+   */
+  previewPath(
+    questions: Question[],
+    hypotheticalAnswers: Map<string, any>
+  ): Question[]
+}
+```
+
+### Mom Test Validator
+
+```typescript
+interface MomTestValidator {
+  /**
+   * Check if question follows Mom Test principles
+   */
+  validate(question: string): {
+    compliant: boolean
+    issues: {
+      type: 'opinion' | 'hypothetical' | 'leading' | 'vague'
+      description: string
+      severity: 'error' | 'warning'
+    }[]
+    suggestions: string[]
+  }
+
+  /**
+   * Suggest behavioral alternative
+   */
+  suggest(questionText: string): {
+    original: string
+    improved: string
+    reasoning: string
+  }
+
+  /**
+   * Classify question type
+   */
+  classify(questionText: string): {
+    type: 'past_behavior' | 'commitment' | 'workflow' | 'pain_point'
+    confidence: number
+  }
+}
+```
+
+---
+
+## References
+
+### Primary Research Sources
+
+**Books & Methodologies:**
+1. "The Mom Test" by Rob Fitzpatrick - Core methodology for customer interviews
+2. "Lean Startup" by Eric Ries - Build-Measure-Learn cycle
+3. "Inspired" by Marty Cagan - Product discovery and validation
+
+**Research Papers:**
+1. Journal of Marketing (2025) - "Limitations of Online A/B Testing in Digital Advertising"
+2. AMA Study (2025) - "Hidden Flaws in A/B Testing on Digital Ad Platforms"
+
+**Platform Documentation:**
+1. Meta Business Help Center - A/B Testing Ads on Facebook & Instagram
+2. Google Ads Help - Campaign Experiments
+3. Statsig Docs - Warehouse-Native Experimentation
+4. GrowthBook Docs - Open Source Feature Flagging and A/B Testing
+
+**Industry Analysis:**
+1. Buffer Blog - "Framework for Testing Your Social Media Ideas"
+2. Sprout Social - "How to Run Social Media Experiments"
+3. CleverTap - "A/B Test for Improved User Onboarding"
+4. ScoreApp - "Waitlist Questions to Pre-Qualify Leads"
+
+### Tools & Platforms Reviewed
+
+**Survey & Forms:**
+- Qualtrics (enterprise)
+- SurveyMonkey (business)
+- Typeform (SMB)
+- Google Forms (free)
+- Microsoft Forms (free)
+
+**Experimentation:**
+- GrowthBook (open source)
+- Statsig (warehouse-native)
+- Optimizely (enterprise)
+- VWO (conversion optimization)
+- Split.io (feature flags)
+
+**Email:**
+- Mailchimp (SMB)
+- Campaign Monitor (business)
+- Salesforce Marketing Cloud (enterprise)
+- Resend (developer-first)
+
+**Social Media:**
+- Buffer (scheduling + analytics)
+- Hootsuite (enterprise social)
+- Sprout Social (business)
+- Later (visual planning)
+
+**Onboarding:**
+- Appcues (no-code)
+- Userpilot (product growth)
+- CleverTap (mobile-first)
+- Maze (user testing)
+
+**Waitlist:**
+- ScoreApp (quiz-based)
+- Waitlister (viral waitlists)
+- Prefinery (beta management)
+- LaunchList (referral campaigns)
+- KickoffLabs (landing pages)
+
+### Related Implementation Notes
+
+- `/Users/nathanclevenger/Projects/.do/api.services/api/routes/experiments.ts` - Current experiments implementation
+- `/Users/nathanclevenger/Projects/.do/api.services/schemas/Experiment.ts` - Existing schema definitions
+- `/Users/nathanclevenger/Projects/.do/api.services/notes/2025-10-01-experiment-system-design.md` - Original experiment system design
+- `/Users/nathanclevenger/Projects/.do/workers/CLAUDE.md` - Microservices architecture documentation
+- `/Users/nathanclevenger/Projects/.do/ARCHITECTURE.md` - Overall platform architecture
+
+---
+
+**Document Status:** Research Complete
+**Next Steps:** Begin Phase 1 implementation (database schema and API extensions)
+**Owner:** Claude Code (AI Project Manager)
+**Last Updated:** 2025-10-03

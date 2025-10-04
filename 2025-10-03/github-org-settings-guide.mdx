@@ -1,0 +1,611 @@
+# GitHub Organization Settings Configuration Guide
+
+**Date:** 2025-10-03
+**Subagent:** D1 - GitHub Organization Implementation
+**Purpose:** Detailed step-by-step instructions for configuring GitHub organization settings
+**Companion to:** github-org-implementation.md
+
+---
+
+## Overview
+
+This guide provides **detailed, screenshot-level instructions** for configuring all GitHub organization settings to maximize discoverability, professionalism, and SEO value.
+
+**Estimated Time:** 30-45 minutes
+**Prerequisites:** Owner or admin access to github.com/dot-do organization
+
+---
+
+## Part 1: Basic Organization Settings (15 minutes)
+
+### Step 1.1: Access Organization Settings
+
+1. **Navigate to organization:**
+   - Go to: https://github.com/dot-do
+
+2. **Access settings:**
+   - Click "Settings" tab (top navigation, far right)
+   - URL should be: https://github.com/organizations/dot-do/settings/profile
+
+### Step 1.2: Update Organization Profile
+
+**Location:** Settings → Profile
+
+#### Organization Name
+```
+Current: dot-do
+Recommended: dot-do
+Action: Keep as-is (GitHub username, cannot be changed easily)
+```
+
+#### Organization Display Name
+```
+Field: Display name
+Current: [Empty or "dot-do"]
+New: .do
+Rationale: Shows ".do" branding instead of "dot-do" in some contexts
+```
+
+#### Organization Email
+```
+Field: Billing email
+Current: [Current email]
+Recommended: contact@do.com (or nathanclevenger@gmail.com temporarily)
+Rationale: Public contact point for community
+Action: Update if you have do.com domain email
+```
+
+#### Organization Description
+```
+Field: Description
+Current: [Empty or minimal]
+New: AI-Native Infrastructure for Modern APIs | 57 repositories, 8 microservices, 121 SDK packages
+Rationale: SEO-optimized, includes keywords and key metrics
+Max Length: 160 characters
+```
+
+#### Organization URL
+```
+Field: URL
+Current: [Empty or github.com/dot-do]
+New: https://github.com/dot-do/.do
+Alternative: https://do.com (when main site launches)
+Rationale: Points to documentation hub, shows professional web presence
+```
+
+#### Organization Location
+```
+Field: Location
+Current: [Empty]
+New: Global
+Alternative: San Francisco, CA (if applicable)
+Rationale: Shows geographic presence, helps with local SEO
+```
+
+#### Verified Domains
+```
+Field: Verified domains
+Current: [None]
+Future: do.com
+Rationale: Trust signal, enables GitHub Enterprise features
+Action: Skip for now (requires DNS verification)
+```
+
+**Save Changes:** Click "Update profile" button at bottom
+
+---
+
+### Step 1.3: Organization Profile Picture
+
+**Location:** Settings → Profile
+
+#### Upload Logo
+
+1. **Prepare image:**
+   - Format: PNG with transparency
+   - Size: 1024x1024px (minimum 400x400px)
+   - File size: <1MB
+   - Content: .do logo (clean, professional)
+
+2. **Upload:**
+   - Click "Upload new picture" button
+   - Select image file
+   - Adjust crop if needed
+   - Click "Set new profile picture"
+
+**Temporary Solution (if logo not ready):**
+- Use a simple monogram: "d" or ".do"
+- Create with: https://looka.com or https://www.canva.com/create/logos/
+- Ensure high contrast for visibility
+
+**Expected Result:** Logo appears next to organization name everywhere on GitHub
+
+---
+
+### Step 1.4: Social Accounts
+
+**Location:** Settings → Profile → Social accounts
+
+#### Twitter/X
+```
+Field: X (Twitter)
+Current: [Empty]
+New: @dotdo_ai
+Note: Only add if account exists and is active
+Alternative: Leave empty until launched
+```
+
+#### LinkedIn
+```
+Field: LinkedIn
+Current: [Empty]
+New: https://www.linkedin.com/company/dot-do/
+Note: Only add if company page exists
+Alternative: Leave empty for now
+```
+
+#### Other Social Accounts
+- Mastodon: Not needed for initial launch
+- YouTube: Add when video content exists
+- Twitch: Not applicable
+- Facebook: Not recommended for developer tool
+
+**Save Changes:** Click "Update profile"
+
+---
+
+## Part 2: Repository Management Settings (10 minutes)
+
+### Step 2.1: Member Privileges
+
+**Location:** Settings → Member privileges
+
+#### Repository Creation
+```
+Setting: Repository creation
+Recommended: Allow members to create private repositories
+Rationale: Enables experimentation without cluttering public profile
+Action: Check "Private" checkbox
+```
+
+#### Repository Forking
+```
+Setting: Repository forking
+Recommended: Allow forking of private repositories
+Rationale: Enables contribution workflow
+Action: Check "Allow forking" checkbox
+```
+
+#### Pages Creation
+```
+Setting: Pages creation
+Recommended: Public and private
+Rationale: Enables documentation sites for all repos
+Action: Select "Public and private"
+```
+
+**Save Changes:** Click "Save"
+
+---
+
+### Step 2.2: Repository Defaults
+
+**Location:** Settings → Repository defaults
+
+#### Default Branch Name
+```
+Setting: Repository default branch
+Current: main
+Recommended: main (industry standard)
+Action: Keep as-is
+```
+
+#### Repository Labels
+```
+Setting: Repository labels
+Recommended: Use standardized label set
+Action: Later - create label sync script for consistency
+```
+
+---
+
+## Part 3: Security Settings (5 minutes)
+
+### Step 3.1: Security and Analysis
+
+**Location:** Settings → Code security and analysis
+
+#### Dependency Graph
+```
+Setting: Dependency graph
+Recommended: Enabled for all repositories
+Rationale: Security and maintenance visibility
+Action: Check "Automatically enable for new repositories"
+```
+
+#### Dependabot Alerts
+```
+Setting: Dependabot alerts
+Recommended: Enabled for all repositories
+Rationale: Automatic vulnerability detection
+Action: Check "Automatically enable for new repositories"
+```
+
+#### Dependabot Security Updates
+```
+Setting: Dependabot security updates
+Recommended: Enabled for all repositories
+Rationale: Automatic security patches
+Action: Check "Automatically enable for new repositories"
+```
+
+#### Secret Scanning
+```
+Setting: Secret scanning
+Recommended: Enabled (if available on plan)
+Rationale: Prevents credential leaks
+Action: Check "Automatically enable for new repositories"
+```
+
+**Save Changes:** Automatic (no save button)
+
+---
+
+## Part 4: Advanced Settings (5 minutes)
+
+### Step 4.1: Organization Features
+
+**Location:** Settings → Features (may require plan upgrade)
+
+#### GitHub Discussions
+```
+Setting: Discussions
+Current: Enable per repository
+Recommended: Enabled on .do root repo
+Action: Enable in .do repository settings (not org-wide)
+See: Deployment checklist Step 5
+```
+
+#### GitHub Packages
+```
+Setting: Packages
+Recommended: Enabled
+Rationale: Publish npm packages under org namespace
+Action: Should be enabled by default
+```
+
+#### GitHub Pages
+```
+Setting: Pages
+Recommended: Enabled for public repos
+Rationale: Deploy documentation sites
+Action: Should be enabled by default
+```
+
+### Step 4.2: Verified Domains (Future)
+
+**Location:** Settings → Verified domains
+
+**When to Configure:**
+- After do.com domain is acquired
+- When deploying GitHub Pages with custom domains
+
+**How to Verify:**
+1. Click "Add a domain"
+2. Enter: do.com
+3. Add TXT record to DNS: `_github-challenge-dot-do-org.do.com`
+4. Wait for verification (5-10 minutes)
+5. Repeat for subdomains if needed
+
+**Benefits:**
+- Trust badge on organization page
+- Email domain verification for members
+- Enhanced security
+
+---
+
+## Part 5: Pinned Repositories Configuration (15 minutes)
+
+### Step 5.1: Select Repositories to Pin
+
+**Location:** Organization profile page (not in settings)
+
+**Recommended 6 Pinned Repositories:**
+
+1. **.do** - Multi-repo architecture hub
+2. **workers** - 8 production microservices
+3. **sdk** - 121 TypeScript SDK packages
+4. **mdx** - MDX runtime infrastructure
+5. **api** - Hono-based API service
+6. **db** - Database layer with Drizzle
+
+**Instructions:**
+
+1. Go to: https://github.com/dot-do
+2. Scroll down to "Pinned" section (below org description)
+3. Click "Customize your pins" button
+4. Modal opens with repository list
+5. **Select 6 repositories** (check boxes next to names)
+6. **Reorder by dragging** (top-left = most prominent)
+7. Click "Save pins" button
+
+**Pin Order Strategy:**
+
+```
+┌─────────────┬─────────────┐
+│   1. .do    │ 2. workers  │  ← Top row (most visible)
+├─────────────┼─────────────┤
+│   3. sdk    │   4. mdx    │  ← Middle row
+├─────────────┼─────────────┤
+│   5. api    │   6. db     │  ← Bottom row
+└─────────────┴─────────────┘
+```
+
+**Verification:**
+- Visit organization profile
+- 6 repositories appear in 2x3 grid
+- Order matches strategic importance
+- Repository stats (stars, forks) visible
+
+---
+
+### Step 5.2: Optimize Pinned Repository Metadata
+
+**For each of the 6 pinned repositories, update:**
+
+#### Repository Settings Location
+```
+1. Go to repository (e.g., https://github.com/dot-do/workers)
+2. Click "Settings" tab
+3. Update "General" section
+```
+
+#### Metadata to Update
+
+**1. .do (root)**
+```
+About section:
+  Description: Multi-repo architecture and documentation for the .do platform | 57 repositories, 8 microservices, 121 SDK packages
+  Website: https://github.com/dot-do/.do
+  Topics: microservices, api-infrastructure, typescript, cloudflare-workers, ai-native, documentation
+```
+
+**2. workers**
+```
+About section:
+  Description: 30+ microservice workers with RPC, HTTP, MCP, and Queue interfaces | 8/8 core services deployed, ~13K LOC
+  Website: https://workers.docs.do (placeholder - will deploy later)
+  Topics: microservices, cloudflare-workers, serverless, rpc, typescript, gateway-pattern
+```
+
+**3. sdk**
+```
+About section:
+  Description: 121 TypeScript SDK packages in 5-layer architecture | Zero-dependency foundation with ai-* types
+  Website: https://sdk.docs.do (placeholder)
+  Topics: typescript, sdk, npm-package, monorepo, ai, developer-tools, packages
+```
+
+**4. mdx**
+```
+About section:
+  Description: MDX runtime and content infrastructure | Velite + Zod validation, bidirectional database sync
+  Website: https://mdx.docs.do (placeholder)
+  Topics: mdx, markdown, content-management, velite, zod, typescript, tooling
+```
+
+**5. api**
+```
+About section:
+  Description: Hono-based API service on Cloudflare Workers | RPC + REST + MCP + Queue interfaces, type-safe, edge-native
+  Website: https://api.docs.do (placeholder)
+  Topics: cloudflare-workers, hono, api, rest, rpc, mcp, typescript
+```
+
+**6. db**
+```
+About section:
+  Description: Database layer with Drizzle ORM, PostgreSQL, and pgvector embeddings | Type-safe queries and migrations
+  Website: https://db.docs.do (placeholder)
+  Topics: drizzle-orm, postgresql, database, migrations, pgvector, cloudflare-d1
+```
+
+**How to Update Topics:**
+1. In repository Settings → About section
+2. Click gear icon next to "Topics"
+3. Add topics one at a time (press Enter after each)
+4. Click "Save changes"
+
+**Expected Result:**
+- All pinned repos have compelling descriptions
+- All have 5-8 relevant topic tags
+- All have website URLs (placeholders OK for now)
+- Consistent professional appearance
+
+---
+
+## Part 6: GitHub Discussions Setup (30 minutes)
+
+**Important:** Discussions are enabled per-repository, not organization-wide.
+
+### Step 6.1: Enable Discussions on .do Repository
+
+**Location:** https://github.com/dot-do/.do/settings
+
+1. **Navigate to repository settings:**
+   - Go to: https://github.com/dot-do/.do
+   - Click "Settings" tab (requires admin access)
+
+2. **Enable Discussions feature:**
+   - Scroll to "Features" section
+   - Find "Discussions" checkbox
+   - Check "Discussions"
+   - Page will reload
+
+3. **Access Discussions settings:**
+   - New "Discussions" tab appears in repository
+   - Click "Discussions" tab
+   - Click "Set up Discussions" if prompted
+
+### Step 6.2: Configure Discussion Categories
+
+**Default categories** are created automatically. **Customize them:**
+
+1. **Go to:** https://github.com/dot-do/.do/discussions
+2. **Click:** Categories (right sidebar)
+3. **Edit/Add categories** as follows:
+
+#### Category Configuration Matrix
+
+| Emoji | Name | Description | Format |
+|-------|------|-------------|--------|
+| 📢 | Announcements | Official updates from the .do team | Announcement |
+| 💬 | General | General discussion about .do | Open-ended |
+| 💡 | Ideas | Share ideas for new features | Open-ended |
+| ❓ | Q&A | Ask questions, get answers from the community | Q&A |
+| 🎨 | Show and Tell | Share your projects built with .do | Open-ended |
+| 🆘 | Help | Get help with issues and problems | Open-ended |
+| 🏗️ | Architecture | Discuss technical architecture and design | Open-ended |
+| 🔌 | Integrations | Talk about integrations and connectors | Open-ended |
+| 💭 | Feedback | Provide feedback on .do platform | Open-ended |
+
+**How to Add/Edit Categories:**
+1. Click "Edit" next to category name
+2. Update name, emoji, description, format
+3. Click "Save"
+4. Repeat for all categories
+
+**Category Format Explanation:**
+- **Announcement:** Only maintainers can create, comments allowed
+- **Q&A:** Has "Mark as answer" feature, best for support questions
+- **Open-ended:** Standard discussion format
+
+### Step 6.3: Create Welcome Discussion
+
+1. **Go to:** https://github.com/dot-do/.do/discussions
+2. **Click:** "New discussion" button
+3. **Select category:** Announcements
+4. **Title:** Welcome to the .do Community! 🎉
+5. **Body:** (Use template from implementation guide)
+6. **Click:** "Start discussion"
+7. **Pin discussion:**
+   - Click "..." menu on discussion
+   - Select "Pin discussion"
+   - Discussion appears at top
+
+### Step 6.4: Link from Organization Profile
+
+**Already done** in profile README, but verify:
+1. Organization profile README includes link: `[GitHub Discussions](https://github.com/orgs/dot-do/discussions)`
+2. Link works and points to: https://github.com/orgs/dot-do/discussions
+3. Discussions are visible to public
+
+---
+
+## Part 7: Verification Checklist
+
+**After completing all settings, verify:**
+
+### Organization Profile
+- [ ] Profile picture uploaded and visible
+- [ ] Display name is ".do"
+- [ ] Description is SEO-optimized (160 chars)
+- [ ] URL points to documentation
+- [ ] Location set to "Global"
+- [ ] Social accounts added (if applicable)
+
+### Repository Settings
+- [ ] Member privileges configured
+- [ ] Repository defaults set
+- [ ] Security features enabled
+- [ ] GitHub Pages enabled for repos
+
+### Pinned Repositories
+- [ ] 6 repositories pinned
+- [ ] Order is strategic (most important top-left)
+- [ ] All have compelling descriptions
+- [ ] All have 5-8 topic tags
+- [ ] All have website URLs (placeholders OK)
+
+### GitHub Discussions
+- [ ] Enabled on .do repository
+- [ ] 9 categories configured correctly
+- [ ] Welcome discussion created and pinned
+- [ ] Link from org profile works
+
+### Visual Check
+- [ ] Organization profile looks professional
+- [ ] No placeholder text visible
+- [ ] All badges/images load correctly
+- [ ] Mobile view is readable
+- [ ] Links work in incognito mode (public view)
+
+---
+
+## Common Issues and Solutions
+
+### Issue: "Settings" tab not visible
+
+**Solution:**
+- Verify you have Owner or Admin role in organization
+- Go to: https://github.com/orgs/dot-do/people
+- Check your role
+- If not Owner/Admin, ask organization owner for access
+
+### Issue: Cannot update organization name
+
+**Context:** Organization username (dot-do) is permanent
+**Solution:**
+- Use "Display name" field for branding (.do)
+- Username remains dot-do for URLs
+
+### Issue: Verified domain verification fails
+
+**Solution:**
+1. Check DNS propagation (use https://dnschecker.org)
+2. Wait 5-10 minutes after adding TXT record
+3. Verify TXT record format exactly matches GitHub's requirement
+4. Contact GitHub Support if persistent issues
+
+### Issue: Pinned repositories not updating
+
+**Solution:**
+1. Clear browser cache
+2. Wait 5-10 minutes for GitHub cache to update
+3. Try in incognito/private browsing mode
+4. Verify repositories are public
+
+---
+
+## Next Steps
+
+After completing this configuration:
+
+1. **Deploy Profile README** - Follow implementation guide Step 1
+2. **Enable Discussions** - Follow implementation guide Step 5
+3. **Verify Everything** - Follow implementation guide Step 6
+4. **Announce Changes** - Social media, blog posts
+5. **Monitor Analytics** - GitHub Insights, backlink tracking
+
+---
+
+## Resources
+
+### GitHub Documentation
+- [Customizing your organization profile](https://docs.github.com/en/organizations/collaborating-with-groups-in-organizations/customizing-your-organizations-profile)
+- [About organization profiles](https://docs.github.com/en/organizations/collaborating-with-groups-in-organizations/about-your-organizations-profile)
+- [Pinning repositories to your profile](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/pinning-items-to-your-profile)
+- [About Discussions](https://docs.github.com/en/discussions/collaborating-with-your-community-using-discussions/about-discussions)
+
+### Internal Documentation
+- `/notes/2025-10-03-github-org-implementation.md` - Deployment guide
+- `/notes/2025-10-03-github-org-optimization.md` - B3's master plan
+- `/notes/2025-10-03-repository-audit-optimization.md` - Repository optimization
+
+---
+
+**End of Guide**
+
+**Status:** Ready for use alongside implementation guide
+**Estimated Completion Time:** 30-45 minutes for first-time setup
+**Difficulty:** Beginner-friendly with screenshots and detailed instructions

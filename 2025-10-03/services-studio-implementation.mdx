@@ -1,0 +1,1406 @@
+# Services.Studio Implementation Report
+
+**Date:** 2025-10-03
+**POC Recommendation:** #5 - Services.Studio with Vibe-Coding
+**Target:** $300K+ ARR via Creator Economy
+
+---
+
+## Executive Summary
+
+This report provides a comprehensive architecture and implementation plan for **Services.Studio**, the creator platform where users can "vibe-code" AI services from natural language to deployed workers.
+
+**Key Insights from POC Research:**
+
+1. ✅ **VibeSK Validated** - Natural language → working apps proven (poc/vibe-payload)
+2. ✅ **MDX Schema Validated** - Configuration-as-content approach (poc/2025-10-02-mdx-payload-poc)
+3. ✅ **Sandbox Execution** - Secure code execution environment (poc/2025-10-02-claude-sandbox-mcp)
+4. ✅ **Dynamic Deployment** - Runtime worker creation (poc/2025-10-03-dynamic-worker-mcp)
+
+**Critical Success Factors:**
+- Natural language → deployed service in < 5 minutes
+- 80% successful deployments without human intervention
+- Human-in-loop approval for code changes
+- One-click publishing to Services.Delivery marketplace
+- Real-time analytics and revenue tracking
+
+---
+
+## Architecture Overview
+
+```
+┌──────────────────────────────────────────────────────┐
+│                Services.Studio                        │
+│         "Vibe-Code Your AI Service"                   │
+└───────────────────┬──────────────────────────────────┘
+                    │
+        ┌───────────┼───────────────┐
+        │           │               │
+        ▼           ▼               ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│   VibeSK     │ │   Claude     │ │  Dynamic     │
+│   Worker     │ │   Sandbox    │ │  Workers     │
+│              │ │              │ │              │
+│ AI Code Gen  │ │ Testing      │ │ Deployment   │
+└──────────────┘ └──────────────┘ └──────────────┘
+        │           │               │
+        └───────────┼───────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────┐
+        │   Services.Delivery       │
+        │   (Marketplace)            │
+        └───────────────────────────┘
+```
+
+**User Flow:**
+
+```
+1. Define Service (Natural Language)
+   ↓
+   User: "Create a service that translates text"
+   AI: "I'll create a Translation service. What languages?"
+   User: "English, Spanish, French"
+   AI: [Generates MDX definition]
+
+2. Review Configuration (YAML)
+   ↓
+   ---
+   service: Translation Service
+   category: AI & Language
+   languages: [en, es, fr]
+   pricing:
+     - tier: Pay-as-you-go
+       price: $0.01 per 1000 characters
+   ---
+
+3. Generate Code (AI-Assisted)
+   ↓
+   AI: "Generating translation function..."
+   [VibeSK generates code in sandbox]
+   AI: "Code ready. Review?"
+   User: "Looks good!"
+
+4. Test (Automated)
+   ↓
+   AI: "Running tests in sandbox..."
+   [Claude Sandbox executes test suite]
+   AI: "All tests passing ✓"
+
+5. Deploy (One-Click)
+   ↓
+   User: "Deploy to production"
+   [Dynamic Worker created]
+   AI: "Live at: https://services.delivery/translation"
+
+6. Monitor (Analytics)
+   ↓
+   Dashboard shows:
+   - Executions: 1,234 today
+   - Revenue: $45.67
+   - Avg latency: 23ms
+   - Error rate: 0.1%
+```
+
+---
+
+## Component Architecture
+
+### 1. Services.Studio App (app/studio/)
+
+**Tech Stack:**
+- Next.js 15 (App Router)
+- PayloadCMS 3.0 (integrated)
+- Cloudflare D1 (database)
+- Cloudflare R2 (media storage)
+- React 19 + Tailwind CSS
+
+**Directory Structure:**
+
+```
+app/
+├── app/
+│   ├── (studio)/                     # Studio pages
+│   │   ├── layout.tsx                # Studio layout
+│   │   ├── page.tsx                  # Dashboard
+│   │   ├── services/
+│   │   │   ├── new/
+│   │   │   │   └── page.tsx          # Create service wizard
+│   │   │   └── [id]/
+│   │   │       ├── edit/page.tsx     # Edit service
+│   │   │       ├── test/page.tsx     # Test in sandbox
+│   │   │       └── analytics/page.tsx # Service analytics
+│   │   └── templates/
+│   │       └── page.tsx              # Template library
+│   │
+│   └── (admin)/
+│       └── admin/                    # PayloadCMS admin
+│
+├── collections/                      # PayloadCMS collections
+│   ├── Services.ts                   # Service definitions
+│   ├── ServiceVersions.ts            # Version history
+│   ├── ServiceTemplates.ts           # Template library
+│   ├── ServiceAnalytics.ts           # Usage metrics
+│   └── Users.ts                      # Creator accounts
+│
+├── workers/                          # Cloudflare Workers
+│   ├── vibe/
+│   │   └── index.ts                  # VibeSK integration (DO)
+│   ├── sandbox/
+│   │   └── index.ts                  # Claude Sandbox worker
+│   └── deploy/
+│       └── index.ts                  # Deployment automation
+│
+├── lib/
+│   ├── mdx-parser.ts                 # Parse MDX service definitions
+│   ├── code-generator.ts             # Generate worker code
+│   ├── deployer.ts                   # Deploy to Workers for Platforms
+│   └── analytics.ts                  # Cloudflare Analytics integration
+│
+├── components/
+│   ├── ServiceWizard.tsx             # Step-by-step creation
+│   ├── CodeEditor.tsx                # MDX editor with preview
+│   ├── SandboxTester.tsx             # Test interface
+│   ├── DeployButton.tsx              # One-click deploy
+│   └── AnalyticsDashboard.tsx        # Real-time metrics
+│
+├── payload.config.ts                 # PayloadCMS config
+├── next.config.mjs                   # Next.js config
+├── wrangler.jsonc                    # Cloudflare config
+└── package.json
+```
+
+---
+
+## 2. PayloadCMS Collections
+
+### Services Collection
+
+**Purpose:** Store service definitions, metadata, and state
+
+```typescript
+// collections/Services.ts
+import { CollectionConfig } from 'payload/types'
+
+export const Services: CollectionConfig = {
+  slug: 'services',
+  admin: {
+    useAsTitle: 'name',
+    defaultColumns: ['name', 'category', 'status', 'creator'],
+  },
+  access: {
+    read: () => true, // Public
+    create: ({ req }) => !!req.user, // Authenticated
+    update: ({ req, id }) => req.user?.id === id, // Owner only
+  },
+  fields: [
+    // Basic Info
+    {
+      name: 'name',
+      type: 'text',
+      required: true,
+      unique: true,
+      validate: (val) => {
+        if (!/^[a-z0-9-]+$/.test(val)) {
+          return 'Service name must be lowercase alphanumeric with hyphens'
+        }
+        return true
+      },
+    },
+    {
+      name: 'displayName',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'description',
+      type: 'textarea',
+      required: true,
+      maxLength: 500,
+    },
+    {
+      name: 'category',
+      type: 'select',
+      required: true,
+      options: [
+        { label: 'AI & ML', value: 'ai-ml' },
+        { label: 'Data', value: 'data' },
+        { label: 'Communication', value: 'communication' },
+        { label: 'Productivity', value: 'productivity' },
+        { label: 'Integration', value: 'integration' },
+        { label: 'Other', value: 'other' },
+      ],
+    },
+    {
+      name: 'creator',
+      type: 'relationship',
+      relationTo: 'users',
+      required: true,
+      hasMany: false,
+    },
+
+    // Service Definition (MDX)
+    {
+      name: 'mdxDefinition',
+      type: 'code',
+      required: true,
+      admin: {
+        language: 'markdown',
+      },
+    },
+
+    // Pricing
+    {
+      name: 'pricing',
+      type: 'array',
+      required: true,
+      fields: [
+        {
+          name: 'tier',
+          type: 'select',
+          required: true,
+          options: [
+            { label: 'Free', value: 'free' },
+            { label: 'Starter', value: 'starter' },
+            { label: 'Pro', value: 'pro' },
+            { label: 'Enterprise', value: 'enterprise' },
+          ],
+        },
+        {
+          name: 'price',
+          type: 'number',
+          required: true,
+          min: 0,
+        },
+        {
+          name: 'priceUnit',
+          type: 'select',
+          required: true,
+          options: [
+            { label: 'Per month', value: 'month' },
+            { label: 'Per API call', value: 'call' },
+            { label: 'Per 1000 calls', value: '1000calls' },
+            { label: 'Per GB data', value: 'gb' },
+          ],
+        },
+        {
+          name: 'included',
+          type: 'text',
+          required: true,
+        },
+      ],
+    },
+
+    // Integrations
+    {
+      name: 'integrations',
+      type: 'array',
+      fields: [
+        {
+          name: 'integration',
+          type: 'text',
+          required: true,
+        },
+      ],
+    },
+
+    // Functions (parsed from MDX)
+    {
+      name: 'functions',
+      type: 'array',
+      admin: {
+        readOnly: true,
+        description: 'Auto-generated from MDX definition',
+      },
+      fields: [
+        {
+          name: 'name',
+          type: 'text',
+          required: true,
+        },
+        {
+          name: 'description',
+          type: 'textarea',
+        },
+        {
+          name: 'inputSchema',
+          type: 'json',
+          required: true,
+        },
+        {
+          name: 'outputSchema',
+          type: 'json',
+          required: true,
+        },
+      ],
+    },
+
+    // Status
+    {
+      name: 'status',
+      type: 'select',
+      required: true,
+      defaultValue: 'draft',
+      options: [
+        { label: 'Draft', value: 'draft' },
+        { label: 'Testing', value: 'testing' },
+        { label: 'Published', value: 'published' },
+        { label: 'Archived', value: 'archived' },
+      ],
+    },
+
+    // Deployment Info
+    {
+      name: 'workerName',
+      type: 'text',
+      admin: {
+        readOnly: true,
+        condition: (data) => data.status !== 'draft',
+      },
+    },
+    {
+      name: 'workerUrl',
+      type: 'text',
+      admin: {
+        readOnly: true,
+        condition: (data) => data.status !== 'draft',
+      },
+    },
+    {
+      name: 'deployedAt',
+      type: 'date',
+      admin: {
+        readOnly: true,
+        condition: (data) => data.status !== 'draft',
+      },
+    },
+
+    // Analytics
+    {
+      name: 'totalExecutions',
+      type: 'number',
+      defaultValue: 0,
+      admin: {
+        readOnly: true,
+      },
+    },
+    {
+      name: 'totalRevenue',
+      type: 'number',
+      defaultValue: 0,
+      admin: {
+        readOnly: true,
+      },
+    },
+    {
+      name: 'averageLatency',
+      type: 'number',
+      defaultValue: 0,
+      admin: {
+        readOnly: true,
+      },
+    },
+    {
+      name: 'errorRate',
+      type: 'number',
+      defaultValue: 0,
+      admin: {
+        readOnly: true,
+      },
+    },
+  ],
+  hooks: {
+    beforeChange: [
+      // Parse MDX and extract functions
+      async ({ data, operation }) => {
+        if (operation === 'create' || operation === 'update') {
+          if (data.mdxDefinition) {
+            const parsed = await parseMDXDefinition(data.mdxDefinition)
+            data.functions = parsed.functions
+          }
+        }
+        return data
+      },
+    ],
+    afterChange: [
+      // Auto-deploy on publish
+      async ({ doc, operation, req }) => {
+        if (doc.status === 'published' && !doc.workerName) {
+          // Trigger deployment
+          await deployService(doc, req)
+        }
+      },
+    ],
+  },
+}
+```
+
+### ServiceVersions Collection
+
+**Purpose:** Track version history for rollbacks
+
+```typescript
+// collections/ServiceVersions.ts
+export const ServiceVersions: CollectionConfig = {
+  slug: 'service-versions',
+  admin: {
+    useAsTitle: 'version',
+  },
+  fields: [
+    {
+      name: 'service',
+      type: 'relationship',
+      relationTo: 'services',
+      required: true,
+    },
+    {
+      name: 'version',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'mdxDefinition',
+      type: 'code',
+      required: true,
+    },
+    {
+      name: 'workerCode',
+      type: 'code',
+      required: true,
+    },
+    {
+      name: 'deployedAt',
+      type: 'date',
+      required: true,
+    },
+    {
+      name: 'commitMessage',
+      type: 'textarea',
+    },
+  ],
+}
+```
+
+### ServiceTemplates Collection
+
+**Purpose:** Pre-built service templates for creators
+
+```typescript
+// collections/ServiceTemplates.ts
+export const ServiceTemplates: CollectionConfig = {
+  slug: 'service-templates',
+  admin: {
+    useAsTitle: 'name',
+  },
+  fields: [
+    {
+      name: 'name',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'description',
+      type: 'textarea',
+      required: true,
+    },
+    {
+      name: 'category',
+      type: 'select',
+      required: true,
+      options: [
+        // Same as Services.category
+      ],
+    },
+    {
+      name: 'mdxTemplate',
+      type: 'code',
+      required: true,
+    },
+    {
+      name: 'popularity',
+      type: 'number',
+      defaultValue: 0,
+    },
+    {
+      name: 'featured',
+      type: 'checkbox',
+      defaultValue: false,
+    },
+  ],
+}
+```
+
+---
+
+## 3. MDX Service Schema
+
+**File Format:**
+
+```yaml
+---
+service: Service Name
+displayName: Human-Readable Service Name
+category: ai-ml | data | communication | productivity | integration | other
+description: Brief description of the service (max 500 chars)
+
+pricing:
+  - tier: free | starter | pro | enterprise
+    price: 0 | 9 | 49 | 299
+    priceUnit: month | call | 1000calls | gb
+    included: 1000 requests/month, 10GB storage, etc.
+
+integrations:
+  - openai
+  - stripe
+  - sendgrid
+
+functions:
+  - name: functionName
+    description: What this function does
+    input:
+      param1: string
+      param2: number
+      param3?: boolean
+    output:
+      result: string
+      metadata: object
+    implementation: |
+      // TypeScript code
+      export default async function(input, env) {
+        // Implementation
+        return { result: "success" }
+      }
+---
+
+# Service Documentation
+
+Markdown content here describing the service, usage examples, etc.
+
+## Features
+
+- Feature 1
+- Feature 2
+
+## Usage
+
+```typescript
+import { functionName } from '@services/service-name'
+
+const result = await functionName({ param1: "value", param2: 42 })
+console.log(result)
+```
+
+## Examples
+
+### Example 1: Basic Usage
+
+```typescript
+// Example code
+```
+```
+
+---
+
+## 4. VibeSK Integration (workers/vibe/)
+
+**Purpose:** AI-powered code generation using Google Gemini 2.5
+
+**File:** `workers/vibe/index.ts`
+
+```typescript
+import { DurableObject } from 'cloudflare:workers'
+import { generateText } from 'ai'
+import { google } from '@ai-sdk/google'
+import { parseMDXDefinition } from '../../lib/mdx-parser'
+
+export interface Env {
+  VIBE_AGENT: DurableObjectNamespace
+  AI_GATEWAY_URL: string
+  CLOUDFLARE_ACCOUNT_ID: string
+}
+
+export class VibeAgent extends DurableObject {
+  private sessionHistory: Array<{ role: string; content: string }> = []
+
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url)
+
+    if (url.pathname === '/generate-service') {
+      return this.generateService(request)
+    }
+
+    if (url.pathname === '/generate-function') {
+      return this.generateFunction(request)
+    }
+
+    if (url.pathname === '/refine-code') {
+      return this.refineCode(request)
+    }
+
+    return new Response('Not found', { status: 404 })
+  }
+
+  /**
+   * Generate MDX service definition from natural language
+   */
+  async generateService(request: Request) {
+    const { prompt, category, integrations } = await request.json()
+
+    this.sessionHistory.push({
+      role: 'user',
+      content: prompt,
+    })
+
+    const result = await generateText({
+      model: google('gemini-2.5-pro', {
+        baseURL: this.env.AI_GATEWAY_URL,
+      }),
+      messages: [
+        {
+          role: 'system',
+          content: `You are a service definition expert. Generate a complete MDX service definition based on the user's description.
+
+Format:
+---
+service: kebab-case-name
+displayName: Human Readable Name
+category: ${category}
+description: Brief description (max 500 chars)
+
+pricing:
+  - tier: free
+    price: 0
+    priceUnit: month
+    included: Description
+
+integrations:
+  - ${integrations?.join('\n  - ') || 'none'}
+
+functions:
+  - name: functionName
+    description: What it does
+    input:
+      param: type
+    output:
+      result: type
+    implementation: |
+      // TypeScript implementation
+---
+
+# Service Documentation
+...
+`,
+        },
+        ...this.sessionHistory,
+      ],
+    })
+
+    this.sessionHistory.push({
+      role: 'assistant',
+      content: result.text,
+    })
+
+    // Parse and validate MDX
+    const parsed = await parseMDXDefinition(result.text)
+
+    return Response.json({
+      mdx: result.text,
+      parsed,
+      sessionId: this.id,
+    })
+  }
+
+  /**
+   * Generate function implementation from spec
+   */
+  async generateFunction(request: Request) {
+    const { functionSpec, serviceContext } = await request.json()
+
+    const result = await generateText({
+      model: google('gemini-2.5-pro'),
+      prompt: `Generate a TypeScript implementation for this function:
+
+Name: ${functionSpec.name}
+Description: ${functionSpec.description}
+Input: ${JSON.stringify(functionSpec.input, null, 2)}
+Output: ${JSON.stringify(functionSpec.output, null, 2)}
+
+Service Context:
+${serviceContext}
+
+Requirements:
+- Export as default async function
+- Use Cloudflare Workers runtime
+- Handle errors gracefully
+- Include TypeScript types
+- Use env bindings for external services
+- Return output matching the schema exactly
+
+Implementation:
+`,
+    })
+
+    return Response.json({
+      code: result.text,
+    })
+  }
+
+  /**
+   * Refine existing code based on feedback
+   */
+  async refineCode(request: Request) {
+    const { code, feedback, testResults } = await request.json()
+
+    const result = await generateText({
+      model: google('gemini-2.5-pro'),
+      prompt: `Refine this code based on feedback:
+
+Current Code:
+${code}
+
+Feedback: ${feedback}
+
+Test Results:
+${JSON.stringify(testResults, null, 2)}
+
+Provide improved implementation:
+`,
+    })
+
+    return Response.json({
+      code: result.text,
+    })
+  }
+}
+```
+
+---
+
+## 5. MDX Parser (lib/mdx-parser.ts)
+
+**Purpose:** Parse and validate MDX service definitions
+
+```typescript
+import { parse } from 'yaml'
+import { z } from 'zod'
+
+// Zod schemas for validation
+const ServiceSchema = z.object({
+  service: z.string().regex(/^[a-z0-9-]+$/),
+  displayName: z.string().min(1).max(100),
+  category: z.enum(['ai-ml', 'data', 'communication', 'productivity', 'integration', 'other']),
+  description: z.string().min(10).max(500),
+
+  pricing: z.array(
+    z.object({
+      tier: z.enum(['free', 'starter', 'pro', 'enterprise']),
+      price: z.number().min(0),
+      priceUnit: z.enum(['month', 'call', '1000calls', 'gb']),
+      included: z.string(),
+    }),
+  ),
+
+  integrations: z.array(z.string()).optional(),
+
+  functions: z.array(
+    z.object({
+      name: z.string(),
+      description: z.string(),
+      input: z.record(z.string()),
+      output: z.record(z.string()),
+      implementation: z.string(),
+    }),
+  ),
+})
+
+export async function parseMDXDefinition(mdx: string) {
+  // Extract YAML frontmatter
+  const match = mdx.match(/^---\n([\s\S]+?)\n---/)
+  if (!match) {
+    throw new Error('Invalid MDX: Missing frontmatter')
+  }
+
+  const frontmatter = match[1]
+  const markdown = mdx.slice(match[0].length).trim()
+
+  // Parse YAML
+  const data = parse(frontmatter)
+
+  // Validate with Zod
+  const validated = ServiceSchema.parse(data)
+
+  // Extract Markdown content
+  const sections = parseMarkdownSections(markdown)
+
+  return {
+    ...validated,
+    markdown,
+    sections,
+  }
+}
+
+function parseMarkdownSections(markdown: string) {
+  const sections: Record<string, string> = {}
+  const lines = markdown.split('\n')
+
+  let currentSection = 'overview'
+  let currentContent: string[] = []
+
+  for (const line of lines) {
+    if (line.startsWith('## ')) {
+      if (currentContent.length > 0) {
+        sections[currentSection] = currentContent.join('\n')
+      }
+      currentSection = line.slice(3).toLowerCase().replace(/\s+/g, '-')
+      currentContent = []
+    } else {
+      currentContent.push(line)
+    }
+  }
+
+  if (currentContent.length > 0) {
+    sections[currentSection] = currentContent.join('\n')
+  }
+
+  return sections
+}
+
+export function generateTypeScriptTypes(functions: any[]) {
+  let types = '// Auto-generated types\n\n'
+
+  for (const fn of functions) {
+    types += `export interface ${fn.name}Input {\n`
+    for (const [key, type] of Object.entries(fn.input)) {
+      types += `  ${key}: ${type}\n`
+    }
+    types += `}\n\n`
+
+    types += `export interface ${fn.name}Output {\n`
+    for (const [key, type] of Object.entries(fn.output)) {
+      types += `  ${key}: ${type}\n`
+    }
+    types += `}\n\n`
+  }
+
+  return types
+}
+```
+
+---
+
+## 6. Code Generator (lib/code-generator.ts)
+
+**Purpose:** Generate deployable worker code from MDX
+
+```typescript
+import { parseMDXDefinition } from './mdx-parser'
+
+export async function generateWorkerCode(mdx: string): Promise<string> {
+  const parsed = await parseMDXDefinition(mdx)
+
+  let code = `// Auto-generated worker for ${parsed.displayName}
+// Generated: ${new Date().toISOString()}
+
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { logger } from 'hono/logger'
+
+export interface Env {
+  // Add required bindings here
+}
+
+const app = new Hono<{ Bindings: Env }>()
+
+app.use('*', cors())
+app.use('*', logger())
+
+// Health check
+app.get('/health', (c) => {
+  return c.json({ status: 'ok', service: '${parsed.service}' })
+})
+
+`
+
+  // Generate route for each function
+  for (const fn of parsed.functions) {
+    code += `
+// ${fn.description}
+app.post('/${fn.name}', async (c) => {
+  const input = await c.req.json()
+
+  // TODO: Validate input
+  // TODO: Implement function logic
+
+  ${fn.implementation}
+
+  // TODO: Return output
+  return c.json({ result: 'success' })
+})
+`
+  }
+
+  code += `
+export default app
+`
+
+  return code
+}
+
+export async function generateTestSuite(mdx: string): Promise<string> {
+  const parsed = await parseMDXDefinition(mdx)
+
+  let tests = `// Auto-generated tests for ${parsed.displayName}
+import { describe, it, expect } from 'vitest'
+import app from './index'
+
+describe('${parsed.service}', () => {
+  it('health check works', async () => {
+    const res = await app.request('/health')
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    expect(data.status).toBe('ok')
+  })
+
+`
+
+  for (const fn of parsed.functions) {
+    tests += `
+  it('${fn.name} works', async () => {
+    const res = await app.request('/${fn.name}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        // TODO: Add test input
+      }),
+    })
+    expect(res.status).toBe(200)
+    const data = await res.json()
+    // TODO: Add assertions
+  })
+`
+  }
+
+  tests += `})
+`
+
+  return tests
+}
+```
+
+---
+
+## 7. Deployer (lib/deployer.ts)
+
+**Purpose:** Deploy service to Cloudflare Workers for Platforms
+
+```typescript
+import { Cloudflare } from '@cloudflare/workers-sdk'
+
+export interface DeploymentConfig {
+  serviceName: string
+  code: string
+  bindings?: Record<string, any>
+  accountId: string
+  apiToken: string
+}
+
+export async function deployService(config: DeploymentConfig) {
+  const cf = new Cloudflare({
+    accountId: config.accountId,
+    apiToken: config.apiToken,
+  })
+
+  // 1. Create worker
+  const worker = await cf.workers.scripts.upload({
+    name: config.serviceName,
+    main: config.code,
+    bindings: config.bindings,
+  })
+
+  // 2. Create route
+  const route = await cf.workers.routes.create({
+    pattern: `${config.serviceName}.services.delivery/*`,
+    script: config.serviceName,
+  })
+
+  // 3. Get worker URL
+  const url = `https://${config.serviceName}.services.delivery`
+
+  return {
+    workerId: worker.id,
+    workerName: config.serviceName,
+    workerUrl: url,
+    deployedAt: new Date(),
+  }
+}
+
+export async function deleteService(serviceName: string, accountId: string, apiToken: string) {
+  const cf = new Cloudflare({
+    accountId,
+    apiToken,
+  })
+
+  await cf.workers.scripts.delete(serviceName)
+}
+
+export async function getServiceLogs(serviceName: string, accountId: string, apiToken: string) {
+  const cf = new Cloudflare({
+    accountId,
+    apiToken,
+  })
+
+  const logs = await cf.workers.scripts.logs(serviceName)
+  return logs
+}
+```
+
+---
+
+## 8. React Components
+
+### ServiceWizard.tsx
+
+**Purpose:** Step-by-step service creation wizard
+
+```typescript
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+export function ServiceWizard() {
+  const [step, setStep] = useState(1)
+  const [serviceData, setServiceData] = useState({})
+  const router = useRouter()
+
+  async function handleGenerate() {
+    // Call VibeSK to generate MDX
+    const res = await fetch('/api/vibe/generate-service', {
+      method: 'POST',
+      body: JSON.stringify(serviceData),
+    })
+    const { mdx, parsed } = await res.json()
+
+    // Create service in Payload
+    const service = await fetch('/api/services', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...parsed,
+        mdxDefinition: mdx,
+        status: 'draft',
+      }),
+    })
+
+    router.push(`/studio/services/${service.id}/edit`)
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <h1>Create New Service</h1>
+
+      {step === 1 && (
+        <div>
+          <h2>Describe Your Service</h2>
+          <textarea
+            placeholder="I want to create a service that..."
+            onChange={(e) => setServiceData({ ...serviceData, prompt: e.target.value })}
+          />
+          <button onClick={() => setStep(2)}>Next</button>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div>
+          <h2>Select Category</h2>
+          <select onChange={(e) => setServiceData({ ...serviceData, category: e.target.value })}>
+            <option value="ai-ml">AI & ML</option>
+            <option value="data">Data</option>
+            <option value="communication">Communication</option>
+            <option value="productivity">Productivity</option>
+            <option value="integration">Integration</option>
+            <option value="other">Other</option>
+          </select>
+          <button onClick={() => setStep(3)}>Next</button>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div>
+          <h2>Integrations (Optional)</h2>
+          <input
+            type="text"
+            placeholder="openai, stripe, sendgrid..."
+            onChange={(e) => setServiceData({ ...serviceData, integrations: e.target.value.split(',') })}
+          />
+          <button onClick={handleGenerate}>Generate Service</button>
+        </div>
+      )}
+    </div>
+  )
+}
+```
+
+### CodeEditor.tsx
+
+**Purpose:** Edit MDX with live preview
+
+```typescript
+'use client'
+
+import { useState, useEffect } from 'react'
+import { parseMDXDefinition } from '@/lib/mdx-parser'
+
+export function CodeEditor({ initialValue, onChange }) {
+  const [mdx, setMdx] = useState(initialValue)
+  const [parsed, setParsed] = useState(null)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    async function parse() {
+      try {
+        const result = await parseMDXDefinition(mdx)
+        setParsed(result)
+        setError(null)
+        onChange?.(mdx, result)
+      } catch (err) {
+        setError(err.message)
+      }
+    }
+    parse()
+  }, [mdx])
+
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <h3>MDX Source</h3>
+        <textarea value={mdx} onChange={(e) => setMdx(e.target.value)} className="w-full h-[600px] font-mono" />
+        {error && <div className="text-red-500">{error}</div>}
+      </div>
+      <div>
+        <h3>Preview</h3>
+        {parsed && (
+          <div>
+            <h4>{parsed.displayName}</h4>
+            <p>{parsed.description}</p>
+            <h5>Functions:</h5>
+            <ul>
+              {parsed.functions.map((fn) => (
+                <li key={fn.name}>
+                  {fn.name}: {fn.description}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## 9. Deployment Process
+
+### Automated Deployment Flow
+
+```typescript
+// hooks/afterChange in Services collection
+async function deployService(doc: Service, req: PayloadRequest) {
+  // 1. Generate worker code
+  const workerCode = await generateWorkerCode(doc.mdxDefinition)
+
+  // 2. Generate tests
+  const testCode = await generateTestSuite(doc.mdxDefinition)
+
+  // 3. Run tests in Claude Sandbox
+  const testResults = await runTestsInSandbox(testCode, workerCode)
+
+  if (!testResults.success) {
+    throw new Error(`Tests failed: ${testResults.errors.join(', ')}`)
+  }
+
+  // 4. Deploy to Workers for Platforms
+  const deployment = await deployService({
+    serviceName: doc.name,
+    code: workerCode,
+    accountId: req.context.cloudflare.env.CLOUDFLARE_ACCOUNT_ID,
+    apiToken: req.context.cloudflare.env.CLOUDFLARE_API_TOKEN,
+  })
+
+  // 5. Update service with deployment info
+  await req.payload.update({
+    collection: 'services',
+    id: doc.id,
+    data: {
+      workerName: deployment.workerName,
+      workerUrl: deployment.workerUrl,
+      deployedAt: deployment.deployedAt,
+    },
+  })
+
+  // 6. Create version record
+  await req.payload.create({
+    collection: 'service-versions',
+    data: {
+      service: doc.id,
+      version: '1.0.0', // TODO: Semantic versioning
+      mdxDefinition: doc.mdxDefinition,
+      workerCode,
+      deployedAt: deployment.deployedAt,
+      commitMessage: 'Initial deployment',
+    },
+  })
+
+  // 7. Publish to Services.Delivery marketplace
+  await publishToMarketplace(doc, deployment)
+}
+```
+
+---
+
+## 10. Analytics Integration
+
+### Real-Time Analytics
+
+**Purpose:** Track service execution metrics
+
+```typescript
+// In deployed worker
+app.use('*', async (c, next) => {
+  const start = Date.now()
+
+  await next()
+
+  const duration = Date.now() - start
+
+  // Log to Cloudflare Analytics Engine
+  c.env.ANALYTICS_ENGINE.writeDataPoint({
+    indexes: [c.env.SERVICE_NAME],
+    blobs: [
+      c.req.path,
+      c.req.method,
+      String(c.res.status),
+      String(duration),
+      String(c.req.header('user-agent')),
+    ],
+    doubles: [duration],
+  })
+
+  // Update service metrics in Payload
+  await updateServiceMetrics(c.env.SERVICE_NAME, {
+    executions: 1,
+    revenue: calculateRevenue(c.req.path, c.env.PRICING),
+    latency: duration,
+    error: c.res.status >= 400 ? 1 : 0,
+  })
+})
+```
+
+---
+
+## Success Metrics
+
+### Phase 1: MVP (Weeks 1-8)
+
+- [ ] VibeSK integration complete
+- [ ] Service definition via MDX working
+- [ ] AI-assisted code generation functional
+- [ ] Automated deployment to Workers
+- [ ] 10+ creators onboarded
+- [ ] 20+ services created
+- [ ] 80% successful deployments
+
+### Phase 2: Growth (Weeks 9-24)
+
+- [ ] 50+ active creators
+- [ ] 100+ services listed
+- [ ] $10K+ GMV
+- [ ] 4.5+ average service rating
+- [ ] <100ms p95 latency
+- [ ] 99.9% uptime
+
+### Phase 3: Scale (6 months)
+
+- [ ] 500+ creators
+- [ ] 500+ services
+- [ ] $300K+ ARR contribution
+- [ ] 60% MoM GMV growth
+- [ ] <5% dispute rate
+
+---
+
+## Revenue Model
+
+### Creator Subscriptions
+
+- **Free Tier:** 1 service, 1000 executions/month
+- **Starter ($29/mo):** 5 services, 50K executions/month
+- **Pro ($99/mo):** Unlimited services, 500K executions/month
+- **Enterprise (Custom):** Dedicated infrastructure, SLA
+
+### Marketplace Take Rate
+
+- **15% of all sales** from published services
+- Automated via Stripe Connect
+- Monthly payouts to creators
+
+### Template Marketplace
+
+- **30% revenue share** on template sales
+- Creators can sell pre-built templates
+- One-click deployment for buyers
+
+---
+
+## Next Steps
+
+### Week 1: Foundation
+
+1. Set up app/ directory structure
+2. Create PayloadCMS collections
+3. Initialize VibeSK worker
+4. Set up Cloudflare bindings
+
+### Week 2: Core Features
+
+1. Implement ServiceWizard
+2. Integrate VibeSK for code generation
+3. Build MDX parser and validator
+4. Create CodeEditor component
+
+### Week 3-4: Deployment
+
+1. Implement code generator
+2. Set up Claude Sandbox integration
+3. Build deployment automation
+4. Create analytics tracking
+
+### Week 5-8: Polish & Launch
+
+1. Add template library
+2. Implement billing (Stripe)
+3. Build analytics dashboard
+4. Public beta launch
+
+---
+
+## Conclusion
+
+Services.Studio provides a complete platform for creators to build, deploy, and monetize AI services with minimal technical expertise. By combining VibeSK's AI code generation, Claude Sandbox's secure execution, and Dynamic Workers' deployment automation, we enable a new creator economy for AI services.
+
+**Key Differentiators:**
+- Natural language → deployed service in < 5 minutes
+- Human-in-loop approval for quality control
+- One-click deployment to global edge network
+- Real-time analytics and revenue tracking
+- 15% take rate enables sustainable creator economy
+
+**Estimated Impact:** $300K+ ARR from 500 creators × $600 average annual revenue
+
+---
+
+**Author:** Claude Code (AI Implementation Agent)
+**Date:** 2025-10-03
+**Status:** Ready for Implementation
+**Next:** Begin Week 1 foundation work

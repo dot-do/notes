@@ -1,0 +1,835 @@
+# Unified WorkOS Authentication Implementation
+
+**Date:** 2025-10-03
+**Status:** Implementation Plan
+**Recommendation:** #1 from poc/RECOMMENDATIONS.md
+**Effort:** 4 weeks
+**Impact:** Critical foundation for platform
+
+## Executive Summary
+
+This document provides a comprehensive implementation plan for unifying authentication across the .do platform under WorkOS AuthKit. The current platform has multiple authentication systems (better-auth, API keys, custom OAuth) that need to be consolidated into a single, enterprise-ready OAuth 2.0 solution.
+
+## Current State Analysis
+
+### Existing Auth Infrastructure
+
+**workers/auth/ Service - ✅ ALREADY IMPLEMENTED**
+
+The platform already has a comprehensive WorkOS-based auth service:
+
+```typescript
+// workers/auth/src/index.ts
+export default class AuthService extends WorkerEntrypoint<AuthServiceEnv> {
+  // RPC Methods (Service-to-Service)
+  async validateToken(token: string): Promise<ValidateTokenResponse>
+  async validateApiKey(apiKey: string): Promise<User | null>
+  async createApiKey(input: ApiKeyCreateInput): Promise<CreateApiKeyResponse>
+  async createSession(userId: string, ...): Promise<SessionResponse>
+  async checkPermission(check: PermissionCheck): Promise<boolean>
+  async getWorkOSAuthURL(redirectUri: string, state?: string): Promise<string>
+  async exchangeWorkOSCode(code: string): Promise<WorkOSAuthResponse>
+  // ... 10+ more methods
+}
+```
+
+**Features Already Implemented:**
+- ✅ WorkOS OAuth 2.0 integration
+- ✅ JWT session management (access + refresh tokens)
+- ✅ API key generation and validation
+- ✅ Role-based access control (admin, user, viewer)
+- ✅ Permission system (resource:action)
+- ✅ Rate limiting middleware
+- ✅ Organization-based access control
+- ✅ HTTP API endpoints (Hono)
+- ✅ RPC interface (WorkerEntrypoint)
+- ✅ Database schema (users, sessions, api_keys, permissions)
+- ✅ Comprehensive README and documentation
+
+### Better-Auth Usage - 📍 LEGACY SYSTEM
+
+Located in `api.services/auth/config.ts`:
+
+```typescript
+import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { stripe } from '@better-auth/stripe'
+
+export function createAuth(config: AuthConfig) {
+  return betterAuth({
+    database: drizzleAdapter(config.db, {
+      provider: 'pg',
+      schema: {
+        user: schema.users,
+        session: schema.sessions,
+        account: schema.accounts,
+        verification: schema.verifications,
+        subscription: schema.subscriptions
+      },
+    }),
+    socialProviders: {
+      github: { clientId, clientSecret }
+    },
+    // ... Stripe plugin for subscriptions
+  })
+}
+```
+
+**Used In:**
+- `api.services/api/routes/workos.ts` - OAuth callbacks
+- `api.services/api/mcp/auth.ts` - MCP authentication
+- `api.services/scripts/setup-stripe-products.ts` - Subscription management
+
+**Why It Must Go:**
+- Duplicate auth system alongside WorkOS
+- Different session management approach
+- Incompatible with unified RPC architecture
+- Missing organization-based access control
+- Not using Workers RPC service bindings
+
+## Implementation Architecture
+
+### Phase 1: Unified Auth Service (Already Complete!)
+
+**Status:** ✅ Already deployed at `workers/auth/`
+
+The auth service already provides everything needed:
+
+```
+┌─────────────────────────────────────────┐
+│       @auth/ Service                    │
+│   (workers/auth/ - DEPLOYED)            │
+├─────────────────────────────────────────┤
+│  WorkOS AuthKit Integration             │
+│   • OAuth 2.0 (Google, Microsoft, etc.) │
+│   • SAML SSO                           │
+│   • Directory Sync (SCIM)              │
+│   • Organization Management            │
+├─────────────────────────────────────────┤
+│  JWT Session Management                 │
+│   • Access tokens (1 hour)             │
+│   • Refresh tokens (30 days)           │
+│   • Session persistence in DB          │
+├─────────────────────────────────────────┤
+│  API Key Management                     │
+│   • Generate keys (sk_live_, sk_test_) │
+│   • SHA-256 hashing                    │
+│   • Expiration and revocation          │
+├─────────────────────────────────────────┤
+│  RBAC (Role-Based Access Control)       │
+│   • Roles: admin, user, viewer         │
+│   • Permissions: resource:action        │
+│   • Custom permissions per user        │
+├─────────────────────────────────────────┤
+│  Rate Limiting                          │
+│   • KV-based (10 req/min auth)         │
+│   • Configurable per endpoint          │
+└─────────────────────────────────────────┘
+```
+
+### Phase 2: Migration from Better-Auth
+
+**Goal:** Replace better-auth with AUTH_SERVICE binding across platform
+
+**Migration Steps:**
+
+#### Step 1: Update Service Bindings (Week 1)
+
+Add AUTH_SERVICE binding to all workers:
+
+```jsonc
+// api.services/wrangler.jsonc
+{
+  "services": [
+    {
+      "binding": "AUTH_SERVICE",
+      "service": "auth"  // Points to workers/auth/
+    },
+    // ... existing bindings
+  ]
+}
+
+// workers/mcp/wrangler.jsonc
+{
+  "services": [
+    {
+      "binding": "AUTH_SERVICE",
+      "service": "auth"
+    }
+  ]
+}
+```
+
+#### Step 2: Replace Middleware (Week 1)
+
+**Current (better-auth):**
+```typescript
+// api.services/api/middleware.ts
+import { createAuth } from '../auth/config'
+
+const auth = createAuth({
+  db,
+  secret: env.AUTH_SECRET,
+  githubClientId: env.GITHUB_CLIENT_ID,
+  githubClientSecret: env.GITHUB_CLIENT_SECRET,
+  baseURL: env.BASE_URL
+})
+```
+
+**New (WorkOS via RPC):**
+```typescript
+// api.services/api/middleware.ts
+export async function authenticate(c: Context) {
+  const authHeader = c.req.header('Authorization')
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    throw new UnauthorizedError('Authentication required')
+  }
+
+  const token = authHeader.substring(7)
+
+  // Call AUTH_SERVICE via RPC
+  const result = await c.env.AUTH_SERVICE.validateToken(token)
+
+  if (!result.valid) {
+    throw new UnauthorizedError(result.error || 'Invalid token')
+  }
+
+  // Set user in context
+  c.set('user', result.user)
+  c.set('session', result.session)
+}
+```
+
+#### Step 3: Update OAuth Routes (Week 2)
+
+**Current:**
+```typescript
+// api.services/api/routes/workos.ts
+app.get('/auth/authorize', async (c) => {
+  const redirectUri = `${baseURL}/auth/callback`
+  const url = workos.getAuthorizationURL({ redirectUri })
+  return c.redirect(url)
+})
+
+app.get('/auth/callback', async (c) => {
+  const code = c.req.query('code')
+  const { user, accessToken } = await workos.exchangeCode(code)
+
+  // Create better-auth session
+  const session = await auth.createSession({ userId: user.id })
+
+  return c.json({ token: session.token })
+})
+```
+
+**New:**
+```typescript
+// api.services/api/routes/auth.ts
+app.get('/auth/authorize', async (c) => {
+  const redirectUri = `${baseURL}/auth/callback`
+  const url = await c.env.AUTH_SERVICE.getWorkOSAuthURL(redirectUri)
+  return c.redirect(url)
+})
+
+app.get('/auth/callback', async (c) => {
+  const code = c.req.query('code')
+
+  if (!code) {
+    return c.json({ error: 'Missing authorization code' }, 400)
+  }
+
+  // Exchange via AUTH_SERVICE
+  const authResponse = await c.env.AUTH_SERVICE.exchangeWorkOSCode(code)
+
+  return c.json({
+    token: authResponse.accessToken,
+    refreshToken: authResponse.refreshToken,
+    user: authResponse.user
+  })
+})
+```
+
+#### Step 4: API Key Routes (Week 2)
+
+```typescript
+// api.services/api/routes/apikeys.ts
+import { Hono } from 'hono'
+
+const app = new Hono()
+
+app.post('/apikeys', async (c) => {
+  // User must be authenticated
+  const user = c.get('user')
+
+  const { name, expiresInDays, environment } = await c.req.json()
+
+  const result = await c.env.AUTH_SERVICE.createApiKey({
+    userId: user.id,
+    name,
+    expiresInDays,
+    environment
+  })
+
+  if (!result.success) {
+    return c.json({ error: result.error }, 500)
+  }
+
+  return c.json(result.apiKey)
+})
+
+app.get('/apikeys', async (c) => {
+  const user = c.get('user')
+
+  // Call DB service directly or add listApiKeys to AUTH_SERVICE
+  const keys = await c.env.DB.query({
+    sql: 'SELECT id, name, prefix, last_used_at, expires_at FROM api_keys WHERE user_id = ? AND revoked_at IS NULL',
+    params: [user.id]
+  })
+
+  return c.json({ keys: keys.rows })
+})
+
+app.delete('/apikeys/:id', async (c) => {
+  const user = c.get('user')
+  const keyId = c.req.param('id')
+
+  const revoked = await c.env.AUTH_SERVICE.revokeApiKey(user.id, keyId)
+
+  if (!revoked) {
+    return c.json({ error: 'API key not found' }, 404)
+  }
+
+  return c.json({ message: 'API key revoked' })
+})
+
+export default app
+```
+
+#### Step 5: Permission Checks (Week 2)
+
+Replace inline permission checks with AUTH_SERVICE RPC:
+
+```typescript
+// Before (custom logic)
+if (user.role !== 'admin') {
+  return c.json({ error: 'Forbidden' }, 403)
+}
+
+// After (RBAC via AUTH_SERVICE)
+const hasPermission = await c.env.AUTH_SERVICE.checkPermission({
+  userId: user.id,
+  resource: 'things',
+  action: 'write',
+  organizationId: user.organizationId
+})
+
+if (!hasPermission) {
+  return c.json({ error: 'Forbidden' }, 403)
+}
+```
+
+#### Step 6: Database Migration (Week 3)
+
+**Schema Changes:**
+
+The better-auth schema uses different column names. Need to migrate:
+
+```sql
+-- better-auth schema
+CREATE TABLE users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE,
+  emailVerified BOOLEAN,
+  name TEXT,
+  image TEXT,
+  createdAt TIMESTAMP,
+  updatedAt TIMESTAMP
+);
+
+CREATE TABLE sessions (
+  id TEXT PRIMARY KEY,
+  userId TEXT REFERENCES users(id),
+  expiresAt TIMESTAMP,
+  token TEXT,
+  -- better-auth specific fields
+  ipAddress TEXT,
+  userAgent TEXT
+);
+
+-- WorkOS auth schema (workers/auth/)
+CREATE TABLE users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT,
+  image TEXT,
+  role TEXT DEFAULT 'user',
+  email_verified BOOLEAN DEFAULT FALSE,
+  workos_id TEXT,
+  organization_id TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT REFERENCES users(id),
+  token TEXT NOT NULL,
+  refresh_token TEXT,
+  expires_at TIMESTAMP NOT NULL,
+  device TEXT,
+  ip_address TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE api_keys (
+  id TEXT PRIMARY KEY,
+  user_id TEXT REFERENCES users(id),
+  name TEXT NOT NULL,
+  key_hash TEXT NOT NULL,
+  prefix TEXT NOT NULL,
+  last_used_at TIMESTAMP,
+  expires_at TIMESTAMP,
+  revoked_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE permissions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT REFERENCES users(id),
+  resource TEXT NOT NULL,
+  action TEXT NOT NULL,
+  organization_id TEXT,
+  granted_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Migration Script:**
+
+```typescript
+// db/migrations/migrate-to-workos-auth.ts
+import { drizzle } from 'drizzle-orm/neon-http'
+import { neon } from '@neondatabase/serverless'
+
+export async function migrateToWorkOSAuth() {
+  const sql = neon(process.env.POSTGRES_URL!)
+  const db = drizzle(sql)
+
+  console.log('Starting migration from better-auth to WorkOS auth...')
+
+  // 1. Add new columns to users table
+  await db.execute(sql`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user',
+    ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS workos_id TEXT,
+    ADD COLUMN IF NOT EXISTS organization_id TEXT;
+  `)
+
+  // 2. Rename columns to snake_case (PostgreSQL convention)
+  await db.execute(sql`
+    ALTER TABLE users
+    RENAME COLUMN "emailVerified" TO email_verified;
+
+    ALTER TABLE users
+    RENAME COLUMN "createdAt" TO created_at;
+
+    ALTER TABLE users
+    RENAME COLUMN "updatedAt" TO updated_at;
+  `)
+
+  // 3. Update sessions table
+  await db.execute(sql`
+    ALTER TABLE sessions
+    RENAME COLUMN "userId" TO user_id;
+
+    ALTER TABLE sessions
+    RENAME COLUMN "expiresAt" TO expires_at;
+
+    ALTER TABLE sessions
+    RENAME COLUMN "ipAddress" TO ip_address;
+
+    ALTER TABLE sessions
+    RENAME COLUMN "userAgent" TO user_agent;
+
+    ALTER TABLE sessions
+    ADD COLUMN IF NOT EXISTS refresh_token TEXT,
+    ADD COLUMN IF NOT EXISTS device TEXT,
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+  `)
+
+  // 4. Create api_keys table
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS api_keys (
+      id TEXT PRIMARY KEY,
+      user_id TEXT REFERENCES users(id),
+      name TEXT NOT NULL,
+      key_hash TEXT NOT NULL,
+      prefix TEXT NOT NULL,
+      last_used_at TIMESTAMP,
+      expires_at TIMESTAMP,
+      revoked_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id);
+    CREATE INDEX IF NOT EXISTS idx_api_keys_prefix ON api_keys(prefix);
+  `)
+
+  // 5. Create permissions table
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS permissions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT REFERENCES users(id),
+      resource TEXT NOT NULL,
+      action TEXT NOT NULL,
+      organization_id TEXT,
+      granted_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_permissions_user_id ON permissions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_permissions_resource_action ON permissions(resource, action);
+  `)
+
+  // 6. Drop better-auth specific tables
+  await db.execute(sql`
+    DROP TABLE IF EXISTS accounts CASCADE;
+    DROP TABLE IF EXISTS verifications CASCADE;
+    DROP TABLE IF EXISTS subscriptions CASCADE;
+  `)
+
+  console.log('Migration complete!')
+}
+```
+
+#### Step 7: Update MCP Authentication (Week 3)
+
+Replace MCP auth to use AUTH_SERVICE:
+
+**Current:**
+```typescript
+// api.services/api/mcp/auth.ts
+import { createAuth } from '../auth/config'
+
+export async function authenticateMCP(request: Request) {
+  const authHeader = request.headers.get('Authorization')
+  const token = authHeader?.replace('Bearer ', '')
+
+  const auth = createAuth({ ... })
+  const session = await auth.validateSession(token)
+
+  return session.user
+}
+```
+
+**New:**
+```typescript
+// api.services/api/mcp/auth.ts
+export async function authenticateMCP(request: Request, env: Env) {
+  const authHeader = request.headers.get('Authorization')
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return null
+  }
+
+  const token = authHeader.substring(7)
+
+  // Use AUTH_SERVICE for validation
+  const result = await env.AUTH_SERVICE.validateToken(token)
+
+  if (!result.valid) {
+    return null
+  }
+
+  return result.user
+}
+```
+
+#### Step 8: Remove Better-Auth Dependencies (Week 4)
+
+```bash
+# Remove packages
+cd api.services
+pnpm remove better-auth @better-auth/stripe better-auth/adapters/drizzle
+
+# Remove files
+rm -rf auth/
+rm api/routes/workos.ts  # Replaced by workers/auth/ endpoints
+
+# Update imports across codebase
+# Find and replace:
+# - import { createAuth } from '../auth/config' → removed
+# - auth.validateSession → env.AUTH_SERVICE.validateToken
+# - auth.createSession → env.AUTH_SERVICE.createSession
+```
+
+### Phase 3: Environment Variables & Secrets (Week 4)
+
+**Move WorkOS credentials to workers/auth/:**
+
+```bash
+# Set secrets in workers/auth/ worker
+cd workers/auth
+wrangler secret put WORKOS_API_KEY
+wrangler secret put WORKOS_CLIENT_ID
+wrangler secret put WORKOS_CLIENT_SECRET
+wrangler secret put WORKOS_WEBHOOK_SECRET  # Optional
+wrangler secret put JWT_SECRET
+wrangler secret put JWT_REFRESH_SECRET
+
+# Remove from api.services
+# (api.services no longer needs direct WorkOS access)
+```
+
+**Update .dev.vars:**
+
+```bash
+# workers/auth/.dev.vars
+WORKOS_API_KEY=sk_test_...
+WORKOS_CLIENT_ID=client_...
+WORKOS_CLIENT_SECRET=...
+JWT_SECRET=your-secret-here
+JWT_REFRESH_SECRET=another-secret-here
+
+# api.services/.dev.vars
+# Remove WORKOS_* variables
+# Remove AUTH_SECRET
+# Keep other secrets (DB, AI, etc.)
+```
+
+### Phase 4: Testing & Validation (Week 4)
+
+**Test Checklist:**
+
+```typescript
+// tests/auth/workos-integration.test.ts
+describe('Unified WorkOS Authentication', () => {
+  it('should authenticate with OAuth', async () => {
+    // 1. Get authorization URL
+    const url = await env.AUTH_SERVICE.getWorkOSAuthURL('http://localhost/callback')
+    expect(url).toContain('workos.com')
+
+    // 2. Exchange code (mocked)
+    const authResponse = await env.AUTH_SERVICE.exchangeWorkOSCode('test-code')
+    expect(authResponse.user).toBeDefined()
+    expect(authResponse.accessToken).toBeDefined()
+  })
+
+  it('should validate JWT tokens', async () => {
+    // Create session
+    const { token } = await env.AUTH_SERVICE.createSession('user-123')
+
+    // Validate token
+    const result = await env.AUTH_SERVICE.validateToken(token)
+    expect(result.valid).toBe(true)
+    expect(result.user?.id).toBe('user-123')
+  })
+
+  it('should validate API keys', async () => {
+    // Create API key
+    const { apiKey } = await env.AUTH_SERVICE.createApiKey({
+      userId: 'user-123',
+      name: 'Test Key',
+      environment: 'test'
+    })
+
+    // Validate API key
+    const user = await env.AUTH_SERVICE.validateApiKey(apiKey.key!)
+    expect(user?.id).toBe('user-123')
+  })
+
+  it('should check permissions', async () => {
+    const hasPermission = await env.AUTH_SERVICE.checkPermission({
+      userId: 'admin-user',
+      resource: 'things',
+      action: 'write'
+    })
+    expect(hasPermission).toBe(true)
+  })
+
+  it('should handle organization context', async () => {
+    // Switch organization
+    await env.AUTH_SERVICE.switchOrganization('org-123')
+
+    // Check org-scoped permissions
+    const hasPermission = await env.AUTH_SERVICE.checkPermission({
+      userId: 'user-123',
+      resource: 'things',
+      action: 'write',
+      organizationId: 'org-123'
+    })
+    expect(hasPermission).toBe(true)
+  })
+})
+```
+
+## Migration Strategy
+
+### Breaking Changes
+
+**API Changes:**
+- ✅ Session token format changes (better-auth → JWT)
+- ✅ OAuth callback responses use WorkOS format
+- ✅ Permission checks use resource:action format
+- ⚠️ Users must re-authenticate (sessions invalidated)
+
+**Database Changes:**
+- ✅ Column names: camelCase → snake_case
+- ✅ New tables: api_keys, permissions
+- ✅ Removed tables: accounts, verifications, subscriptions
+- ⚠️ Stripe subscription data needs migration (if used)
+
+### Rollback Plan
+
+If migration fails, rollback is straightforward:
+
+1. Revert wrangler.jsonc bindings (remove AUTH_SERVICE)
+2. Restore better-auth code from git
+3. Revert database migration
+4. Restore environment variables
+
+### Success Metrics
+
+**Week 1 (Bindings & Middleware):**
+- [ ] AUTH_SERVICE binding added to 5+ workers
+- [ ] authenticate() middleware replaced across api.services
+- [ ] All HTTP endpoints use new middleware
+- [ ] Zero authentication errors in logs
+
+**Week 2 (OAuth & API Keys):**
+- [ ] OAuth flow working with WorkOS
+- [ ] API key generation and validation working
+- [ ] Permission checks integrated
+- [ ] Test coverage >80%
+
+**Week 3 (Database Migration):**
+- [ ] Database schema migrated
+- [ ] All users re-authenticated successfully
+- [ ] API keys working for existing users
+- [ ] No data loss
+
+**Week 4 (Cleanup & Validation):**
+- [ ] better-auth dependencies removed
+- [ ] All auth-related files updated
+- [ ] Integration tests passing
+- [ ] Production deployment successful
+
+## Production Deployment Checklist
+
+**Pre-Deployment:**
+- [ ] workers/auth/ service deployed to production
+- [ ] Database migration script tested on staging
+- [ ] All environment variables set
+- [ ] WorkOS production configuration verified
+- [ ] Rollback plan documented
+
+**Deployment Steps:**
+1. Deploy workers/auth/ service (already done)
+2. Run database migration (during maintenance window)
+3. Update api.services with new bindings
+4. Deploy updated api.services worker
+5. Update all other workers with AUTH_SERVICE binding
+6. Monitor error logs for 24 hours
+7. Send re-authentication emails to users
+
+**Post-Deployment:**
+- [ ] Monitor authentication success rate
+- [ ] Track API errors related to auth
+- [ ] Verify WorkOS organization sync
+- [ ] Check API key validation performance
+- [ ] Validate RBAC permissions
+
+## Security Considerations
+
+**JWT Security:**
+- Access tokens expire after 1 hour
+- Refresh tokens expire after 30 days
+- HS256 signing with secure secrets
+- Token rotation on refresh
+
+**API Key Security:**
+- SHA-256 hashing before storage
+- Never log full keys
+- Prefix-based identification (sk_live_, sk_test_)
+- Revocation support
+
+**Rate Limiting:**
+- Auth endpoints: 10 req/min per IP
+- General API: 60 req/min per IP
+- KV-based tracking
+
+**WorkOS Security:**
+- JWKS verification for tokens
+- Webhook signature validation
+- Organization-based isolation
+- SAML/SCIM for enterprise
+
+## Cost Analysis
+
+**WorkOS Pricing:**
+- Free tier: 1,000 monthly active users
+- Starter: $125/month (10,000 MAU)
+- Growth: $350/month (25,000 MAU)
+- Enterprise: Custom pricing
+
+**Cloudflare Workers:**
+- AUTH_SERVICE invocations: ~100K/day @ $0.15/million = $0.45/month
+- KV operations (rate limiting): ~50K/day @ $0.50/million = $0.75/month
+- Database queries: Included in Neon pricing
+
+**Total Monthly Cost:**
+- WorkOS: $125 (Starter)
+- Cloudflare: $1.20
+- **Total: ~$126/month** (significantly less than managing custom auth)
+
+## Documentation Updates
+
+**Files to Update:**
+- [x] workers/auth/README.md - Already comprehensive
+- [ ] api.services/CLAUDE.md - Remove better-auth references
+- [ ] api.services/ARCHITECTURE.md - Update auth section
+- [ ] Root CLAUDE.md - Add AUTH_SERVICE binding pattern
+- [ ] Root WORKSTREAMS.md - Mark WS-007 complete
+
+**New Documentation Needed:**
+- [ ] Migration guide for users (re-authentication)
+- [ ] Developer guide for AUTH_SERVICE usage
+- [ ] API reference for auth endpoints
+- [ ] Troubleshooting guide
+
+## Timeline Summary
+
+**Week 1:** Service bindings and middleware updates
+**Week 2:** OAuth, API keys, and permission integration
+**Week 3:** Database migration and MCP updates
+**Week 4:** Cleanup, testing, and deployment
+
+**Total Duration:** 4 weeks
+**Team Size:** 1-2 developers
+**Risk Level:** Medium (well-planned migration path)
+
+## Next Steps
+
+1. **Review this plan** with team and stakeholders
+2. **Set up staging environment** for migration testing
+3. **Create migration branch** in git
+4. **Begin Week 1 implementation** (bindings and middleware)
+5. **Daily standups** to track progress and blockers
+
+## References
+
+- [WorkOS AuthKit Documentation](https://workos.com/docs/authkit)
+- [workers/auth/ README](../../workers/auth/README.md)
+- [POC RECOMMENDATIONS.md](../../poc/RECOMMENDATIONS.md)
+- [Dynamic Worker MCP POC](../../poc/2025-10-03-dynamic-worker-mcp/README.md)
+
+---
+
+**Document Owner:** Claude Code Implementation Agent
+**Last Updated:** 2025-10-03
+**Status:** Ready for Review

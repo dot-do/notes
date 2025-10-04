@@ -1,0 +1,1167 @@
+# Quick Wins Implementation Guide
+
+**Date:** October 3, 2025
+**Purpose:** Actionable step-by-step guide for implementing the 20 quick wins identified in the repository audit
+**Time Estimate:** 40 hours (Phase 1)
+**ROI:** Immediate visibility boost, backlink acceptance readiness
+
+---
+
+## Overview
+
+This guide provides **concrete implementation steps** for each of the 20 quick wins identified in the repository audit. Each task is designed to be completed in **under 1 hour** and requires minimal setup.
+
+### Quick Navigation
+
+1. [GitHub Metadata Optimization (10 tasks)](#1-github-metadata-optimization)
+2. [README Enhancements (5 tasks)](#2-readme-enhancements)
+3. [CI/CD Badges (3 tasks)](#3-cicd-badges)
+4. [Documentation Links (2 tasks)](#4-documentation-links)
+
+---
+
+## 1. GitHub Metadata Optimization
+
+### 1.1 Add Repository Topics/Tags (All Core Repos)
+
+**Time:** 5 minutes per repo × 8 repos = 40 minutes
+**Impact:** High - Improves GitHub search discoverability
+
+**Repositories:** agent, ai, api, app, db, do.industries, sdk, site
+
+**Steps for Each Repository:**
+
+1. Navigate to repository on GitHub
+2. Click "Settings" → "General"
+3. Find "Topics" section (below description)
+4. Add 5-8 relevant topics from this list:
+
+**agent/** topics:
+```
+ai, agents, code-generation, durable-objects, cloudflare-workers,
+typescript, autonomous-coding, openai
+```
+
+**ai/** topics:
+```
+ai, openai, anthropic, cloudflare-workers-ai, embeddings,
+vector-search, text-generation, typescript
+```
+
+**api/** topics:
+```
+api, hono, cloudflare-workers, rest-api, typescript,
+microservices, rpc, serverless
+```
+
+**app/** topics:
+```
+cms, payload-cms, admin, nextjs, cloudflare-pages,
+database, typescript, headless-cms
+```
+
+**db/** topics:
+```
+database, postgresql, drizzle-orm, migrations,
+cloudflare-d1, neon, typescript, orm
+```
+
+**do.industries/** topics:
+```
+ontology, schema-org, business-data, knowledge-graph,
+industry-taxonomy, metadata, semantic-web
+```
+
+**sdk/** topics:
+```
+sdk, typescript, npm-packages, api-client,
+code-generation, monorepo, pnpm, turborepo
+```
+
+**site/** topics:
+```
+nextjs, cloudflare-pages, shadcn-ui, tailwindcss,
+website, frontend, typescript, react
+```
+
+5. Click "Save changes"
+
+**Validation:**
+- Repository shows topics under the name/description
+- Topics are clickable and lead to relevant searches
+
+---
+
+### 1.2 Write Compelling About Sections
+
+**Time:** 10 minutes per repo × 8 repos = 80 minutes
+**Impact:** High - First impression for visitors
+
+**Template Format:**
+```
+[Action Verb] [Main Feature] for [Use Case] using [Key Tech].
+[Optional: Key differentiator or metric].
+```
+
+**Suggested About Sections:**
+
+**agent/**
+```
+AI-powered code generation agent using Durable Objects for phase-wise autonomous coding.
+Generates production-ready code with 95%+ test coverage.
+```
+
+**ai/**
+```
+Multi-provider AI toolkit for Cloudflare Workers supporting OpenAI, Anthropic, Google, and Workers AI.
+Unified interface for text generation, embeddings, and chat.
+```
+
+**api/**
+```
+High-performance API services built with Hono on Cloudflare Workers.
+RPC-first architecture with automatic OpenAPI documentation.
+```
+
+**app/**
+```
+Modern CMS and admin dashboard powered by Payload CMS and Next.js.
+Deploy to Cloudflare Pages with D1 database backend.
+```
+
+**db/**
+```
+Type-safe database layer using Drizzle ORM with PostgreSQL and Cloudflare D1.
+Automated migrations and query builders with 100% TypeScript coverage.
+```
+
+**do.industries/**
+```
+Business ontology and industry taxonomy based on Schema.org standards.
+Machine-readable business concepts for AI and knowledge graphs.
+```
+
+**sdk/**
+```
+121 TypeScript SDK packages organized in 5-layer dependency pyramid.
+Zero-dependency foundation with universal AI tool adapters.
+```
+
+**site/**
+```
+Public websites and marketing pages built with Next.js and shadcn/ui.
+Deploy to Cloudflare Pages with automatic domain routing.
+```
+
+**Implementation:**
+1. Go to repository on GitHub
+2. Click pencil icon next to description
+3. Paste new description
+4. Click "Save"
+
+---
+
+### 1.3 Add Website URLs
+
+**Time:** 2 minutes per repo × 8 repos = 16 minutes
+**Impact:** Medium - Direct traffic from GitHub
+
+**URLs to Add:**
+
+| Repository | Website URL | Purpose |
+|------------|-------------|---------|
+| agent | https://agent.do | Agent landing page |
+| ai | https://ai.do | AI toolkit docs |
+| api | https://api.do | API documentation |
+| app | https://app.do | Admin dashboard |
+| db | https://db.do | Database guides |
+| do.industries | https://do.industries | Business ontology browser |
+| sdk | https://sdk.do | SDK package docs |
+| site | https://do.com | Main website |
+
+**Implementation:**
+1. Go to repository settings
+2. Find "Website" field (right sidebar on main repo page)
+3. Enter URL
+4. Click "Save changes"
+
+---
+
+### 1.4 Add LICENSE Files
+
+**Time:** 3 minutes per repo × 8 repos = 24 minutes
+**Impact:** High - Required for open source acceptance
+
+**Recommended:** MIT License (most permissive, widely accepted)
+
+**Implementation:**
+
+```bash
+# For each repository:
+cd [repo-name]
+
+cat > LICENSE << 'EOF'
+MIT License
+
+Copyright (c) 2025 .do
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+EOF
+
+git add LICENSE
+git commit -m "Add MIT License"
+git push
+```
+
+**Alternative:** Use GitHub's "Add file" → "Create new file" → name it `LICENSE` → choose MIT from template dropdown
+
+---
+
+### 1.5 Create Social Preview Images
+
+**Time:** 15 minutes per repo × 8 repos = 120 minutes
+**Impact:** High - Visual presence in social shares
+
+**Specifications:**
+- **Size:** 1280x640px (2:1 ratio)
+- **Format:** PNG or JPG
+- **File size:** Under 1MB
+- **Content:** Repository name, tagline, key visual
+
+**Design Template (using Canva or Figma):**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│                        [.do Logo/Icon]                          │
+│                                                                 │
+│                    [Repository Name]                            │
+│                                                                 │
+│              [One-line compelling description]                  │
+│                                                                 │
+│     [Key Tech Icons: TypeScript, Cloudflare, etc.]            │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Quick Method (Using Browser DevTools):**
+
+1. Create HTML template:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      margin: 0;
+      width: 1280px;
+      height: 640px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: white;
+    }
+    h1 {
+      font-size: 72px;
+      font-weight: 700;
+      margin: 0 0 20px 0;
+    }
+    p {
+      font-size: 32px;
+      margin: 0 0 40px 0;
+      opacity: 0.9;
+    }
+    .tech {
+      font-size: 24px;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <h1>agent.do</h1>
+  <p>AI-Powered Code Generation Agent</p>
+  <div class="tech">TypeScript • Durable Objects • OpenAI</div>
+</body>
+</html>
+```
+
+2. Open in browser
+3. Use browser screenshot tool or DevTools screenshot (full page)
+4. Save as PNG
+
+**Upload to GitHub:**
+1. Go to repository settings
+2. Scroll to "Social preview"
+3. Click "Upload an image"
+4. Select your 1280x640px image
+5. Click "Save"
+
+---
+
+## 2. README Enhancements
+
+### 2.1 Add Badges to Core Repos
+
+**Time:** 10 minutes per repo × 8 repos = 80 minutes
+**Impact:** High - Professional appearance, trust signals
+
+**Badge Template (Add to top of README after H1):**
+
+```markdown
+# Repository Name
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Stars](https://img.shields.io/github/stars/dot-do/[repo-name]?style=social)](https://github.com/dot-do/[repo-name])
+[![Build Status](https://github.com/dot-do/[repo-name]/actions/workflows/ci.yml/badge.svg)](https://github.com/dot-do/[repo-name]/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/dot-do/[repo-name])](https://codecov.io/gh/dot-do/[repo-name])
+```
+
+**Custom Badges by Repository Type:**
+
+**For API/Backend Services:**
+```markdown
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange.svg)](https://workers.cloudflare.com/)
+[![Hono](https://img.shields.io/badge/Hono-v4-blueviolet)](https://hono.dev/)
+```
+
+**For Frontend/Sites:**
+```markdown
+[![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8.svg)](https://tailwindcss.com/)
+```
+
+**For Databases:**
+```markdown
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
+[![Drizzle ORM](https://img.shields.io/badge/Drizzle-ORM-C5F74F.svg)](https://orm.drizzle.team/)
+```
+
+**For AI/ML:**
+```markdown
+[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-412991.svg)](https://openai.com/)
+[![Cloudflare AI](https://img.shields.io/badge/Workers-AI-orange.svg)](https://ai.cloudflare.com/)
+```
+
+**Implementation:**
+1. Edit README.md in each repository
+2. Add badge section after H1 title
+3. Replace `[repo-name]` with actual repository name
+4. Commit and push
+
+---
+
+### 2.2 Add Quick Start Sections
+
+**Time:** 15 minutes per repo × 5 repos = 75 minutes
+**Impact:** High - Lowers barrier to entry
+
+**Repositories:** agent, ai, api, db, sdk
+
+**Template:**
+
+```markdown
+## Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- pnpm 9+
+- [Any other requirements]
+
+### Installation
+
+\`\`\`bash
+# Clone the repository
+git clone https://github.com/dot-do/[repo-name].git
+cd [repo-name]
+
+# Install dependencies
+pnpm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your configuration
+
+# Run development server
+pnpm dev
+\`\`\`
+
+### First Steps
+
+1. **[Key Action 1]** - [Brief description]
+2. **[Key Action 2]** - [Brief description]
+3. **[Key Action 3]** - [Brief description]
+
+### Example Usage
+
+\`\`\`typescript
+// Simple example showing core functionality
+import { [mainExport] } from '@dot-do/[repo-name]'
+
+// [Minimal working example]
+\`\`\`
+
+See [Full Documentation](https://[repo].do/docs) for more examples.
+```
+
+**Repository-Specific Examples:**
+
+**agent/ Quick Start:**
+```markdown
+## Quick Start
+
+### Prerequisites
+
+- Cloudflare account with Durable Objects enabled
+- OpenAI API key
+- Node.js 20+ and pnpm 9+
+
+### Installation
+
+\`\`\`bash
+git clone https://github.com/dot-do/agent.git
+cd agent
+pnpm install
+cp .dev.vars.example .dev.vars
+# Add your OPENAI_API_KEY to .dev.vars
+pnpm dev
+\`\`\`
+
+### Generate Your First Code
+
+\`\`\`typescript
+import { Agent } from '@dot-do/agent'
+
+const agent = new Agent({
+  apiKey: env.OPENAI_API_KEY
+})
+
+// Generate code with natural language
+const result = await agent.generate({
+  prompt: 'Create a REST API endpoint for user authentication',
+  language: 'typescript',
+  framework: 'hono'
+})
+
+console.log(result.code) // Generated TypeScript code
+console.log(result.tests) // Generated test suite
+\`\`\`
+```
+
+---
+
+### 2.3 Add Usage Examples
+
+**Time:** 20 minutes per repo × 5 repos = 100 minutes
+**Impact:** High - Demonstrates value immediately
+
+**Template:**
+
+```markdown
+## Usage Examples
+
+### Basic Example
+
+\`\`\`typescript
+// [Simplest possible use case]
+\`\`\`
+
+### Advanced Example
+
+\`\`\`typescript
+// [More complex but realistic scenario]
+\`\`\`
+
+### Common Patterns
+
+#### [Pattern 1 Name]
+
+\`\`\`typescript
+// [Code example]
+\`\`\`
+
+#### [Pattern 2 Name]
+
+\`\`\`typescript
+// [Code example]
+\`\`\`
+
+### Real-World Use Cases
+
+- **[Use Case 1]**: [Description] - [Link to example]
+- **[Use Case 2]**: [Description] - [Link to example]
+- **[Use Case 3]**: [Description] - [Link to example]
+```
+
+---
+
+### 2.4 Add Architecture Diagrams
+
+**Time:** 30 minutes per repo × 3 repos = 90 minutes
+**Impact:** High - Aids understanding, looks professional
+
+**Repositories:** api, db, workers
+
+**ASCII Diagram Template:**
+
+```markdown
+## Architecture
+
+\`\`\`
+┌─────────────────────────────────────────────────────────────────┐
+│                         [Component Name]                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌──────────────┐      ┌──────────────┐      ┌──────────────┐ │
+│  │  [Module 1]  │─────▶│  [Module 2]  │─────▶│  [Module 3]  │ │
+│  └──────────────┘      └──────────────┘      └──────────────┘ │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+\`\`\`
+```
+
+**Example for api/ repository:**
+
+```markdown
+## Architecture
+
+\`\`\`
+                         API Gateway (Hono)
+                                │
+                                │
+            ┌───────────────────┼───────────────────┐
+            │                   │                   │
+            ▼                   ▼                   ▼
+    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+    │     Auth     │    │      DB      │    │      AI      │
+    │   Service    │    │   Service    │    │   Service    │
+    └──────────────┘    └──────────────┘    └──────────────┘
+            │                   │                   │
+            │                   ▼                   │
+            │           ┌──────────────┐            │
+            └──────────▶│  PostgreSQL  │◀───────────┘
+                        │    (Neon)    │
+                        └──────────────┘
+\`\`\`
+
+**Request Flow:**
+1. Client → API Gateway (authentication, rate limiting)
+2. Gateway → Service (RPC call via Workers binding)
+3. Service → Database (type-safe queries)
+4. Response ← bubbles back through stack
+```
+
+**Tools for Creating Diagrams:**
+- ASCII art (directly in markdown)
+- Mermaid.js (GitHub native support)
+- Draw.io / Excalidraw (export as SVG)
+- Figma (export as PNG/SVG)
+
+**Mermaid Example:**
+
+```markdown
+## Architecture
+
+\`\`\`mermaid
+graph TB
+    Client[Client Request]
+    Gateway[API Gateway]
+    Auth[Auth Service]
+    DB[DB Service]
+    AI[AI Service]
+    PG[(PostgreSQL)]
+
+    Client-->Gateway
+    Gateway-->Auth
+    Gateway-->DB
+    Gateway-->AI
+    DB-->PG
+    AI-->PG
+\`\`\`
+```
+
+---
+
+### 2.5 Add Contributing Guidelines
+
+**Time:** 10 minutes per repo × 8 repos = 80 minutes
+**Impact:** Medium - Encourages community contributions
+
+**Template (Add to README or create CONTRIBUTING.md):**
+
+```markdown
+## Contributing
+
+We welcome contributions! Here's how to get started:
+
+### Development Setup
+
+1. Fork the repository
+2. Clone your fork: `git clone https://github.com/YOUR-USERNAME/[repo-name].git`
+3. Create a branch: `git checkout -b feature/your-feature-name`
+4. Install dependencies: `pnpm install`
+5. Make your changes
+6. Run tests: `pnpm test`
+7. Commit with conventional commits: `git commit -m "feat: add new feature"`
+8. Push: `git push origin feature/your-feature-name`
+9. Open a Pull Request
+
+### Commit Convention
+
+We follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `feat:` New features
+- `fix:` Bug fixes
+- `docs:` Documentation changes
+- `refactor:` Code refactoring
+- `test:` Test additions/changes
+- `chore:` Maintenance tasks
+
+### Code Style
+
+- Run `pnpm format` before committing
+- Run `pnpm lint` to check for issues
+- Ensure `pnpm check-types` passes
+- Maintain 80%+ test coverage
+
+### Questions?
+
+Open an issue or join our [Discord](https://discord.gg/dotdo) (TODO: add real link)
+```
+
+---
+
+## 3. CI/CD Badges
+
+### 3.1 Set Up GitHub Actions Workflows
+
+**Time:** 20 minutes per repo × 8 repos = 160 minutes
+**Impact:** High - Automated quality checks, professional signal
+
+**Basic CI Workflow Template:**
+
+Create `.github/workflows/ci.yml`:
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Type check
+        run: pnpm check-types
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+  coverage:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - run: pnpm install
+      - run: pnpm test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+```
+
+**Implementation:**
+1. Create `.github/workflows/` directory in repository
+2. Add `ci.yml` file with above content
+3. Adjust commands to match your package.json scripts
+4. Commit and push
+5. GitHub Actions will run automatically
+
+**Add Badge to README:**
+```markdown
+[![CI Status](https://github.com/dot-do/[repo-name]/actions/workflows/ci.yml/badge.svg)](https://github.com/dot-do/[repo-name]/actions)
+```
+
+---
+
+### 3.2 Add Dependency Update Automation
+
+**Time:** 10 minutes per repo × 8 repos = 80 minutes
+**Impact:** Medium - Keeps dependencies secure and current
+
+**Create `.github/dependabot.yml`:**
+
+```yaml
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "dot-do/core-team"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+```
+
+**Implementation:**
+1. Create `.github/dependabot.yml` in repository
+2. Commit and push
+3. Dependabot will create PRs for outdated dependencies
+
+---
+
+### 3.3 Add Release Automation
+
+**Time:** 15 minutes per repo × 5 repos = 75 minutes
+**Impact:** Medium - Professional release process
+
+**Repositories:** agent, ai, api, db, sdk
+
+**Create `.github/workflows/release.yml`:**
+
+```yaml
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm test
+
+      - name: Publish to npm
+        run: pnpm publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+```
+
+**Add Version Badge:**
+```markdown
+[![npm version](https://badge.fury.io/js/@dot-do%2F[package-name].svg)](https://www.npmjs.com/package/@dot-do/[package-name])
+```
+
+---
+
+## 4. Documentation Links
+
+### 4.1 Cross-Reference Related Repositories
+
+**Time:** 10 minutes per repo × 8 repos = 80 minutes
+**Impact:** High - Improves navigation, shows ecosystem
+
+**Add "Related Repositories" Section to README:**
+
+```markdown
+## Related Repositories
+
+This repository is part of the .do ecosystem:
+
+### Core Infrastructure
+- [**api**](https://github.com/dot-do/api) - API services (Hono, Workers)
+- [**db**](https://github.com/dot-do/db) - Database layer (Drizzle, PostgreSQL)
+- [**ai**](https://github.com/dot-do/ai) - AI features (OpenAI, Workers AI)
+- [**agent**](https://github.com/dot-do/agent) - AI code generation (Durable Objects)
+- [**sdk**](https://github.com/dot-do/sdk) - TypeScript SDK packages (121 total)
+
+### Applications
+- [**app**](https://github.com/dot-do/app) - Admin CMS (Payload, Next.js)
+- [**site**](https://github.com/dot-do/site) - Public websites (Next.js)
+
+### Workers
+- [**workers**](https://github.com/dot-do/workers) - 30+ microservices
+
+### Documentation
+- [**docs**](https://github.com/dot-do/docs) - Full documentation site
+- [**do.industries**](https://github.com/dot-do/do.industries) - Business ontology
+
+See [.do GitHub Organization](https://github.com/dot-do) for all repositories.
+```
+
+---
+
+### 4.2 Add Documentation Site Links
+
+**Time:** 5 minutes per repo × 8 repos = 40 minutes
+**Impact:** Medium - Directs users to comprehensive docs
+
+**Add to README (near top, after badges):**
+
+```markdown
+## 📚 Documentation
+
+- **Getting Started:** https://[repo].do/docs/getting-started
+- **API Reference:** https://[repo].do/docs/api
+- **Examples:** https://[repo].do/docs/examples
+- **Guides:** https://[repo].do/docs/guides
+
+**Full Docs:** https://[repo].do/docs
+```
+
+**For repositories without dedicated docs sites, link to main docs:**
+
+```markdown
+## 📚 Documentation
+
+See the [.do Documentation](https://docs.do/) for:
+- [Getting Started](https://docs.do/getting-started)
+- [Architecture](https://docs.do/architecture)
+- [API Reference](https://docs.do/api/[repo-name])
+
+**GitHub Wiki:** https://github.com/dot-do/[repo-name]/wiki
+```
+
+---
+
+## Implementation Checklist
+
+Use this checklist to track progress across all repositories:
+
+### GitHub Metadata (40 min + 80 min + 16 min + 24 min + 120 min = 280 min / 4.7 hours)
+
+- [ ] **agent**
+  - [ ] Add topics/tags (5 min)
+  - [ ] Write About section (10 min)
+  - [ ] Add website URL (2 min)
+  - [ ] Add LICENSE (3 min)
+  - [ ] Create social preview (15 min)
+
+- [ ] **ai**
+  - [ ] Add topics/tags (5 min)
+  - [ ] Write About section (10 min)
+  - [ ] Add website URL (2 min)
+  - [ ] Add LICENSE (3 min)
+  - [ ] Create social preview (15 min)
+
+- [ ] **api**
+  - [ ] Add topics/tags (5 min)
+  - [ ] Write About section (10 min)
+  - [ ] Add website URL (2 min)
+  - [ ] Add LICENSE (3 min)
+  - [ ] Create social preview (15 min)
+
+- [ ] **app**
+  - [ ] Add topics/tags (5 min)
+  - [ ] Write About section (10 min)
+  - [ ] Add website URL (2 min)
+  - [ ] Add LICENSE (3 min)
+  - [ ] Create social preview (15 min)
+
+- [ ] **db**
+  - [ ] Add topics/tags (5 min)
+  - [ ] Write About section (10 min)
+  - [ ] Add website URL (2 min)
+  - [ ] Add LICENSE (3 min)
+  - [ ] Create social preview (15 min)
+
+- [ ] **do.industries**
+  - [ ] Add topics/tags (5 min)
+  - [ ] Write About section (10 min)
+  - [ ] Add website URL (2 min)
+  - [ ] Add LICENSE (3 min)
+  - [ ] Create social preview (15 min)
+
+- [ ] **sdk**
+  - [ ] Add topics/tags (5 min)
+  - [ ] Write About section (10 min)
+  - [ ] Add website URL (2 min)
+  - [ ] Add LICENSE (3 min)
+  - [ ] Create social preview (15 min)
+
+- [ ] **site**
+  - [ ] Add topics/tags (5 min)
+  - [ ] Write About section (10 min)
+  - [ ] Add website URL (2 min)
+  - [ ] Add LICENSE (3 min)
+  - [ ] Create social preview (15 min)
+
+### README Enhancements (80 min + 75 min + 100 min + 90 min + 80 min = 425 min / 7.1 hours)
+
+- [ ] **All 8 Core Repos**
+  - [ ] Add badges section (10 min each)
+  - [ ] Add contributing guidelines (10 min each)
+
+- [ ] **agent, ai, api, db, sdk**
+  - [ ] Add Quick Start section (15 min each)
+  - [ ] Add usage examples (20 min each)
+
+- [ ] **api, db, workers**
+  - [ ] Add architecture diagram (30 min each)
+
+### CI/CD Badges (160 min + 80 min + 75 min = 315 min / 5.3 hours)
+
+- [ ] **All 8 Core Repos**
+  - [ ] Set up GitHub Actions CI workflow (20 min each)
+  - [ ] Add Dependabot config (10 min each)
+
+- [ ] **agent, ai, api, db, sdk**
+  - [ ] Add release automation (15 min each)
+
+### Documentation Links (80 min + 40 min = 120 min / 2 hours)
+
+- [ ] **All 8 Core Repos**
+  - [ ] Add "Related Repositories" section (10 min each)
+  - [ ] Add documentation links (5 min each)
+
+---
+
+## Total Time Investment
+
+| Category | Tasks | Time per Repo | Total Repos | Total Time |
+|----------|-------|---------------|-------------|------------|
+| GitHub Metadata | 5 tasks | 35 min | 8 | 4.7 hours |
+| README Enhancements | 2-5 tasks | varies | 8 | 7.1 hours |
+| CI/CD Badges | 2-3 tasks | varies | 8 | 5.3 hours |
+| Documentation Links | 2 tasks | 15 min | 8 | 2 hours |
+| **TOTAL** | **20 tasks** | **varies** | **8 repos** | **19.1 hours** |
+
+**Rounded:** 20 hours for complete implementation of all quick wins
+
+---
+
+## Automation Scripts
+
+### Batch Operations Script
+
+Save as `/scripts/apply-quick-wins.sh`:
+
+```bash
+#!/bin/bash
+# Batch apply quick wins to all repositories
+
+REPOS=("agent" "ai" "api" "app" "db" "do.industries" "sdk" "site")
+
+for repo in "${REPOS[@]}"; do
+  echo "Processing $repo..."
+
+  cd "$repo" || continue
+
+  # Add LICENSE if missing
+  if [ ! -f "LICENSE" ]; then
+    cat > LICENSE << 'EOF'
+MIT License
+
+Copyright (c) 2025 .do
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+EOF
+    echo "✓ Added LICENSE to $repo"
+  fi
+
+  # Create .github/workflows directory if missing
+  mkdir -p .github/workflows
+
+  # Add basic CI workflow if missing
+  if [ ! -f ".github/workflows/ci.yml" ]; then
+    cat > .github/workflows/ci.yml << 'EOF'
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      - run: pnpm install
+      - run: pnpm test
+      - run: pnpm check-types
+      - run: pnpm lint
+      - run: pnpm build
+EOF
+    echo "✓ Added CI workflow to $repo"
+  fi
+
+  cd ..
+
+  echo "Completed $repo"
+  echo "---"
+done
+
+echo "Quick wins applied to all repositories!"
+echo "Next steps:"
+echo "1. Review changes in each repository"
+echo "2. Commit: git add . && git commit -m 'feat: apply quick wins'"
+echo "3. Push: git push"
+```
+
+---
+
+## Success Metrics
+
+After implementing quick wins, track these metrics:
+
+### GitHub Metrics
+- [ ] All repos have 5-8 topics
+- [ ] All repos have descriptions under 120 chars
+- [ ] All repos have website URLs
+- [ ] All repos have LICENSE files
+- [ ] All repos have social preview images
+- [ ] All repos have CI badges (green)
+
+### README Metrics
+- [ ] All repos have comprehensive badges section
+- [ ] Core repos (5) have Quick Start sections
+- [ ] Core repos (5) have usage examples
+- [ ] Infrastructure repos (3) have architecture diagrams
+- [ ] All repos have contributing guidelines
+
+### CI/CD Metrics
+- [ ] All repos have GitHub Actions workflows
+- [ ] All repos have passing CI badges
+- [ ] All repos have Dependabot enabled
+- [ ] Package repos (5) have release automation
+
+### Documentation Metrics
+- [ ] All repos cross-reference related repositories
+- [ ] All repos link to documentation site
+- [ ] Navigation between repos is clear
+
+---
+
+## Next Steps After Quick Wins
+
+Once quick wins are complete:
+
+1. **Monitor GitHub Analytics** (insights/traffic)
+   - Track star growth
+   - Monitor clone/visitor counts
+   - Analyze referral sources
+
+2. **Begin Phase 2: Content Expansion**
+   - Expand MDX content repo READMEs (11 repos)
+   - Create GitHub Pages sites (top 10 candidates)
+   - Write comprehensive guides
+
+3. **Start Backlink Submissions**
+   - Begin with "Easy" awesome lists (122 identified)
+   - Submit to relevant directories (120+ identified)
+   - Track acceptance rates
+
+4. **Optimize Based on Data**
+   - A/B test descriptions and titles
+   - Refine based on search traffic
+   - Iterate on documentation
+
+---
+
+**Status:** Ready for implementation
+**Owner:** Subagent B1 - Repository Audit & Optimization
+**Last Updated:** October 3, 2025

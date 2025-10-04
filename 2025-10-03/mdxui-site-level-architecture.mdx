@@ -1,0 +1,951 @@
+# MDXUI Site-Level Component Architecture
+## Deep Dive Technical Specification
+
+**Date:** October 3, 2025
+**Related:** [Main Plan](2025-10-03-mdxui-simplification-plan.md) | [GitHub Issue #6](https://github.com/dot-do/.do/issues/6)
+**Status:** Specification - Ready for Implementation
+
+---
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Use Cases](#use-cases)
+3. [File Format Specification](#file-format-specification)
+4. [Component Architecture](#component-architecture)
+5. [Routing System](#routing-system)
+6. [Navigation Generation](#navigation-generation)
+7. [Implementation Details](#implementation-details)
+8. [AI Integration](#ai-integration)
+
+---
+
+## Overview
+
+The **Site-Level Component** enables rendering **entire multi-page websites from a single MDX file**. Inspired by the `llms-full.txt` pattern, this architecture is optimized for:
+
+- **AI-generated content** (LLMs can generate entire sites in one context)
+- **Simple content management** (single file = entire site)
+- **Rapid prototyping** (sketch a full site in minutes)
+- **Version control** (one file diff = entire site history)
+
+### Core Concept
+
+> "One MDX file = One complete website"
+
+Instead of managing multiple files, folders, and routes, you write a single MDX document with **section markers** that the system automatically converts into:
+- Multiple pages
+- Navigation menus
+- Routing configuration
+- Inter-page links
+
+---
+
+## Use Cases
+
+### 1. AI-Generated Sites
+
+**Problem:** LLMs struggle with multi-file outputs
+**Solution:** Generate entire site in single response
+
+```mdx
+<!-- AI can output this in one shot -->
+---
+$type: FullSite
+siteName: My Startup
+---
+
+<!-- Page: Home -->
+# Welcome to My Startup
+...
+
+<!-- Page: About -->
+# About Us
+...
+
+<!-- Page: Pricing -->
+# Pricing Plans
+...
+```
+
+AI generates one file → Instant multi-page website
+
+### 2. Landing Page Variants
+
+**Problem:** A/B testing requires duplicate file management
+**Solution:** All variants in one file
+
+```mdx
+---
+$type: FullSite
+variants: ['control', 'variant-a', 'variant-b']
+---
+
+<!-- Page: Home [control] -->
+# Original Headline
+...
+
+<!-- Page: Home [variant-a] -->
+# Experimental Headline A
+...
+
+<!-- Page: Home [variant-b] -->
+# Experimental Headline B
+...
+```
+
+### 3. Documentation Sites
+
+**Problem:** Many small docs files hard to manage
+**Solution:** All docs in one file with sections
+
+```mdx
+---
+$type: DocsSite
+sidebar: true
+---
+
+<!-- Page: Introduction -->
+# Getting Started
+...
+
+<!-- Page: Installation -->
+# Installation
+...
+
+<!-- Page: API Reference -->
+# API Reference
+...
+```
+
+### 4. Portfolio Sites
+
+**Problem:** Personal sites often small but multi-page
+**Solution:** Portfolio in single file
+
+```mdx
+---
+$type: FullSite
+theme: portfolio
+---
+
+<!-- Page: Home -->
+# John Doe
+Designer & Developer
+
+<!-- Page: Work -->
+# My Work
+...
+
+<!-- Page: Contact -->
+# Get in Touch
+...
+```
+
+---
+
+## File Format Specification
+
+### Frontmatter Configuration
+
+```yaml
+---
+# Required: Declares this as a full site
+$type: FullSite
+
+# Site metadata
+siteName: My Website
+siteDescription: A great website
+siteUrl: https://example.com
+
+# Navigation configuration
+navigation:
+  - label: Home
+    href: /
+  - label: About
+    href: /about
+  - label: Services
+    href: /services
+  - label: Contact
+    href: /contact
+
+# Optional: Auto-generate navigation from pages
+autoNavigation: true
+
+# Optional: Navigation style
+navigationStyle: horizontal # or: vertical, sidebar
+
+# Theme configuration
+theme: default # or: dark, minimal, portfolio
+
+# SEO
+meta:
+  title: My Website
+  description: ...
+  image: /og-image.png
+
+# Optional: Variants for A/B testing
+variants:
+  - control
+  - variant-a
+
+# Optional: Authentication
+auth:
+  required: false
+  allowedRoles: []
+---
+```
+
+### Page Markers (3 Syntaxes)
+
+#### Syntax 1: HTML Comment (Recommended)
+
+```mdx
+<!-- Page: Home -->
+Content for home page
+
+<!-- Page: About -->
+Content for about page
+```
+
+**Pros:** Clean, standard Markdown
+**Cons:** Verbose
+
+#### Syntax 2: Horizontal Rule + Heading
+
+```mdx
+# Home
+Content for home page
+
+---
+
+# About
+Content for about page
+```
+
+**Pros:** Concise, natural Markdown
+**Cons:** Ambiguous (could be sections within same page)
+
+#### Syntax 3: XML Tags
+
+```mdx
+<page slug="home">
+Content for home page
+</page>
+
+<page slug="about">
+Content for about page
+</page>
+```
+
+**Pros:** Explicit, supports attributes
+**Cons:** Not standard Markdown
+
+**Decision:** Support all three, with HTML comments as default.
+
+### Page Metadata
+
+```mdx
+<!-- Page: About
+  title: About Us
+  description: Learn more about our company
+  path: /about-us
+  layout: centered
+  auth: false
+-->
+Content here
+```
+
+Metadata in comment:
+- `title`: Page title (overrides slug)
+- `description`: Page description for SEO
+- `path`: Custom URL path (default: slug)
+- `layout`: Layout variant
+- `auth`: Require authentication
+
+---
+
+## Component Architecture
+
+### FullSite Component
+
+```typescript
+/**
+ * Full site component
+ * Renders entire multi-page website from single MDX file
+ */
+export interface FullSiteProps extends ComponentProps {
+  /**
+   * Site name
+   */
+  siteName: string
+
+  /**
+   * Site description
+   */
+  siteDescription?: string
+
+  /**
+   * Navigation items
+   */
+  navigation?: NavItem[]
+
+  /**
+   * Auto-generate navigation from pages
+   * @default true
+   */
+  autoNavigation?: boolean
+
+  /**
+   * Theme
+   */
+  theme?: string
+
+  /**
+   * SEO metadata
+   */
+  meta?: SiteMeta
+
+  /**
+   * Children (MDX content with page markers)
+   */
+  children: React.ReactNode
+}
+
+interface NavItem {
+  label: string
+  href: string
+  icon?: string
+  children?: NavItem[] // Nested navigation
+}
+
+interface SiteMeta {
+  title?: string
+  description?: string
+  image?: string
+  keywords?: string[]
+}
+```
+
+### Page Component
+
+```typescript
+/**
+ * Individual page within FullSite
+ */
+export interface PageProps extends ComponentProps {
+  /**
+   * Page slug (URL path segment)
+   */
+  slug: string
+
+  /**
+   * Page title
+   */
+  title?: string
+
+  /**
+   * Page description
+   */
+  description?: string
+
+  /**
+   * Custom path (overrides slug)
+   */
+  path?: string
+
+  /**
+   * Layout variant
+   */
+  layout?: PageLayout
+
+  /**
+   * Require authentication
+   */
+  auth?: boolean
+
+  /**
+   * Page content
+   */
+  children: React.ReactNode
+}
+
+type PageLayout = 'default' | 'centered' | 'wide' | 'narrow' | 'sidebar'
+```
+
+---
+
+## Routing System
+
+### Static Generation (SSG)
+
+**Build Time:**
+1. Parse MDX file
+2. Extract pages (split on markers)
+3. Generate static HTML for each page
+4. Create routing manifest
+
+**Structure:**
+```
+out/
+├── index.html          # Home page
+├── about.html          # About page
+├── services.html       # Services page
+├── contact.html        # Contact page
+└── _routing.json       # Routing manifest
+```
+
+### Client-Side Routing (SPA)
+
+**Runtime:**
+1. Load single JS bundle
+2. Parse routing manifest
+3. Hydrate current page
+4. Use React Router for navigation
+
+```typescript
+// Generated routing config
+const routes: Route[] = [
+  { path: '/', component: HomePage },
+  { path: '/about', component: AboutPage },
+  { path: '/services', component: ServicesPage },
+  { path: '/contact', component: ContactPage }
+]
+```
+
+### Server-Side Routing (SSR)
+
+**Per Request:**
+1. Receive URL
+2. Lookup page in manifest
+3. Render page component
+4. Return HTML
+
+```typescript
+// Express.js example
+app.get('*', async (req, res) => {
+  const page = findPageByPath(req.path)
+  if (!page) return res.status(404).send('Not Found')
+
+  const html = await renderPage(page)
+  res.send(html)
+})
+```
+
+---
+
+## Navigation Generation
+
+### Automatic Navigation
+
+From frontmatter:
+```yaml
+navigation:
+  - label: Home
+    href: /
+  - label: About
+    href: /about
+```
+
+From pages (auto-detect):
+```typescript
+function generateNavigation(pages: Page[]): NavItem[] {
+  return pages.map(page => ({
+    label: page.title || capitalizeSlug(page.slug),
+    href: page.path || `/${page.slug}`
+  }))
+}
+```
+
+### Navigation Component
+
+```typescript
+<Navigation
+  items={navigation}
+  style="horizontal" // or: vertical, sidebar
+  logo="/logo.png"
+  logoLink="/"
+/>
+```
+
+Renders as:
+```html
+<nav>
+  <a href="/"><img src="/logo.png" /></a>
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/services">Services</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+```
+
+### Nested Navigation
+
+```yaml
+navigation:
+  - label: Products
+    href: /products
+    children:
+      - label: Product A
+        href: /products/a
+      - label: Product B
+        href: /products/b
+```
+
+Renders dropdown or sidebar submenu.
+
+---
+
+## Implementation Details
+
+### Parser
+
+```typescript
+/**
+ * Parse MDX into site structure
+ */
+export async function parseSite(mdx: string): Promise<Site> {
+  // 1. Extract frontmatter
+  const { frontmatter, content } = extractFrontmatter(mdx)
+
+  // 2. Split content by page markers
+  const pages = splitIntoPages(content)
+
+  // 3. Parse each page
+  const parsedPages = await Promise.all(
+    pages.map(page => parsePage(page))
+  )
+
+  // 4. Generate navigation
+  const navigation = frontmatter.autoNavigation
+    ? generateNavigation(parsedPages)
+    : frontmatter.navigation
+
+  return {
+    name: frontmatter.siteName,
+    description: frontmatter.siteDescription,
+    pages: parsedPages,
+    navigation,
+    theme: frontmatter.theme,
+    meta: frontmatter.meta
+  }
+}
+
+/**
+ * Split content by page markers
+ */
+function splitIntoPages(content: string): RawPage[] {
+  const pages: RawPage[] = []
+
+  // Match HTML comment markers: <!-- Page: Slug -->
+  const markerRegex = /<!--\s*Page:\s*([^\n]+?)\s*(?:\n([^]*?))?-->/gi
+
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = markerRegex.exec(content)) !== null) {
+    const [fullMatch, titleLine, metadata] = match
+    const nextMarkerIndex = content.indexOf('<!-- Page:', match.index + 1)
+    const pageContent = content.slice(
+      match.index + fullMatch.length,
+      nextMarkerIndex === -1 ? content.length : nextMarkerIndex
+    ).trim()
+
+    // Parse title and attributes
+    const { title, attrs } = parsePageTitle(titleLine, metadata)
+
+    pages.push({
+      slug: slugify(title),
+      title,
+      content: pageContent,
+      metadata: attrs
+    })
+
+    lastIndex = nextMarkerIndex
+  }
+
+  return pages
+}
+
+/**
+ * Parse page title and metadata
+ */
+function parsePageTitle(titleLine: string, metadata?: string): {
+  title: string
+  attrs: Record<string, any>
+} {
+  // Example: "About [variant-a]"
+  const variantMatch = titleLine.match(/^(.+?)\s*\[(.+?)\]$/)
+  if (variantMatch) {
+    return {
+      title: variantMatch[1].trim(),
+      attrs: { variant: variantMatch[2].trim() }
+    }
+  }
+
+  // Parse YAML metadata if present
+  if (metadata) {
+    const attrs = parseYAML(metadata)
+    return { title: titleLine.trim(), attrs }
+  }
+
+  return { title: titleLine.trim(), attrs: {} }
+}
+```
+
+### Renderer
+
+```typescript
+/**
+ * Render full site
+ */
+export function FullSite({ children, ...props }: FullSiteProps) {
+  const site = useMemo(() => parseSiteFromChildren(children), [children])
+
+  return (
+    <SiteContext.Provider value={site}>
+      <Router>
+        {/* Navigation */}
+        {props.navigation && (
+          <Navigation
+            items={props.navigation}
+            siteName={props.siteName}
+          />
+        )}
+
+        {/* Routes */}
+        <Routes>
+          {site.pages.map(page => (
+            <Route
+              key={page.slug}
+              path={page.path || `/${page.slug}`}
+              element={<PageRenderer page={page} />}
+            />
+          ))}
+        </Routes>
+
+        {/* Footer */}
+        <Footer siteName={props.siteName} />
+      </Router>
+    </SiteContext.Provider>
+  )
+}
+
+/**
+ * Render individual page
+ */
+function PageRenderer({ page }: { page: Page }) {
+  return (
+    <PageLayout layout={page.layout}>
+      <Helmet>
+        <title>{page.title}</title>
+        {page.description && (
+          <meta name="description" content={page.description} />
+        )}
+      </Helmet>
+
+      <MDXContent>{page.content}</MDXContent>
+    </PageLayout>
+  )
+}
+```
+
+---
+
+## AI Integration
+
+### LLM Context Optimization
+
+**Problem:** LLMs have limited context windows
+**Solution:** Single file fits in context
+
+```
+Tokens used:
+- Multi-file approach: ~50,000 tokens (100+ files)
+- Single-file approach: ~5,000 tokens (1 file)
+
+10x reduction in token usage!
+```
+
+### Prompt Engineering
+
+```
+Generate a complete website for a SaaS startup in a single MDX file.
+
+Use this format:
+
+---
+$type: FullSite
+siteName: [Name]
+navigation:
+  - label: Home
+    href: /
+  [... more nav items]
+---
+
+<!-- Page: Home -->
+# [Headline]
+[Content]
+
+<!-- Page: [PageName] -->
+# [Title]
+[Content]
+
+Include these pages:
+- Home (hero, features, CTA)
+- About (team, mission, values)
+- Pricing (3 tiers)
+- Contact (form, info)
+```
+
+LLM generates **one complete response** = **instant website**.
+
+### AI-Powered Site Generation
+
+```typescript
+/**
+ * Generate site from prompt
+ */
+async function generateSite(prompt: string): Promise<string> {
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [
+      {
+        role: 'system',
+        content: SITE_GENERATION_SYSTEM_PROMPT
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ]
+  })
+
+  return response.choices[0].message.content // Returns MDX
+}
+
+// Usage:
+const mdx = await generateSite('Create a website for a yoga studio')
+// Returns complete site in single MDX file
+```
+
+### Iterative Refinement
+
+```typescript
+/**
+ * Update specific page in site
+ */
+async function updatePage(
+  siteMDX: string,
+  pageSlug: string,
+  updatePrompt: string
+): Promise<string> {
+  // Extract specific page
+  const site = await parseSite(siteMDX)
+  const page = site.pages.find(p => p.slug === pageSlug)
+
+  // Generate updated page content
+  const updatedContent = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [
+      {
+        role: 'system',
+        content: 'Update the page content based on user request'
+      },
+      {
+        role: 'user',
+        content: `Current content:\n${page.content}\n\nUpdate: ${updatePrompt}`
+      }
+    ]
+  })
+
+  // Replace page in site
+  return replacePage(siteMDX, pageSlug, updatedContent)
+}
+```
+
+---
+
+## Example: Complete Site
+
+```mdx
+---
+$type: FullSite
+siteName: AcmeSaaS
+siteDescription: The best SaaS platform for teams
+navigation:
+  - label: Home
+    href: /
+  - label: Features
+    href: /features
+  - label: Pricing
+    href: /pricing
+  - label: About
+    href: /about
+  - label: Contact
+    href: /contact
+theme: modern
+meta:
+  image: /og-image.png
+---
+
+<!-- Page: Home -->
+# Build Better Products, Faster
+
+AcmeSaaS helps teams collaborate, ship faster, and scale effortlessly.
+
+[Get Started Free](/signup){.primary}
+[Watch Demo](/demo){.secondary}
+
+![Hero](/hero.png)
+
+## Trusted by 10,000+ Teams
+...
+
+---
+
+<!-- Page: Features
+  title: Features That Matter
+  description: Everything you need to succeed
+-->
+# Features That Matter
+
+## Fast
+Ship 10x faster with AI-powered workflows
+
+## Secure
+Enterprise-grade security, SOC 2 compliant
+
+## Scalable
+Grows with your team, from 1 to 10,000 users
+
+---
+
+<!-- Page: Pricing
+  title: Simple, Transparent Pricing
+-->
+# Simple Pricing
+
+| Plan | Price | Features |
+|------|-------|----------|
+| **Starter** | $10/mo | Up to 5 users, Basic features |
+| **Pro** | $50/mo | Up to 50 users, Advanced features |
+| **Enterprise** | Custom | Unlimited users, Custom features |
+
+[Start Free Trial](/signup){.primary}
+
+---
+
+<!-- Page: About
+  title: About AcmeSaaS
+-->
+# About Us
+
+We started AcmeSaaS in 2023 to solve a problem we faced ourselves...
+
+## Our Team
+- **Jane Doe** - CEO
+- **John Smith** - CTO
+- **Alice Johnson** - Head of Product
+
+---
+
+<!-- Page: Contact
+  title: Get in Touch
+-->
+# Get in Touch
+
+Have questions? We'd love to hear from you.
+
+**Email:** hello@acmesaas.com
+**Phone:** (555) 123-4567
+
+Or fill out the form:
+[Contact Form Component]
+```
+
+**Result:** 5-page website from single file!
+
+---
+
+## Testing Strategy
+
+### Parser Tests
+
+```typescript
+describe('Site Parser', () => {
+  it('parses pages from HTML comments', () => {
+    const mdx = `
+<!-- Page: Home -->
+# Home Content
+
+<!-- Page: About -->
+# About Content
+    `
+
+    const site = parseSite(mdx)
+
+    expect(site.pages).toHaveLength(2)
+    expect(site.pages[0].slug).toBe('home')
+    expect(site.pages[1].slug).toBe('about')
+  })
+
+  it('extracts page metadata', () => {
+    const mdx = `
+<!-- Page: About
+  title: About Us
+  description: Learn more
+  auth: true
+-->
+Content
+    `
+
+    const site = parseSite(mdx)
+    const page = site.pages[0]
+
+    expect(page.title).toBe('About Us')
+    expect(page.description).toBe('Learn more')
+    expect(page.metadata.auth).toBe(true)
+  })
+})
+```
+
+### Routing Tests
+
+```typescript
+describe('Site Routing', () => {
+  it('generates correct routes', () => {
+    const site = {
+      pages: [
+        { slug: 'home', path: '/' },
+        { slug: 'about', path: '/about' }
+      ]
+    }
+
+    const routes = generateRoutes(site)
+
+    expect(routes).toEqual([
+      { path: '/', component: expect.any(Function) },
+      { path: '/about', component: expect.any(Function) }
+    ])
+  })
+})
+```
+
+---
+
+## Future Enhancements
+
+1. **Live Preview:** Real-time preview as you edit MDX
+2. **Visual Editor:** GUI for editing site structure
+3. **Templates:** Pre-built site templates
+4. **Plugins:** Extend with custom page types
+5. **Multi-Site:** Manage multiple sites in one file
+
+---
+
+**End of Specification**
+
+The Site-Level Component enables **rapid website creation** from a single MDX file, optimized for **AI generation**, **simple content management**, and **version control**. This is a unique feature that sets mdxui apart from traditional site builders.

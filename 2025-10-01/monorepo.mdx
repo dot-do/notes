@@ -1,0 +1,485 @@
+# Monorepo Setup Guide
+
+## Why Monorepo?
+
+**Current Problem**: Git submodules + manual build outputs is fragile
+
+**Monorepo Benefits**:
+- ✅ **Shared dependencies** - Single `node_modules`, faster installs
+- ✅ **Cross-repo imports** - `import { db } from 'db'` without publishing
+- ✅ **Coordinated builds** - Build all packages with one command
+- ✅ **TypeScript project references** - Fast incremental builds
+- ✅ **Single lockfile** - Consistent dependency versions
+- ✅ **Turborepo** - Intelligent caching & parallel builds
+- ✅ **Version management** - Changesets for coordinated releases
+
+## Architecture
+
+```
+.do/ (monorepo root)
+├── package.json         # Root workspace config
+├── pnpm-workspace.yaml  # Workspace definition
+├── turbo.json          # Turborepo config
+├── tsconfig.base.json  # Shared TypeScript config
+├── packages/
+│   ├── db/             # Database worker (RPC, Queue, Pipeline)
+│   ├── ai/             # AI worker (generation, embeddings)
+│   ├── api/            # API worker (HTTP endpoints)
+│   ├── app/            # Payload CMS admin
+│   ├── site/           # Public websites
+│   ├── agent/          # AI code gen
+│   └── sdk/            # Generated SDK packages
+└── api.services/       # Monolith (will be phased out)
+```
+
+## Setup Steps
+
+### 1. Initialize Root Package
+
+```bash
+cd /Users/nathanclevenger/Projects/.do
+
+# Create root package.json
+cat > package.json <<'EOF'
+{
+  "name": "dot-do-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "deploy": "turbo run deploy",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:dev": "pnpm --filter db dev",
+    "db:deploy": "pnpm --filter db deploy",
+    "ai:dev": "pnpm --filter ai dev",
+    "ai:deploy": "pnpm --filter ai deploy",
+    "api:dev": "pnpm --filter api dev",
+    "api:deploy": "pnpm --filter api deploy"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.0",
+    "@changesets/cli": "^2.27.1",
+    "typescript": "^5.5.2",
+    "prettier": "^3.6.2"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.1"
+}
+EOF
+```
+
+### 2. Create Workspace Configuration
+
+```bash
+# pnpm-workspace.yaml
+cat > pnpm-workspace.yaml <<'EOF'
+packages:
+  - 'db'
+  - 'ai'
+  - 'api'
+  - 'app'
+  - 'site'
+  - 'agent'
+  - 'sdk'
+  # Exclude api.services (legacy monolith)
+  - '!api.services'
+EOF
+```
+
+### 3. Create Turborepo Configuration
+
+```bash
+cat > turbo.json <<'EOF'
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "build/**"],
+      "env": ["NODE_ENV"]
+    },
+    "deploy": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "inputs": ["src/**", "tests/**"]
+    },
+    "lint": {
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}
+EOF
+```
+
+### 4. Create Shared TypeScript Config
+
+```bash
+cat > tsconfig.base.json <<'EOF'
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022"],
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "composite": true,
+    "incremental": true
+  }
+}
+EOF
+```
+
+### 5. Update Each Package's tsconfig.json
+
+```bash
+# db/tsconfig.json
+cat > db/tsconfig.json <<'EOF'
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "tests"],
+  "references": []
+}
+EOF
+
+# ai/tsconfig.json (when created, will reference db)
+cat > ai/tsconfig.json <<'EOF'
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "tests"],
+  "references": [
+    { "path": "../db" }
+  ]
+}
+EOF
+
+# api/tsconfig.json (when created, will reference db and ai)
+cat > api/tsconfig.json <<'EOF'
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "tests"],
+  "references": [
+    { "path": "../db" },
+    { "path": "../ai" }
+  ]
+}
+EOF
+```
+
+### 6. Update Package Names and Dependencies
+
+```bash
+# db/package.json - already done (name: "db")
+
+# When creating ai/ package:
+# ai/package.json
+{
+  "name": "ai",
+  "dependencies": {
+    "db": "workspace:*"
+  }
+}
+
+# When creating api/ package:
+# api/package.json
+{
+  "name": "api",
+  "dependencies": {
+    "db": "workspace:*",
+    "ai": "workspace:*"
+  }
+}
+```
+
+### 7. Install Dependencies
+
+```bash
+# Install pnpm if not already
+npm install -g pnpm
+
+# Install all workspace dependencies
+pnpm install
+```
+
+## Usage
+
+### Development
+
+```bash
+# Start all workers in dev mode (parallel)
+pnpm dev
+
+# Start specific worker
+pnpm db:dev
+pnpm ai:dev
+pnpm api:dev
+
+# Build all packages
+pnpm build
+
+# Run tests across all packages
+pnpm test
+
+# Type check everything
+pnpm typecheck
+```
+
+### Cross-Package Imports
+
+```typescript
+// In api/src/worker.ts
+import { createDbClient } from 'db/client-rpc'
+import { generateText } from 'ai'
+
+export default {
+  async fetch(request: Request, env: Env) {
+    const db = createDbClient(env.DB)
+    const thing = await db.getThing('onet', 'software-developers')
+
+    const summary = await generateText(thing.content)
+
+    return Response.json({ thing, summary })
+  }
+}
+```
+
+**No need to publish packages!** Imports work directly via pnpm workspace protocol.
+
+### Deployment
+
+```bash
+# Deploy all workers
+pnpm deploy
+
+# Deploy specific worker
+pnpm db:deploy
+pnpm ai:deploy
+pnpm api:deploy
+```
+
+### Adding New Packages
+
+```bash
+# Create new package
+mkdir packages/new-package
+cd packages/new-package
+
+# Initialize package.json
+pnpm init
+
+# Add workspace dependencies
+pnpm add db@workspace:* ai@workspace:*
+
+# Back to root, install
+cd ../..
+pnpm install
+```
+
+## Benefits Over Git Submodules
+
+| Feature | Git Submodules | Monorepo |
+|---------|---------------|----------|
+| **Install speed** | Slow (n × install) | Fast (1 install) |
+| **Cross-repo imports** | Must publish to npm | Direct imports |
+| **Build coordination** | Manual | Turborepo |
+| **Dependency versions** | Can diverge | Always consistent |
+| **TypeScript references** | Not possible | Full support |
+| **Caching** | None | Intelligent |
+| **Parallel execution** | Manual | Automatic |
+| **Version management** | Complex | Changesets |
+
+## Migration Strategy
+
+### Phase 1: Setup (Now)
+- [x] Create root package.json
+- [ ] Create pnpm-workspace.yaml
+- [ ] Create turbo.json
+- [ ] Install dependencies
+
+### Phase 2: Move Packages (This Week)
+- [x] db/ already in place
+- [ ] Create ai/ (extract from api.services)
+- [ ] Create api/ (extract from api.services)
+- [ ] Update imports to use workspace protocol
+
+### Phase 3: Optimize (Next Week)
+- [ ] Configure Turborepo caching
+- [ ] Set up Changesets
+- [ ] Add pre-commit hooks
+- [ ] Configure CI/CD for monorepo
+
+### Phase 4: Cleanup (Following Week)
+- [ ] Archive api.services monolith
+- [ ] Remove git submodules
+- [ ] Update all documentation
+
+## Turborepo Caching
+
+Turborepo caches build outputs for instant rebuilds:
+
+```bash
+# First build (slow)
+pnpm build
+✓ db:build: 5.2s
+✓ ai:build: 3.1s
+✓ api:build: 4.8s
+
+# Second build (instant - from cache)
+pnpm build
+✓ db:build: CACHED
+✓ ai:build: CACHED
+✓ api:build: CACHED
+```
+
+Cache is based on:
+- Source files
+- Dependencies
+- Environment variables
+- Package.json changes
+
+## Changesets (Version Management)
+
+```bash
+# Add changeset (describes what changed)
+pnpm changeset
+
+# Version packages (updates versions + CHANGELOG)
+pnpm changeset version
+
+# Publish to npm (if needed)
+pnpm changeset publish
+```
+
+## CI/CD Integration
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test
+      - run: pnpm typecheck
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+```
+
+## FAQ
+
+**Q: Do I need to publish packages to npm?**
+A: No! Workspace imports work directly via `workspace:*` protocol.
+
+**Q: How do I share code between packages?**
+A: Just add `"packageName": "workspace:*"` to dependencies and import normally.
+
+**Q: Will this break existing deployments?**
+A: No. Each worker deploys independently to Cloudflare.
+
+**Q: Can I still use git submodules?**
+A: You can, but monorepo is simpler. Migrate gradually.
+
+**Q: How does this work with Cloudflare Workers?**
+A: Perfect! Each package can be a separate worker. They communicate via RPC/Queue/Pipeline.
+
+## Next Steps
+
+1. **Initialize monorepo** (today)
+   ```bash
+   cd /Users/nathanclevenger/Projects/.do
+   pnpm init
+   # ... copy configs from above
+   pnpm install
+   ```
+
+2. **Test db worker** (today)
+   ```bash
+   pnpm db:dev
+   # Should start wrangler dev server
+   ```
+
+3. **Create ai package** (this week)
+   ```bash
+   mkdir -p ai/src
+   # Extract AI code from api.services
+   # Add dependency on db: "db": "workspace:*"
+   ```
+
+4. **Update documentation** (this week)
+   - Update root CLAUDE.md
+   - Update each package's CLAUDE.md
+   - Document cross-package patterns
+
+---
+
+**Ready to migrate?** Start with step 1 above. The monorepo setup takes ~30 minutes and will save hours of build coordination overhead.

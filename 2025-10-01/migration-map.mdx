@@ -1,0 +1,1175 @@
+# Migration Map: api.services → api, db, ai
+
+**Date**: 2025-10-01
+**Task**: A1.4 - Create migration map document
+**Source Repository**: `/Users/nathanclevenger/Projects/.do/api.services`
+**Target Repositories**: `api/`, `db/`, `ai/`
+
+## Executive Summary
+
+The api.services repository is a monolithic Cloudflare Workers application with ~485 source files and ~45,000 lines of TypeScript code. This migration will split it into three focused repositories:
+
+- **api/**: API routes, middleware, MCP server, RPC server, authentication (24,405 LOC)
+- **db/**: Database schema, migrations, queries, importers (7,712 LOC)
+- **ai/**: AI generation functions, embeddings, batch processing (5,239 LOC)
+
+**Critical Dependencies**: The three repositories are highly interdependent. The api layer imports from db extensively (28 imports of db/schema), and AI features are used throughout. Migration must be done carefully to maintain these cross-repository dependencies.
+
+---
+
+## Repository Size Analysis
+
+### Total Repository Stats
+- **Total TypeScript files**: 485
+- **Total lines of code**: ~45,000 LOC
+- **API routes**: 41 route files
+- **Database importers**: 11 importers
+- **AI executors**: 6 executor types
+- **Durable Objects**: 7 DO classes
+- **Test files**: Located in `/tests` directory with subdirectories
+
+### Lines of Code by Category
+| Category | LOC | Files | Percentage |
+|----------|-----|-------|------------|
+| API | 24,405 | ~61 | 54% |
+| Database | 7,712 | ~80 | 17% |
+| AI | 5,239 | ~28 | 12% |
+| Auth | 1,276 | ~10 | 3% |
+| Events | 2,995 | ~18 | 7% |
+| Search | 1,863 | ~7 | 4% |
+| Markdown | 1,059 | ~6 | 2% |
+| Other | ~1,451 | ~275 | 3% |
+
+---
+
+## Migration Target: `api/` Repository
+
+### Purpose
+Core API infrastructure, routing, middleware, MCP protocol, RPC over WebSockets, and authentication.
+
+### Files to Migrate (54% of codebase)
+
+#### Core API Files
+```
+api/
+├── index.ts                          # Main Hono app with routing (235 LOC)
+├── context.ts                        # Request context types
+├── middleware.ts                     # Core middleware (database, auth, logging, admin)
+├── middleware/
+│   ├── domain.ts                     # Domain-based namespace routing
+│   └── rateLimit.ts                  # Rate limiting middleware
+├── utils/
+│   ├── json.ts                       # Pretty JSON formatting
+│   └── metadata.ts                   # Metadata extraction
+└── clients/
+    ├── browserbase.ts                # Browserbase API client
+    └── firecrawl.ts                  # Firecrawl API client
+```
+
+#### API Routes (41 route files - 24,405 LOC total)
+```
+api/routes/
+├── things.ts                         # Core CRUD for things/relationships
+├── search.ts                         # Search endpoints
+├── auth.ts                           # Authentication routes
+├── workos.ts                         # WorkOS authentication
+├── workos-sso.ts                     # WorkOS SSO
+├── workos-scim.ts                    # WorkOS SCIM
+├── mcp.ts                            # Legacy MCP endpoint
+├── mcp-jsonrpc.ts                    # MCP JSON-RPC 2.0 (86,159 LOC - largest file!)
+├── mcp-sse.ts                        # MCP Server-Sent Events
+├── mcp-streamable.ts                 # MCP streamable responses
+├── docs-mcp.ts                       # MCP documentation
+├── rpc.ts                            # RPC over HTTP
+├── websocket.ts                      # WebSocket handler
+├── recursion.ts                      # forEach patterns
+├── editor.ts                         # Monaco editor MDX format
+├── markdown.ts                       # Markdown rendering
+├── readme.ts                         # README generation
+├── docs.ts                           # Documentation
+├── ai.ts                             # AI generation endpoints
+├── batch.ts                          # Batch processing API
+├── claude-code.ts                    # Claude Code integration
+├── vapi.ts                           # VAPI voice AI
+├── marketplace.ts                    # Stripe marketplace
+├── pricing.ts                        # Pricing pages
+├── sdk.ts                            # SDK generation
+├── domains.ts                        # Domain management
+├── ideas.ts                          # Growth ideas
+├── experiments.ts                    # A/B testing experiments
+├── crawl-jobs.ts                     # Web crawling jobs
+├── google-ads.ts                     # Google Ads integration
+├── queue.ts                          # Queue management
+├── workflows.ts                      # Workflow execution
+├── landing.ts                        # Landing pages
+├── business-setup.ts                 # Business setup wizard
+├── functions.ts                      # Cloud functions
+├── code-exec.ts                      # Code execution
+├── containers.ts                     # Container management
+├── sandboxes.ts                      # Sandbox environments
+├── integrations.ts                   # Third-party integrations
+├── playground.ts                     # API playground
+└── webhooks.ts                       # Webhook handlers
+```
+
+#### MCP Server (Model Context Protocol)
+```
+api/mcp/
+└── resources.ts                      # MCP resources definition
+```
+
+#### RPC Server (Cap'n Proto over WebSockets)
+```
+api/rpc/
+├── server.ts                         # RPC server implementation
+├── ai.ts                             # RPC AI methods
+├── api.ts                            # RPC API methods
+├── batch.ts                          # RPC batch methods
+└── db.ts                             # RPC database methods
+```
+
+#### Domain-Specific API Implementations
+```
+api/domains/
+├── ai/index.ts                       # AI domain endpoints
+├── auth/index.ts                     # Auth domain endpoints
+├── core/index.ts                     # Core domain endpoints
+├── execution/index.ts                # Execution domain endpoints
+├── integrations/index.ts             # Integrations domain endpoints
+├── marketplace/index.ts              # Marketplace domain endpoints
+└── research/index.ts                 # Research domain endpoints
+```
+
+#### Authentication Module
+```
+auth/
+├── index.ts                          # Auth exports
+├── config.ts                         # better-auth config
+├── middleware.ts                     # Auth middleware
+├── routes.ts                         # Auth route handlers
+├── types.ts                          # Auth types
+├── apikey.ts                         # API key management
+├── github.ts                         # GitHub OAuth
+├── workos.ts                         # WorkOS integration
+├── subscription.ts                   # Subscription management
+└── env.d.ts                          # Auth environment types
+```
+
+#### Event System
+```
+events/
+├── index.ts                          # Event exports
+├── consumer.ts                       # Queue consumer
+├── batchConsumer.ts                  # Batch queue consumer
+├── cron.ts                           # Scheduled tasks
+├── email.ts                          # Email routing
+├── emailAgent.ts                     # Email AI agent
+├── queue.ts                          # Queue utilities
+├── actions.ts                        # Action definitions
+├── branches.ts                       # Branching logic
+├── evaluator.ts                      # Condition evaluator
+├── executor.ts                       # Event executor
+├── forEach.ts                        # forEach patterns
+├── handlers.ts                       # Event handlers
+├── parser.ts                         # Event parser
+├── relations.ts                      # Relationship events
+├── types.ts                          # Event types
+├── embeddings.ts                     # Embedding events
+└── wiki-consumer.ts                  # Wikipedia consumer
+```
+
+#### Markdown Rendering
+```
+markdown/
+├── index.ts                          # Markdown exports
+├── render.ts                         # Entity → Markdown
+├── convert.ts                        # MDX conversion
+├── llms.ts                           # llms.txt generation
+├── sitemap.ts                        # sitemap.xml
+└── visibility.ts                     # Visibility control
+```
+
+#### Search System
+```
+search/
+├── index.ts                          # Search exports
+├── api.ts                            # Search API
+├── fulltext.ts                       # Full-text search
+├── vector.ts                         # Vector search
+├── embeddings.ts                     # Embedding generation
+├── embed-multi.ts                    # Multi-model embeddings
+└── chunking.ts                       # Text chunking
+```
+
+#### Root Files
+```
+worker.ts                             # Cloudflare Workers entry point
+wrangler.jsonc                        # Cloudflare configuration
+package.json                          # Dependencies and scripts
+tsconfig.json                         # TypeScript config
+vitest.config.mts                     # Vitest config
+eslint.config.mjs                     # ESLint config
+.gitignore                            # Git ignore rules
+.wranglerignore                       # Wrangler ignore rules
+```
+
+#### Middleware (top-level)
+```
+middleware/
+├── errors.ts                         # Error handling
+└── logging.ts                        # Request/response logging
+```
+
+#### Durable Objects
+```
+durableObjects/
+├── stub.ts                           # MCP stub
+├── claude-code-do.ts                 # Claude Code session
+├── database-do.ts                    # Database wrapper
+├── state-do.ts                       # State management
+├── events-do.ts                      # Event queue
+├── mcp-do.ts                         # MCP server
+└── queue-do.ts                       # Queue implementation
+```
+
+#### Code Execution Runtime
+```
+code/
+├── runtime.ts                        # Runtime entry
+├── types.ts                          # Runtime types
+├── sandbox.ts                        # Sandboxed execution
+├── crawlee.ts                        # Crawlee integration
+├── runtime/
+│   ├── index.ts                      # Runtime exports
+│   ├── ai.ts                         # AI runtime API
+│   ├── api.ts                        # API runtime methods
+│   ├── db.ts                         # Database runtime API
+│   ├── database.ts                   # Database utilities
+│   ├── actions.ts                    # Action definitions
+│   ├── events.ts                     # Event utilities
+│   ├── every.ts                      # Scheduling
+│   ├── functions.ts                  # Function utilities
+│   ├── log.ts                        # Logging
+│   ├── mcp.ts                        # MCP integration
+│   ├── namespaces.ts                 # Namespace management
+│   ├── queue.ts                      # Queue integration
+│   ├── queue-do.ts                   # Queue DO integration
+│   ├── state.ts                      # State management
+│   ├── types.ts                      # Runtime types
+│   └── workflows.ts                  # Workflow utilities
+├── sdk/
+│   ├── generator.ts                  # SDK generator
+│   └── schema.ts                     # SDK schema
+└── social-accounts/
+    ├── index.ts                      # Social account exports
+    ├── hackernews.ts                 # HackerNews account creation
+    ├── medium.ts                     # Medium account creation
+    └── producthunt.ts                # ProductHunt account creation
+```
+
+#### Agents (backup/deprecated)
+```
+agents/
+├── parser.ts                         # Agent parser
+└── runtime.bak/                      # Backup of old agent runtime
+    ├── agent-do.ts
+    ├── mastra-agent.ts
+    ├── mcp-bridge.ts
+    ├── tools.ts
+    └── vapi-tools.ts
+```
+
+#### Client Package (services.studio npm package)
+```
+package/
+├── index.ts                          # Package entry point
+├── client.ts                         # HTTP client
+├── client.test.ts                    # HTTP client tests
+├── rpc.ts                            # RPC client
+├── rpc-enhanced.ts                   # Enhanced RPC client
+├── rpc-types.ts                      # RPC type definitions
+├── claude-code.ts                    # Claude Code client
+├── generateReadme.ts                 # README generator
+├── updateSchemaDescriptions.ts       # Schema description updater
+├── schemas.test.ts                   # Schema tests
+├── schemas/                          # TypeScript type definitions (43 files)
+│   ├── index.ts
+│   ├── Ability.ts
+│   ├── Action.ts
+│   ├── Activity.ts
+│   ├── ... (40 more schema files)
+│   └── WorkStyle.ts
+└── README.md                         # Package documentation
+```
+
+#### MCP Tools
+```
+mcp/
+└── tools/
+    └── batch.ts                      # Batch processing tools
+```
+
+#### Configuration Files
+```
+ai.config.ts                          # AI configuration
+drizzle.config.ts                     # Drizzle ORM config
+mcp-http-bridge.js                    # MCP HTTP bridge
+.mcp.json                             # MCP configuration
+.domains.tsv                          # Domain mappings
+.env.example                          # Environment example
+```
+
+#### Integration Modules
+```
+integrations/
+└── zapier/
+    └── transform.ts                  # Zapier data transformation
+```
+
+#### Library Modules
+```
+lib/
+└── diagram/
+    ├── index.ts                      # Diagram exports
+    ├── parse.ts                      # Mermaid parser
+    ├── serialize.ts                  # Mermaid serializer
+    └── serializers/
+        ├── index.ts
+        ├── architecture.ts
+        ├── git-graph.ts
+        ├── info.ts
+        ├── packet.ts
+        ├── pie.ts
+        ├── radar.ts
+        └── treemap.ts
+```
+
+### Dependencies
+- **Database**: Heavy dependency on `db/schema.ts` (28 imports across API files)
+- **AI**: Light dependency (3 imports of AI modules)
+- **External Services**: WorkOS, Stripe, Browserbase, Firecrawl, VAPI
+- **Cloudflare Platform**: Workers AI, Durable Objects, Queues, Browser Rendering, Email Routing
+
+### Migration Priority: HIGH
+This is the largest portion of the codebase and the most complex. Must migrate after database schema is established.
+
+### Potential Challenges
+1. **MCP Route File Size**: `mcp-jsonrpc.ts` is 86,159 LOC (likely includes embedded schemas) - may need refactoring
+2. **Cross-Repository Dependencies**: Need package publishing strategy for db/ai modules
+3. **Durable Objects**: Require Cloudflare-specific bindings - cannot be mocked easily
+4. **Authentication**: better-auth configuration spans multiple files
+5. **Event System**: Queue consumers need careful testing for retry logic
+
+---
+
+## Migration Target: `db/` Repository
+
+### Purpose
+Database schema, migrations, seed data, importers for external data sources, and type generation.
+
+### Files to Migrate (17% of codebase)
+
+#### Core Database Schema
+```
+db/
+├── schema.ts                         # Main Drizzle schema (things, relationships, auth tables)
+├── schemas.ts                        # Schema exports
+└── schemas/                          # Individual table schemas (30 files)
+    ├── index.ts
+    ├── ability.ts
+    ├── action.ts
+    ├── activity.ts
+    ├── alternateTitle.ts
+    ├── career.ts
+    ├── diagram.ts
+    ├── dimension.ts
+    ├── disposition.ts
+    ├── education.ts
+    ├── event.ts
+    ├── experience.ts
+    ├── field.ts
+    ├── fieldMapping.ts
+    ├── industry.ts
+    ├── interest.ts
+    ├── jobZone.ts
+    ├── knowledge.ts
+    ├── noun.ts
+    ├── occupation.ts
+    ├── property.ts
+    ├── schemaAction.ts
+    ├── search.ts
+    ├── skill.ts
+    ├── software.ts
+    ├── step.ts
+    ├── task.ts
+    ├── tool.ts
+    ├── training.ts
+    ├── trigger.ts
+    ├── type.ts
+    ├── workContext.ts
+    └── workStyle.ts
+```
+
+#### Data Importers (11 importers)
+```
+db/importers/
+├── utils.ts                          # Import utilities
+├── onet.ts                           # O*NET occupation data
+├── onet/                             # O*NET data files
+├── naics.ts                          # NAICS industry classifications
+├── naics/                            # NAICS data files
+├── schemaOrg.ts                      # Schema.org vocabulary
+├── schema/                           # Schema.org data files
+├── gs1.ts                            # GS1 CBV and EPCIS
+├── gs1/                              # GS1 data files
+├── zapier.ts                         # Zapier integration data
+├── zapier/                           # Zapier data files
+├── wiki.ts                           # Wikipedia articles
+├── bls.ts                            # Bureau of Labor Statistics
+├── composio.ts                       # Composio integration data
+├── processes.ts                      # APQC process framework
+├── processes.tsv                     # Process data
+├── services.ts                       # AI-generated services
+└── utils/                            # Importer utilities
+```
+
+#### Database Migrations
+```
+db/migrations/
+└── add-generations-table.ts          # Add AI generations table
+```
+
+#### Database Utility Scripts
+```
+db/
+├── seed.ts                           # Main seed script
+├── seedMinimal.ts                    # Minimal seed data
+├── seedProgress.ts                   # Seed progress tracking
+├── seedWithResume.ts                 # Seed with resume data
+├── resetAndSeed.ts                   # Reset and seed
+├── verifySeed.ts                     # Verify seed data
+├── verifyTables.ts                   # Verify table structure
+├── generated-types.ts                # Auto-generated types
+├── generateTypes.ts                  # Type generator
+├── generatePackageTypes.ts           # Package type generator
+├── generateEmbeddings.ts             # Embedding generator
+├── generateDescriptions.ts           # Description generator
+├── generateDiagrams.ts               # Diagram generator
+├── generateNames.ts                  # Name generator
+├── exportSchemas.ts                  # Schema exporter
+├── addContentColumn.ts               # Migration script
+├── migrateToCompositePK.ts           # Migration script
+├── applyMigration.ts                 # Apply migration
+└── checkMigration.ts                 # Check migration status
+```
+
+#### Database Verification Scripts
+```
+db/
+├── checkConsequence.ts               # Check data consequences
+├── checkContextData.ts               # Check context data
+├── checkData.ts                      # Check data integrity
+├── checkMissing.ts                   # Check missing data
+├── checkRelationships.ts             # Check relationships
+├── checkSkills.ts                    # Check skills data
+├── checkTables.ts                    # Check table structure
+├── checkTypes.ts                     # Check type validity
+├── countRelationships.ts             # Count relationships
+├── detailedCheck.ts                  # Detailed data check
+├── finalVerification.ts              # Final verification
+├── testEnrichment.ts                 # Test enrichments
+└── testIncoming.ts                   # Test incoming data
+```
+
+#### Test Scripts
+```
+db/tests/
+└── (test files for database operations)
+```
+
+### Dependencies
+- **None** - Database schema is the foundation layer
+- **Used By**: api/, ai/ (extensively)
+
+### Migration Priority: HIGHEST
+Must be migrated first as both api/ and ai/ depend on it.
+
+### Potential Challenges
+1. **Large Data Files**: Importers reference large JSON/TSV data files in subdirectories
+2. **Type Generation**: Scripts generate TypeScript types consumed by other repos
+3. **Migration State**: Need to maintain migration history across repositories
+4. **Seed Data**: Large seed datasets may need separate storage strategy
+
+---
+
+## Migration Target: `ai/` Repository
+
+### Purpose
+AI generation functions, embeddings, batch processing, and AI model integrations.
+
+### Files to Migrate (12% of codebase)
+
+#### Core AI Functions
+```
+ai/
+├── index.ts                          # AI exports
+├── models.ts                         # AI model definitions
+├── schemas.ts                        # AI schemas
+├── utils.ts                          # AI utilities
+├── logging.ts                        # AI logging
+├── examples.ts                       # Example prompts
+├── list.ts                           # List generation
+├── listType.ts                       # Typed list generation
+├── listAgents.ts                     # Agent list generation
+├── generateType.ts                   # Type generation
+├── generateName.ts                   # Name generation
+├── generateDescription.ts            # Description generation
+├── writeType.ts                      # Write type generation
+├── diagramType.ts                    # Diagram generation
+├── codeType.ts                       # Code generation
+├── function-analyzer.ts              # Function analysis
+└── function-router.ts                # Function routing
+```
+
+#### Batch Processing
+```
+ai/batch/
+├── index.ts                          # Batch exports
+├── types.ts                          # Batch types
+├── openai.ts                         # OpenAI batch API
+├── anthropic.ts                      # Anthropic batch API
+├── google.ts                         # Google batch API
+└── cloudflare.ts                     # Cloudflare batch API
+```
+
+#### AI Executors
+```
+ai/executors/
+├── agentic-executor.ts               # Agentic execution
+├── browser-executor.ts               # Browser automation
+├── code-executor.ts                  # Code execution
+├── container-executor.ts             # Container execution
+├── generative-executor.ts            # Generative AI
+└── human-executor.ts                 # Human-in-the-loop
+```
+
+#### Test Scripts
+```
+tests/ai/
+└── (AI-specific test files)
+```
+
+### Dependencies
+- **Database**: Uses `db/schema` for storing generations and embeddings
+- **Used By**: api/routes/ai.ts, api/routes/batch.ts
+
+### Migration Priority: MEDIUM
+Can be migrated in parallel with api/ since dependencies are well-defined.
+
+### Potential Challenges
+1. **Model Bindings**: Requires Cloudflare Workers AI binding
+2. **Batch APIs**: Different providers have different batch formats
+3. **Executor Dependencies**: Executors may need Durable Objects or Browser bindings
+4. **Cost Tracking**: AI generations track tokens and costs
+
+---
+
+## Files That Stay in `api.services/`
+
+### Configuration & Documentation
+```
+ARCHITECTURE.md                       # System architecture documentation
+CLAUDE.md                             # Development guidelines (this file)
+TODO.md                               # User's project plan
+PLAN.md                               # Claude's implementation strategy
+STATUS.md                             # Implementation progress
+README.md                             # API documentation
+RECOMMENDATIONS.md                    # Architecture recommendations
+NEXT-STEPS.md                         # Next steps
+TEST.md                               # Testing documentation
+```
+
+### Business Planning
+```
+businesses/                           # Business subdomain ideas (110 .do.md files)
+├── agents.do.md
+├── database.do.md
+├── workers.do.md
+├── mcp.do.md
+└── ... (106 more business ideas)
+```
+
+### Research & Documentation
+```
+research/
+└── SocialAccounts.md                 # Social account research
+```
+
+### Public Assets
+```
+public/                               # Static assets
+├── claude-code/                      # Claude Code UI
+├── docs/                             # Documentation assets
+├── landing/                          # Landing page assets
+└── src/                              # Source assets
+```
+
+### Documentation Site
+```
+docs/                                 # Mintlify documentation site
+├── app/
+├── content/
+├── lib/
+└── public/
+```
+
+### Growth & Marketing
+```
+growth/
+├── deck/                             # Pitch deck
+├── notes/                            # Growth notes
+└── video/                            # Video content
+```
+
+### Landing Pages
+```
+landing/
+├── exp-api-services-ads-001/
+├── exp-services-delivery-ads-001/
+└── exp-services-studio-ads-001/
+```
+
+### Guides
+```
+guides/                               # User guides
+└── (guide files)
+```
+
+### Scripts (Operational/Testing)
+```
+scripts/                              # Operational scripts (44 files)
+├── backfill-embeddings-worker.ts
+├── backfill-embeddings.ts
+├── bulk-embedding-generation.ts
+├── bulk-embedding-simple.ts
+├── check-entity-types.ts
+├── check-stripe-setup.ts
+├── create-ad-experiments.ts
+├── create-agent-api-key.ts
+├── create-all-agent-keys.ts
+├── create-experiment-variants.ts
+├── create-google-ads.ts
+├── create-growth-ideas.ts
+├── evaluate-embeddings.ts
+├── evaluate-generations.ts
+├── generate-agent-lists-batch.ts
+├── generate-agent-lists-test.ts
+├── generate-all-agent-lists.ts
+├── generate-business-docs.ts
+├── generate-comparison-content.ts
+├── generate-domain-packages.ts
+├── generate-enrichments.ts
+├── generate-landing-pages.ts
+├── generate-snapshots.ts
+├── generateStatus.ts
+├── import-wiki.ts
+├── link-experiments-to-ideas.ts
+├── local-embedding-generation.ts
+└── ... (more operational scripts)
+```
+
+### Notes
+```
+notes/                                # Implementation notes (168 files)
+└── (session notes, architecture decisions, etc.)
+```
+
+### Data Files
+```
+data/                                 # Static data files
+└── (data files)
+```
+
+### Containers
+```
+containers/
+└── nodejs/                           # Node.js container config
+```
+
+### Configuration
+```
+config/                               # Configuration files
+└── (config files)
+```
+
+### Source (unclear purpose)
+```
+src/                                  # Source files (purpose unclear)
+└── (source files)
+```
+
+### Schemas (TypeScript type definitions)
+```
+schemas/                              # TypeScript schemas (54 files)
+└── diagram/
+    └── (diagram schema files)
+```
+
+### Snapshots
+```
+snapshots/                            # Test snapshots
+└── ai/
+    └── (AI test snapshots)
+```
+
+### Studio
+```
+studio/                               # Drizzle Studio config
+└── (empty directory)
+```
+
+### Workers
+```
+workers/
+└── queue/                            # Queue worker config
+    └── (queue worker files)
+```
+
+### Test Files
+```
+tests/                                # Root test directory
+├── ai/                               # AI tests (migrate to ai/)
+├── api/                              # API tests (migrate to api/)
+├── code/                             # Code execution tests (migrate to api/)
+├── db/                               # Database tests (migrate to db/)
+├── diagram/                          # Diagram tests (stays)
+├── events/                           # Event tests (migrate to api/)
+├── package/                          # Package tests (migrate to api/)
+├── rpc/                              # RPC tests (migrate to api/)
+├── search/                           # Search tests (migrate to api/)
+├── social-accounts/                  # Social account tests (migrate to api/)
+└── wiki/                             # Wiki tests (stays)
+```
+
+### Build Artifacts (gitignored)
+```
+node_modules/                         # Dependencies (gitignored)
+dist/                                 # Build output (gitignored)
+.wrangler/                            # Wrangler cache (gitignored)
+```
+
+---
+
+## Cross-Repository Dependencies
+
+### api/ → db/
+- **28 imports** of `db/schema` across API files
+- Primary tables used: `things`, `relationships`, `generations`, `users`, `sessions`, `accounts`, `apiKeys`
+- Heavy use in: `routes/things.ts`, `routes/search.ts`, `routes/ai.ts`, `middleware.ts`
+
+### api/ → ai/
+- **3 imports** of AI modules
+- Used in: `routes/ai.ts`, `routes/batch.ts`, `routes/claude-code.ts`
+- Primary functions: `generateType`, `listType`, `writeType`, `diagramType`, `codeType`
+
+### ai/ → db/
+- Stores AI generations in `generations` table
+- Stores embeddings in `things.embedding` column
+- Uses `things` table for entity lookups
+
+### Shared Dependencies
+- **Drizzle ORM**: All repos use Drizzle for database access
+- **Zod**: Schema validation across all repos
+- **Cloudflare Workers**: All repos target Workers runtime
+- **TypeScript**: Shared tsconfig.json patterns
+
+---
+
+## Migration Strategy
+
+### Phase 1: Database Foundation (Week 1)
+**Repository**: `db/`
+
+1. **Setup**
+   - Create new `db/` repository
+   - Copy database schema files
+   - Copy importers and data files
+   - Copy migration scripts
+   - Setup Drizzle configuration
+
+2. **Verify**
+   - Run type generation
+   - Run all database tests
+   - Verify seed scripts work
+   - Test all importers
+
+3. **Publish**
+   - Publish as `@api.services/db` npm package
+   - Version: `0.1.0`
+   - Include all generated types
+
+### Phase 2: AI Layer (Week 2)
+**Repository**: `ai/`
+
+1. **Setup**
+   - Create new `ai/` repository
+   - Copy AI generation functions
+   - Copy batch processing modules
+   - Copy AI executors
+   - Install `@api.services/db` dependency
+
+2. **Update Imports**
+   - Change `../../db/schema` → `@api.services/db/schema`
+   - Update all relative paths
+
+3. **Verify**
+   - Run all AI tests
+   - Test batch processing
+   - Verify executor functionality
+   - Test model integrations
+
+4. **Publish**
+   - Publish as `@api.services/ai` npm package
+   - Version: `0.1.0`
+
+### Phase 3: API Layer (Week 3-4)
+**Repository**: `api/`
+
+1. **Setup**
+   - Create new `api/` repository
+   - Copy API routes and middleware
+   - Copy authentication module
+   - Copy event system
+   - Copy search and markdown modules
+   - Copy Durable Objects
+   - Copy worker.ts and configuration
+   - Install `@api.services/db` and `@api.services/ai` dependencies
+
+2. **Update Imports**
+   - Change `../../db/schema` → `@api.services/db/schema`
+   - Change `../../ai/` → `@api.services/ai`
+   - Update all relative paths
+
+3. **Verify**
+   - Run all API tests
+   - Test all route handlers
+   - Test authentication flows
+   - Test MCP and RPC servers
+   - Test Durable Objects
+   - Test queue consumers
+   - Integration test with db/ and ai/
+
+4. **Deploy**
+   - Deploy to Cloudflare Workers
+   - Configure routes in dashboard
+   - Test production deployment
+
+### Phase 4: Cleanup (Week 5)
+1. Archive `api.services/` repository
+2. Update documentation
+3. Update deployment pipelines
+4. Update package.json references across all projects
+
+---
+
+## Dependency Resolution Strategy
+
+### Package Publishing
+- **@api.services/db**: Core database schema and utilities
+  - Exports: `schema`, `importers`, `types`, `seed`
+  - Version: Semantic versioning (0.1.0 → 1.0.0)
+
+- **@api.services/ai**: AI generation and processing
+  - Exports: `generate`, `batch`, `executors`, `models`
+  - Dependencies: `@api.services/db`
+  - Version: Semantic versioning (0.1.0 → 1.0.0)
+
+- **@api.services/api**: API server (not published)
+  - Dependencies: `@api.services/db`, `@api.services/ai`
+  - Deployed to Cloudflare Workers
+
+### Import Patterns
+
+**Before Migration**:
+```typescript
+// In api/routes/things.ts
+import { things, relationships } from '../../db/schema'
+import { generateType } from '../../ai'
+```
+
+**After Migration**:
+```typescript
+// In api/routes/things.ts
+import { things, relationships } from '@api.services/db/schema'
+import { generateType } from '@api.services/ai'
+```
+
+### Monorepo Consideration
+Alternative strategy: Use a monorepo (pnpm workspaces, Turborepo, Nx) to keep all three packages together while maintaining separation:
+
+```
+api.services/
+├── packages/
+│   ├── db/
+│   ├── ai/
+│   └── api/
+├── package.json
+├── pnpm-workspace.yaml
+└── turbo.json
+```
+
+**Advantages**:
+- Single repository for related code
+- Shared dependencies and configuration
+- Easier cross-package changes
+- Unified CI/CD pipeline
+
+**Disadvantages**:
+- Larger repository size
+- More complex build configuration
+- Potential merge conflicts
+
+---
+
+## Testing Strategy
+
+### Test Migration Plan
+Tests are currently in `/tests` with subdirectories. Each subdirectory should move with its corresponding module:
+
+```
+tests/ai/           → ai/tests/
+tests/api/          → api/tests/
+tests/code/         → api/tests/code/
+tests/db/           → db/tests/
+tests/events/       → api/tests/events/
+tests/package/      → api/tests/package/
+tests/rpc/          → api/tests/rpc/
+tests/search/       → api/tests/search/
+tests/social-accounts/ → api/tests/social-accounts/
+tests/diagram/      → api.services/tests/diagram/ (stays)
+tests/wiki/         → api.services/tests/wiki/ (stays)
+```
+
+### Integration Tests
+Need new integration test suite that tests all three repositories together:
+- API calling DB and AI functions
+- AI storing results in DB
+- Event queue triggering AI batch jobs
+
+---
+
+## Risk Assessment
+
+### High Risk
+1. **Breaking Changes**: 28 imports of db/schema across API - one wrong import breaks everything
+2. **MCP Route Size**: 86K LOC file may have embedded dependencies
+3. **Durable Objects**: Cannot be easily mocked - need production testing
+4. **Queue Consumers**: Retry logic and error handling must be thoroughly tested
+5. **Authentication**: better-auth spans multiple files - easy to miss configuration
+
+### Medium Risk
+1. **Type Generation**: Database types must be generated and published before API can use them
+2. **Environment Variables**: Secrets and configuration spread across multiple files
+3. **Data Files**: Large importer data files may be missed during migration
+4. **RPC Protocol**: Cap'n Proto WebSocket implementation is complex
+5. **Event System**: Complex branching and recursion logic
+
+### Low Risk
+1. **AI Functions**: Well-isolated and have clear interfaces
+2. **Search Module**: Self-contained with minimal dependencies
+3. **Markdown Rendering**: Simple utilities with few dependencies
+4. **Public Assets**: Static files can be copied directly
+
+---
+
+## File Count Summary
+
+### api/ Repository
+- **API Routes**: 41 files
+- **Middleware**: 3 files
+- **Auth**: 10 files
+- **Events**: 18 files
+- **Search**: 7 files
+- **Markdown**: 6 files
+- **MCP/RPC**: 6 files
+- **Durable Objects**: 7 files
+- **Code Runtime**: 20 files
+- **Package**: 47 files
+- **Agents**: 6 files
+- **Config**: 5 files
+- **Total**: ~176 files
+
+### db/ Repository
+- **Schema**: 31 files
+- **Importers**: 11 files + data directories
+- **Migrations**: 1 file
+- **Utilities**: 25 files
+- **Tests**: TBD
+- **Total**: ~68 files + data
+
+### ai/ Repository
+- **Core**: 16 files
+- **Batch**: 5 files
+- **Executors**: 6 files
+- **Tests**: TBD
+- **Total**: ~27 files
+
+### Stays in api.services/
+- **Documentation**: 7 MD files
+- **Business Plans**: 110 files
+- **Scripts**: 44 files
+- **Notes**: 168 files
+- **Public Assets**: Multiple directories
+- **Docs Site**: Multiple files
+- **Growth**: Multiple files
+- **Guides**: Multiple files
+- **Total**: ~400+ files
+
+---
+
+## Next Steps for Sub-Agents
+
+### A1.5: Implement db/ Migration
+1. Create `db/` repository structure
+2. Copy schema files and verify
+3. Copy importers with data files
+4. Setup package.json with correct exports
+5. Run all database tests
+6. Generate and verify types
+7. Publish `@api.services/db@0.1.0`
+
+### A1.6: Implement ai/ Migration
+1. Create `ai/` repository structure
+2. Copy AI generation functions
+3. Install `@api.services/db` dependency
+4. Update all imports from relative to package
+5. Run all AI tests
+6. Verify batch processing works
+7. Publish `@api.services/ai@0.1.0`
+
+### A1.7: Implement api/ Migration
+1. Create `api/` repository structure
+2. Copy all API files (routes, middleware, etc.)
+3. Install `@api.services/db` and `@api.services/ai` dependencies
+4. Update all imports from relative to packages
+5. Copy worker.ts and wrangler.jsonc
+6. Run all API tests
+7. Run integration tests
+8. Deploy to staging environment
+9. Test production deployment
+
+### A1.8: Archive Original Repository
+1. Create archive branch in api.services
+2. Update README with migration information
+3. Add deprecation notice
+4. Update all documentation links
+5. Archive repository in GitHub
+
+---
+
+## Appendix: Detailed File Listings
+
+### Complete API Routes List
+1. `things.ts` - Core CRUD for things/relationships (foundational)
+2. `search.ts` - Search endpoints (full-text, vector, hybrid)
+3. `auth.ts` - Authentication routes (GitHub OAuth, API keys)
+4. `workos.ts` - WorkOS authentication and organization management
+5. `workos-sso.ts` - WorkOS SSO integration
+6. `workos-scim.ts` - WorkOS SCIM provisioning
+7. `mcp.ts` - Legacy MCP endpoint (deprecated, keep for backward compat)
+8. `mcp-jsonrpc.ts` - MCP JSON-RPC 2.0 (86,159 LOC - main MCP implementation)
+9. `mcp-sse.ts` - MCP Server-Sent Events streaming
+10. `mcp-streamable.ts` - MCP streamable responses
+11. `docs-mcp.ts` - MCP documentation endpoint
+12. `rpc.ts` - RPC over HTTP entry point
+13. `websocket.ts` - WebSocket handler for RPC
+14. `recursion.ts` - forEach pattern execution (conditionals, loops)
+15. `editor.ts` - Monaco editor with MDX format
+16. `markdown.ts` - Markdown rendering with YAML frontmatter
+17. `readme.ts` - Dynamic README generation
+18. `docs.ts` - Documentation endpoints
+19. `ai.ts` - AI generation endpoints (list, generate, write, diagram, code)
+20. `batch.ts` - Batch processing API (OpenAI, Anthropic, Google, Cloudflare)
+21. `claude-code.ts` - Claude Code session management
+22. `vapi.ts` - VAPI voice AI integration
+23. `marketplace.ts` - Stripe-powered marketplace
+24. `pricing.ts` - Pricing page endpoints
+25. `sdk.ts` - SDK generation and documentation
+26. `domains.ts` - Domain management (admin only)
+27. `ideas.ts` - Growth ideas and experiments
+28. `experiments.ts` - A/B testing experiments
+29. `crawl-jobs.ts` - Web crawling job management (Crawlee)
+30. `google-ads.ts` - Google Ads integration
+31. `queue.ts` - Queue management and monitoring
+32. `workflows.ts` - Workflow execution and management
+33. `landing.ts` - Landing page generation
+34. `business-setup.ts` - Business setup wizard
+35. `functions.ts` - Cloud function management
+36. `code-exec.ts` - Code execution (sandboxed TypeScript)
+37. `containers.ts` - Container management
+38. `sandboxes.ts` - Sandbox environment management
+39. `integrations.ts` - Third-party integrations (Zapier, etc.)
+40. `playground.ts` - API playground UI
+41. `webhooks.ts` - Webhook handlers (Stripe, WorkOS, etc.)
+
+### Complete Database Schema List
+1. `schema.ts` - Main schema (things, relationships, auth tables)
+2. `ability.ts` - O*NET ability schema
+3. `action.ts` - Schema.org action schema
+4. `activity.ts` - O*NET activity schema
+5. `alternateTitle.ts` - O*NET alternate title schema
+6. `career.ts` - Career path schema
+7. `diagram.ts` - Mermaid diagram schema
+8. `dimension.ts` - Work dimension schema
+9. `disposition.ts` - GS1 disposition schema
+10. `education.ts` - Education requirement schema
+11. `event.ts` - GS1 EPCIS event schema
+12. `experience.ts` - Work experience schema
+13. `field.ts` - Data field schema
+14. `fieldMapping.ts` - Field mapping schema
+15. `industry.ts` - NAICS industry schema
+16. `interest.ts` - O*NET interest schema
+17. `jobZone.ts` - O*NET job zone schema
+18. `knowledge.ts` - O*NET knowledge schema
+19. `noun.ts` - Entity noun schema
+20. `occupation.ts` - O*NET occupation schema
+21. `property.ts` - Schema.org property schema
+22. `schemaAction.ts` - Schema.org action definition
+23. `search.ts` - Search result schema
+24. `skill.ts` - O*NET skill schema
+25. `software.ts` - Software/tool schema
+26. `step.ts` - GS1 business step schema
+27. `task.ts` - O*NET task schema
+28. `tool.ts` - Tool/equipment schema
+29. `training.ts` - Training requirement schema
+30. `trigger.ts` - Zapier trigger schema
+31. `type.ts` - Schema.org type definition
+32. `workContext.ts` - Work context schema
+33. `workStyle.ts` - Work style schema
+
+---
+
+## Conclusion
+
+This migration will split the 45,000 LOC monolithic `api.services` repository into three focused repositories:
+
+- **db/** (17%, 7,712 LOC): Foundation layer with schema and importers
+- **ai/** (12%, 5,239 LOC): AI generation and batch processing
+- **api/** (54%, 24,405 LOC): API routes, MCP, RPC, auth, events
+
+The remaining 17% (~7,644 LOC) consists of documentation, business plans, scripts, and assets that stay in the original repository.
+
+**Critical Success Factors**:
+1. Migrate db/ first - it's the foundation
+2. Publish packages before dependent repos need them
+3. Update imports systematically (28 db imports, 3 ai imports)
+4. Test thoroughly at each phase
+5. Keep integration tests to verify cross-repo functionality
+
+**Estimated Timeline**: 5 weeks
+- Week 1: db/ migration and publishing
+- Week 2: ai/ migration and publishing
+- Week 3-4: api/ migration, testing, and deployment
+- Week 5: Cleanup and documentation
+
+This migration map provides a clear, actionable plan for sub-agents to execute the repository split while maintaining full functionality and avoiding breaking changes.

@@ -1,0 +1,344 @@
+# WS-102: Relationships Service Extraction - Status Report
+
+**Engineer:** Backend Engineer E
+**Date:** 2025-10-02
+**Task:** Extract relationships service from api.services monolith
+**Status:** ⏸️ BLOCKED - Waiting for Dependencies
+
+---
+
+## 🚫 Blocking Issues
+
+### Critical Dependencies Not Met
+
+**WS-001: @db/ Package** - ❌ NOT DEPLOYED
+- Required for: Database access, schema definitions, relationship queries
+- Status: Migration not started (see TODO.md Phase 3)
+- Impact: Cannot proceed without database foundation
+
+**WS-003: @api/ Gateway** - ❌ NOT DEPLOYED
+- Required for: RPC service binding, HTTP routing, gateway coordination
+- Status: Migration not started (see TODO.md Phase 5)
+- Impact: No infrastructure to deploy relationships service to
+
+---
+
+## 📊 Current Architecture Analysis
+
+### Source Code Location
+
+The relationships functionality currently exists in **api.services** within the `CoreDomain` class:
+
+**File:** `api.services/api/domains/core/index.ts`
+
+**Relevant Methods:**
+```typescript
+async getOutgoingRelationships(ns, id, options?)  // Lines 234-261
+async getIncomingRelationships(ns, id, options?)  // Lines 266-292
+```
+
+**Database Schema:**
+- Table: `relationships` (defined in `api.services/db/schema.ts`, lines 36-55)
+- Composite PK: `(ns, id)`
+- Indexed on: `(fromNs, fromId)`, `(toNs, toId)`, `type`, `visibility`
+
+### Data Model
+
+```typescript
+relationships = {
+  ns: text,           // Namespace
+  id: text,           // Unique ID
+  type: text,         // Relationship type (Schema.org property names)
+  fromNs: text,       // Source namespace
+  fromId: text,       // Source ID
+  toNs: text,         // Target namespace
+  toId: text,         // Target ID
+  data: json,         // Metadata
+  code: text,         // Executable TypeScript
+  visibility: enum,   // public/private/unlisted
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+```
+
+### Relationship Types Used
+
+Based on documentation:
+- `additionalType` - Links things to Schema.org types
+- Schema.org property names (camelCase):
+  - `skills`, `educationRequirements`, `responsibilities`
+  - `isPartOf`, `memberOf`
+  - Graph traversal patterns supported
+
+---
+
+## 🎯 Proposed Implementation (When Unblocked)
+
+### 1. Package Structure
+
+```
+workers/relationships/
+├── src/
+│   ├── index.ts              # RPC service (WorkerEntrypoint)
+│   ├── http.ts               # HTTP interface (Hono routes)
+│   ├── mcp.ts                # MCP tool definitions
+│   ├── queue.ts              # Queue handlers
+│   └── schemas.ts            # Zod validation schemas
+├── tests/
+│   ├── relationships.test.ts # CRUD tests
+│   ├── graph.test.ts         # Graph traversal tests
+│   └── integration.test.ts   # Integration with @db/
+├── wrangler.toml             # Cloudflare configuration
+├── package.json
+└── README.md
+```
+
+### 2. RPC Interface
+
+```typescript
+export class RelationshipsService extends WorkerEntrypoint<Env> {
+  // Get relationships for a thing
+  async getRelationships(
+    fromNs: string,
+    fromId: string,
+    options?: RelationshipOptions
+  ): Promise<Relationship[]>
+
+  // Create new relationship
+  async createRelationship(
+    data: CreateRelationshipInput
+  ): Promise<Relationship>
+
+  // Delete relationship by ID
+  async deleteRelationship(id: string): Promise<void>
+
+  // Get relationship graph (recursive traversal)
+  async getRelationshipGraph(
+    ns: string,
+    id: string,
+    depth?: number
+  ): Promise<GraphNode>
+}
+```
+
+### 3. HTTP Endpoints
+
+```
+GET    /relationships/:fromNs/:fromId        # List relationships
+POST   /relationships                        # Create relationship
+DELETE /relationships/:id                    # Delete relationship
+GET    /relationships/:ns/:id/graph?depth=2  # Graph traversal
+```
+
+### 4. MCP Tools
+
+```typescript
+{
+  name: "get_relationships",
+  description: "Get relationships for a thing",
+  inputSchema: { fromNs, fromId, type?, limit? }
+}
+
+{
+  name: "create_relationship",
+  description: "Create relationship between things",
+  inputSchema: { fromNs, fromId, type, toNs, toId, data? }
+}
+
+{
+  name: "delete_relationship",
+  description: "Delete relationship by ID",
+  inputSchema: { id }
+}
+
+{
+  name: "get_relationship_graph",
+  description: "Get relationship graph with traversal",
+  inputSchema: { ns, id, depth? }
+}
+```
+
+### 5. Features to Implement
+
+**Core:**
+- ✅ Get outgoing relationships (fromNs, fromId)
+- ✅ Get incoming relationships (toNs, toId)
+- ✅ Filter by relationship type
+- ✅ Create relationship with validation
+- ✅ Delete relationship by ID
+- ✅ Visibility filtering (public/private/unlisted)
+
+**Advanced:**
+- ✅ Graph traversal with configurable depth
+- ✅ Circular relationship detection
+- ✅ Relationship metadata (data field)
+- ✅ Batch operations via queue
+- ✅ Pagination support
+
+**Integration:**
+- ✅ RPC service binding in gateway
+- ✅ HTTP routes via gateway
+- ✅ MCP tools for AI agents
+- ✅ Queue handlers for async operations
+
+---
+
+## 🔄 Migration Strategy (When Ready)
+
+### Step 1: Extract Code
+```bash
+# Copy relationship methods from CoreDomain
+# Adapt to standalone service
+cp api.services/api/domains/core/index.ts workers/relationships/src/index.ts
+```
+
+### Step 2: Update Dependencies
+```typescript
+// Replace direct DB access with @db/ package
+import { db, relationships, things } from '@dot-do/db'
+
+// Use @api/gateway for RPC binding
+import { WorkerEntrypoint } from '@cloudflare/workers-types'
+```
+
+### Step 3: Add Validation
+```typescript
+// schemas.ts
+export const createRelationshipSchema = z.object({
+  fromNs: z.string(),
+  fromId: z.string(),
+  type: z.string(),
+  toNs: z.string(),
+  toId: z.string(),
+  data: z.record(z.any()).optional(),
+  code: z.string().optional(),
+  visibility: z.enum(['public', 'private', 'unlisted']).default('public')
+})
+
+export const relationshipOptionsSchema = z.object({
+  type: z.string().optional(),
+  limit: z.number().min(1).max(100).default(10),
+  offset: z.number().min(0).default(0)
+})
+```
+
+### Step 4: Create Tests
+```typescript
+// tests/relationships.test.ts
+describe('RelationshipsService', () => {
+  it('should get outgoing relationships', async () => {
+    // Test getRelationships with fromNs/fromId
+  })
+
+  it('should get incoming relationships', async () => {
+    // Test inverse relationships (toNs/toId)
+  })
+
+  it('should create relationship with validation', async () => {
+    // Test createRelationship
+  })
+
+  it('should delete relationship', async () => {
+    // Test deleteRelationship
+  })
+
+  it('should traverse graph with depth limit', async () => {
+    // Test getRelationshipGraph
+  })
+
+  it('should detect circular relationships', async () => {
+    // Test circular detection
+  })
+})
+```
+
+### Step 5: Deploy
+```toml
+# wrangler.toml
+name = "relationships"
+main = "src/index.ts"
+compatibility_date = "2025-10-02"
+
+[[services]]
+binding = "DB"
+service = "db"
+
+[[services]]
+binding = "GATEWAY"
+service = "gateway"
+```
+
+---
+
+## 📋 Estimated Effort
+
+**When Unblocked:**
+- Setup & configuration: 2 hours
+- Core CRUD implementation: 4 hours
+- Graph traversal logic: 3 hours
+- HTTP interface: 2 hours
+- MCP tools: 2 hours
+- Queue handlers: 2 hours
+- Testing (80%+ coverage): 4 hours
+- Integration testing: 2 hours
+- Documentation: 1 hour
+
+**Total: ~22 hours** (3 days)
+
+---
+
+## ✅ Success Criteria (When Complete)
+
+- [ ] Get relationships by thing (fromNs, fromId)
+- [ ] Get inverse relationships (toNs, toId)
+- [ ] Create relationships with Zod validation
+- [ ] Delete relationships by ID
+- [ ] Graph traversal with configurable depth (1-5 levels)
+- [ ] Circular relationship detection
+- [ ] Gateway routes /relationships/* correctly
+- [ ] All tests passing (80%+ coverage)
+- [ ] RPC latency <30ms (p95)
+- [ ] HTTP latency <50ms (p95)
+- [ ] Deployed to staging environment
+- [ ] Documentation complete (README.md)
+
+---
+
+## 🚀 Recommended Actions
+
+### For Project Manager (Claude Code):
+
+1. **Prioritize WS-001 (@db/)** - Critical path for all services
+   - Extract database schema (relationships table)
+   - Port query helpers
+   - Publish @dot-do/db package
+
+2. **Complete WS-003 (@api/ Gateway)** - Required for service binding
+   - Set up RPC infrastructure
+   - Configure service bindings
+   - Deploy gateway worker
+
+3. **Unblock WS-102** - Once dependencies ready
+   - Assign engineer to complete relationships service
+   - Estimated 3 days after unblock
+
+### For Current Session:
+
+**Cannot proceed with implementation** due to missing dependencies. This task should be:
+- **Status:** Deferred until WS-001 and WS-003 complete
+- **Priority:** High (P1) but blocked
+- **Estimated Unblock Date:** Week 3-4 per TODO.md timeline
+
+---
+
+## 📚 References
+
+- **Source Code:** `api.services/api/domains/core/index.ts` (lines 233-292)
+- **Schema:** `api.services/db/schema.ts` (lines 36-55)
+- **TODO.md:** Phase 3 (db/), Phase 5 (api/)
+- **CLAUDE.md:** Relationship architecture patterns
+- **Documentation:** HATEOAS principles, JSON-LD response format
+
+---
+
+**Conclusion:** WS-102 is well-scoped and ready for implementation once critical dependencies (WS-001 @db/ and WS-003 @api/ gateway) are completed. The relationships service is cleanly separated in the current codebase and can be extracted without major refactoring. Estimated 3 days of work after dependencies are resolved.

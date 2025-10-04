@@ -1,0 +1,776 @@
+# MDXUI Semantic Mapping Algorithm
+## Deep Dive Technical Specification
+
+**Date:** October 3, 2025
+**Related:** [Main Plan](2025-10-03-mdxui-simplification-plan.md) | [GitHub Issue #6](https://github.com/dot-do/.do/issues/6)
+**Status:** Specification - Ready for Implementation
+
+---
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Core Concepts](#core-concepts)
+3. [Algorithm Architecture](#algorithm-architecture)
+4. [Detection Rules](#detection-rules)
+5. [Extraction Strategies](#extraction-strategies)
+6. [Composition Patterns](#composition-patterns)
+7. [Implementation Details](#implementation-details)
+8. [Testing Strategy](#testing-strategy)
+
+---
+
+## Overview
+
+The **Semantic Mapping Algorithm** is the core innovation that enables mdxui to convert pure Markdown/MDX into styled React components without explicit component usage. Inspired by Pico CSS's classless HTML approach, it analyzes document structure and context to intelligently map content to component props and child elements.
+
+### Goals
+
+1. **Zero Configuration:** Write pure MDX, get beautiful components
+2. **Type Safety:** Full TypeScript support with inference
+3. **Context Awareness:** Detect intent from surrounding structure
+4. **Extensibility:** Easy to add new mapping rules
+5. **Performance:** Efficient parsing and transformation
+
+### Philosophy
+
+> "The structure of the content **is** the styling intent."
+
+Just as Pico CSS proves that `<header>`, `<main>`, and `<footer>` don't need classes to be styled correctly, we prove that **well-structured Markdown** doesn't need explicit component calls to render beautifully.
+
+---
+
+## Core Concepts
+
+### 1. Intent Detection
+
+**Intent** is the purpose of a content section, detected through:
+- **Position** (first H1 → hero headline)
+- **Context** (H2 + list → features section)
+- **Patterns** (image after CTAs → hero media)
+- **Frontmatter** (explicit type declarations)
+
+### 2. Structural Analysis
+
+The algorithm performs **multi-pass analysis**:
+
+**Pass 1: Parse MDX AST**
+- Convert MDX to Abstract Syntax Tree
+- Identify node types (heading, paragraph, list, image, etc.)
+- Build node relationships (parent, siblings, children)
+
+**Pass 2: Detect Boundaries**
+- Find section separators (`---` or explicit markers)
+- Group related nodes into sections
+- Assign tentative section types
+
+**Pass 3: Refine Intent**
+- Apply contextual rules
+- Disambiguate ambiguous structures
+- Finalize component mapping
+
+**Pass 4: Extract & Compose**
+- Extract props from content
+- Compose child components
+- Generate final React tree
+
+### 3. Mapping Rules
+
+Each rule is a **predicate + action pair**:
+
+```typescript
+interface MappingRule {
+  // When should this rule apply?
+  predicate: (context: MappingContext) => boolean
+
+  // What component intent does it indicate?
+  intent: ComponentIntent
+
+  // How to extract props from this structure?
+  extract: (nodes: MDXNode[]) => ComponentProps
+
+  // Priority (higher = checked first)
+  priority: number
+}
+```
+
+---
+
+## Algorithm Architecture
+
+### Package Structure
+
+```
+@mdxui/semantic-mapping/
+├── src/
+│   ├── parser/
+│   │   ├── ast.ts              # MDX AST utilities
+│   │   ├── frontmatter.ts      # Frontmatter parsing
+│   │   └── tokenizer.ts        # Custom token extraction
+│   ├── detector/
+│   │   ├── intent.ts           # Intent detection engine
+│   │   ├── boundaries.ts       # Section boundary detection
+│   │   └── context.ts          # Context analysis
+│   ├── extractor/
+│   │   ├── props.ts            # Prop extraction from nodes
+│   │   ├── text.ts             # Text content extraction
+│   │   ├── links.ts            # Link and CTA extraction
+│   │   ├── images.ts           # Image and media extraction
+│   │   └── lists.ts            # List structure extraction
+│   ├── composer/
+│   │   ├── components.ts       # Component composition
+│   │   ├── children.ts         # Child element composition
+│   │   └── templates.ts        # Template selection
+│   ├── rules/
+│   │   ├── marketing.ts        # Marketing page rules
+│   │   ├── docs.ts             # Documentation rules
+│   │   ├── dashboard.ts        # Dashboard rules
+│   │   ├── chat.ts             # Chat interface rules
+│   │   └── registry.ts         # Rule registry
+│   ├── mapper.ts               # Main SemanticMapper class
+│   └── index.ts                # Public API
+├── tests/
+│   ├── fixtures/               # Test MDX files
+│   └── *.test.ts
+└── package.json
+```
+
+### Core Classes
+
+```typescript
+// Main semantic mapper
+class SemanticMapper {
+  constructor(
+    private rules: MappingRule[],
+    private options: MapperOptions
+  ) {}
+
+  // Parse and map MDX to components
+  async map(mdx: string): Promise<ComponentTree>
+
+  // Register custom rules
+  addRule(rule: MappingRule): void
+
+  // Get mapping for specific section
+  mapSection(nodes: MDXNode[]): ComponentNode
+}
+
+// Mapping context passed to rules
+interface MappingContext {
+  // Current nodes being analyzed
+  nodes: MDXNode[]
+
+  // Preceding nodes (for context)
+  before: MDXNode[]
+
+  // Following nodes (for lookahead)
+  after: MDXNode[]
+
+  // Frontmatter data
+  frontmatter: Record<string, any>
+
+  // Section index (0 = first section)
+  sectionIndex: number
+
+  // Detected section boundaries
+  boundaries: number[]
+
+  // Parent context (for nested structures)
+  parent?: MappingContext
+}
+
+// Detected component intent
+type ComponentIntent =
+  | { type: 'hero'; variant?: string }
+  | { type: 'features'; layout?: 'grid' | 'list' }
+  | { type: 'pricing'; variant?: string }
+  | { type: 'testimonials'; layout?: string }
+  | { type: 'faq'; style?: string }
+  | { type: 'cta'; variant?: string }
+  | { type: 'docs-page'; sidebar?: boolean }
+  | { type: 'code-block'; language?: string }
+  | { type: 'dashboard'; layout?: string }
+  | { type: 'chat'; variant?: string }
+  // ... extensible
+```
+
+---
+
+## Detection Rules
+
+### Rule Priority System
+
+Rules are checked in **priority order** (highest first). Priority guidelines:
+
+- **100+** Explicit frontmatter declarations
+- **90-99** Position-based rules (first H1, etc.)
+- **80-89** Strong contextual patterns
+- **70-79** Weak contextual patterns
+- **60-69** Fallback rules
+
+### Example Rules
+
+#### Rule 1: Explicit Hero Declaration (Priority 100)
+
+```typescript
+{
+  predicate: (ctx) => {
+    return ctx.frontmatter.$type === 'LandingPage' &&
+           ctx.frontmatter.sections?.[ctx.sectionIndex]?.type === 'hero'
+  },
+  intent: { type: 'hero', variant: ctx.frontmatter.sections[0].variant },
+  extract: extractHeroProps,
+  priority: 100
+}
+```
+
+#### Rule 2: First H1 is Hero (Priority 95)
+
+```typescript
+{
+  predicate: (ctx) => {
+    return ctx.sectionIndex === 0 &&
+           ctx.nodes[0]?.type === 'heading' &&
+           ctx.nodes[0]?.depth === 1 &&
+           hasFollowingParagraph(ctx.nodes) &&
+           hasFollowingLinks(ctx.nodes)
+  },
+  intent: { type: 'hero' },
+  extract: extractHeroProps,
+  priority: 95
+}
+```
+
+#### Rule 3: H2 + List = Features (Priority 85)
+
+```typescript
+{
+  predicate: (ctx) => {
+    const hasH2 = ctx.nodes[0]?.type === 'heading' && ctx.nodes[0]?.depth === 2
+    const hasList = ctx.nodes.some(n => n.type === 'list')
+    const listItems = getListItems(ctx.nodes)
+
+    return hasH2 && hasList && listItems.length >= 2
+  },
+  intent: { type: 'features' },
+  extract: extractFeaturesProps,
+  priority: 85
+}
+```
+
+#### Rule 4: Pricing Table Pattern (Priority 90)
+
+```typescript
+{
+  predicate: (ctx) => {
+    // Look for table with pricing indicators
+    const table = ctx.nodes.find(n => n.type === 'table')
+    if (!table) return false
+
+    // Check for price formatting ($, €, etc)
+    const hasPrices = tableHasPriceColumn(table)
+
+    // Check for CTA column
+    const hasCTAs = tableHasActionColumn(table)
+
+    return hasPrices && hasCTAs
+  },
+  intent: { type: 'pricing' },
+  extract: extractPricingFromTable,
+  priority: 90
+}
+```
+
+#### Rule 5: Blockquotes = Testimonials (Priority 80)
+
+```typescript
+{
+  predicate: (ctx) => {
+    const quotes = ctx.nodes.filter(n => n.type === 'blockquote')
+    return quotes.length >= 2 &&
+           quotes.some(hasAttributionPattern)
+  },
+  intent: { type: 'testimonials' },
+  extract: extractTestimonialProps,
+  priority: 80
+}
+```
+
+---
+
+## Extraction Strategies
+
+### Text Extraction
+
+```typescript
+// Extract clean text from MDX nodes
+function extractText(node: MDXNode): string {
+  if (node.type === 'text') return node.value
+
+  if (node.type === 'emphasis' || node.type === 'strong') {
+    return node.children.map(extractText).join('')
+  }
+
+  if (node.children) {
+    return node.children.map(extractText).join('')
+  }
+
+  return ''
+}
+
+// Extract headline (first H1 or H2)
+function extractHeadline(nodes: MDXNode[]): string {
+  const heading = nodes.find(n =>
+    n.type === 'heading' && (n.depth === 1 || n.depth === 2)
+  )
+  return heading ? extractText(heading) : ''
+}
+
+// Extract description (first paragraph after heading)
+function extractDescription(nodes: MDXNode[]): string {
+  const headingIndex = nodes.findIndex(n => n.type === 'heading')
+  if (headingIndex === -1) return ''
+
+  const paragraph = nodes.slice(headingIndex + 1).find(n => n.type === 'paragraph')
+  return paragraph ? extractText(paragraph) : ''
+}
+```
+
+### Link Extraction (CTAs)
+
+```typescript
+// Extract CTAs from links with class hints
+function extractCTAs(nodes: MDXNode[]): {
+  primary?: { text: string; href: string }
+  secondary?: { text: string; href: string }
+} {
+  const links = nodes
+    .filter(n => n.type === 'paragraph')
+    .flatMap(p => findLinks(p))
+
+  // Links with {.primary} class
+  const primary = links.find(link =>
+    link.data?.hProperties?.className?.includes('primary')
+  )
+
+  // Links with {.secondary} class
+  const secondary = links.find(link =>
+    link.data?.hProperties?.className?.includes('secondary')
+  )
+
+  // Fallback: first two links
+  if (!primary && links.length > 0) {
+    return {
+      primary: { text: extractText(links[0]), href: links[0].url },
+      secondary: links[1] ? { text: extractText(links[1]), href: links[1].url } : undefined
+    }
+  }
+
+  return {
+    primary: primary ? { text: extractText(primary), href: primary.url } : undefined,
+    secondary: secondary ? { text: extractText(secondary), href: secondary.url } : undefined
+  }
+}
+```
+
+### Image Extraction
+
+```typescript
+// Extract media from images
+function extractMedia(nodes: MDXNode[]): {
+  url?: string
+  alt?: string
+  type?: 'image' | 'video'
+} {
+  const image = nodes.find(n => n.type === 'image')
+  if (!image) return {}
+
+  const type = image.data?.hProperties?.className?.includes('video')
+    ? 'video'
+    : 'image'
+
+  return {
+    url: image.url,
+    alt: image.alt || '',
+    type
+  }
+}
+```
+
+### List Extraction (Features, Testimonials, FAQs)
+
+```typescript
+// Extract features from list
+function extractFeatures(nodes: MDXNode[]): FeatureItem[] {
+  const list = nodes.find(n => n.type === 'list')
+  if (!list) return []
+
+  return list.children.map(item => {
+    const text = extractText(item)
+
+    // Pattern: **Title**: Description
+    const match = text.match(/^\*\*(.+?)\*\*:?\s*(.*)$/)
+    if (match) {
+      return {
+        title: match[1],
+        description: match[2] || undefined
+      }
+    }
+
+    // Pattern: Title - Description
+    const dashMatch = text.match(/^(.+?)\s*-\s*(.+)$/)
+    if (dashMatch) {
+      return {
+        title: dashMatch[1],
+        description: dashMatch[2]
+      }
+    }
+
+    // Fallback: entire text as title
+    return { title: text }
+  })
+}
+
+// Extract FAQs from list
+function extractFAQs(nodes: MDXNode[]): FAQItem[] {
+  const list = nodes.find(n => n.type === 'list')
+  if (!list) return []
+
+  return list.children.map(item => {
+    const text = extractText(item)
+
+    // Pattern: Question? Answer
+    const match = text.match(/^(.+?\?)\s*(.+)$/)
+    if (match) {
+      return {
+        question: match[1],
+        answer: match[2]
+      }
+    }
+
+    // Fallback: first sentence = question, rest = answer
+    const sentences = text.match(/^([^.!?]+[.!?])\s*(.*)$/)
+    if (sentences) {
+      return {
+        question: sentences[1],
+        answer: sentences[2]
+      }
+    }
+
+    return { question: text, answer: '' }
+  })
+}
+```
+
+---
+
+## Composition Patterns
+
+### Component Tree Building
+
+```typescript
+// Build component tree from mapped sections
+function composeComponentTree(
+  sections: MappedSection[]
+): ComponentTree {
+  return {
+    type: 'root',
+    children: sections.map(section => {
+      switch (section.intent.type) {
+        case 'hero':
+          return composeHeroSection(section)
+        case 'features':
+          return composeFeaturesSection(section)
+        case 'pricing':
+          return composePricingSection(section)
+        // ... other types
+        default:
+          return composeGenericSection(section)
+      }
+    })
+  }
+}
+
+// Compose hero section
+function composeHeroSection(section: MappedSection): ComponentNode {
+  const { headline, description, primary, secondary, media } = section.props
+
+  return {
+    type: 'component',
+    component: 'HeroSection',
+    props: {
+      headline,
+      description,
+      primaryActionText: primary?.text,
+      primaryActionLink: primary?.href,
+      secondaryActionText: secondary?.text,
+      secondaryActionLink: secondary?.href,
+      mediaUrl: media?.url,
+      mediaAlt: media?.alt,
+      mediaType: media?.type
+    },
+    children: []
+  }
+}
+```
+
+### Nested Component Composition
+
+```typescript
+// Compose features section with feature cards
+function composeFeaturesSection(section: MappedSection): ComponentNode {
+  const { headline, description, features } = section.props
+
+  return {
+    type: 'component',
+    component: 'FeaturesSection',
+    props: {
+      headline,
+      description
+    },
+    children: features.map(feature => ({
+      type: 'component',
+      component: 'FeatureCard',
+      props: {
+        title: feature.title,
+        description: feature.description,
+        iconUrl: feature.iconUrl
+      },
+      children: []
+    }))
+  }
+}
+```
+
+---
+
+## Implementation Details
+
+### Main Mapper Class
+
+```typescript
+export class SemanticMapper {
+  private rules: MappingRule[] = []
+
+  constructor(options: MapperOptions = {}) {
+    // Load default rules
+    this.rules = [
+      ...marketingRules,
+      ...docsRules,
+      ...dashboardRules,
+      ...chatRules
+    ]
+
+    // Sort by priority
+    this.rules.sort((a, b) => b.priority - a.priority)
+  }
+
+  async map(mdx: string): Promise<ComponentTree> {
+    // Parse MDX to AST
+    const ast = await parseMDX(mdx)
+
+    // Extract frontmatter
+    const frontmatter = extractFrontmatter(ast)
+
+    // Detect section boundaries
+    const boundaries = detectBoundaries(ast.children)
+
+    // Split into sections
+    const sections = splitIntoSections(ast.children, boundaries)
+
+    // Map each section
+    const mapped = sections.map((nodes, index) => {
+      const context: MappingContext = {
+        nodes,
+        before: sections.slice(0, index).flat(),
+        after: sections.slice(index + 1).flat(),
+        frontmatter,
+        sectionIndex: index,
+        boundaries
+      }
+
+      return this.mapSection(context)
+    })
+
+    // Compose final tree
+    return composeComponentTree(mapped)
+  }
+
+  mapSection(context: MappingContext): MappedSection {
+    // Find matching rule
+    const rule = this.rules.find(r => r.predicate(context))
+
+    if (!rule) {
+      // Fallback: generic content section
+      return {
+        intent: { type: 'content' },
+        props: { children: context.nodes }
+      }
+    }
+
+    // Apply rule
+    return {
+      intent: rule.intent,
+      props: rule.extract(context)
+    }
+  }
+
+  addRule(rule: MappingRule): void {
+    this.rules.push(rule)
+    this.rules.sort((a, b) => b.priority - a.priority)
+  }
+}
+```
+
+### Usage Example
+
+```typescript
+import { SemanticMapper } from '@mdxui/semantic-mapping'
+
+const mapper = new SemanticMapper()
+
+// Add custom rule
+mapper.addRule({
+  predicate: (ctx) => ctx.nodes[0]?.type === 'code',
+  intent: { type: 'code-playground' },
+  extract: extractCodePlaygroundProps,
+  priority: 85
+})
+
+// Map MDX
+const mdx = `
+# Welcome to My App
+
+Build amazing things with our platform
+
+[Get Started](/signup)
+[Learn More](/docs)
+`
+
+const tree = await mapper.map(mdx)
+// Returns:
+// {
+//   type: 'root',
+//   children: [{
+//     type: 'component',
+//     component: 'HeroSection',
+//     props: {
+//       headline: 'Welcome to My App',
+//       description: 'Build amazing things with our platform',
+//       primaryActionText: 'Get Started',
+//       primaryActionLink: '/signup',
+//       secondaryActionText: 'Learn More',
+//       secondaryActionLink: '/docs'
+//     }
+//   }]
+// }
+```
+
+---
+
+## Testing Strategy
+
+### Unit Tests
+
+Test each extraction function independently:
+
+```typescript
+describe('extractHeadline', () => {
+  it('extracts first H1', () => {
+    const nodes = [
+      { type: 'heading', depth: 1, children: [{ type: 'text', value: 'Hello' }] }
+    ]
+    expect(extractHeadline(nodes)).toBe('Hello')
+  })
+
+  it('handles emphasis in headings', () => {
+    const nodes = [
+      {
+        type: 'heading',
+        depth: 1,
+        children: [
+          { type: 'text', value: 'Hello ' },
+          { type: 'emphasis', children: [{ type: 'text', value: 'World' }] }
+        ]
+      }
+    ]
+    expect(extractHeadline(nodes)).toBe('Hello World')
+  })
+})
+```
+
+### Integration Tests
+
+Test full mapping scenarios:
+
+```typescript
+describe('SemanticMapper', () => {
+  it('maps landing page MDX correctly', async () => {
+    const mdx = `
+---
+$type: LandingPage
+---
+
+# Transform Your Workflow
+
+Build faster with AI
+
+[Get Started](/signup)
+    `
+
+    const mapper = new SemanticMapper()
+    const tree = await mapper.map(mdx)
+
+    expect(tree.children[0].component).toBe('HeroSection')
+    expect(tree.children[0].props.headline).toBe('Transform Your Workflow')
+  })
+})
+```
+
+### Fixture-Based Tests
+
+Create MDX fixtures for each component type:
+
+```
+tests/fixtures/
+├── hero-section.mdx
+├── features-section.mdx
+├── pricing-section.mdx
+└── ...
+```
+
+Test that each fixture maps to expected component structure.
+
+---
+
+## Performance Considerations
+
+### Optimization Strategies
+
+1. **Memoization:** Cache parsed ASTs for repeated mappings
+2. **Lazy Evaluation:** Only parse sections as needed
+3. **Parallel Processing:** Map sections in parallel (when no dependencies)
+4. **AST Reuse:** Reuse AST from MDX compilation
+
+### Benchmarks
+
+Target performance:
+- **Small documents** (<1KB): <10ms
+- **Medium documents** (1-10KB): <50ms
+- **Large documents** (10-100KB): <200ms
+
+---
+
+## Future Enhancements
+
+1. **Machine Learning:** Train model to improve intent detection
+2. **User Feedback:** Learn from user corrections
+3. **Visual Editor:** GUI for adjusting mappings
+4. **A/B Testing:** Test different mapping strategies
+5. **Custom DSL:** Allow users to define mapping rules in DSL
+
+---
+
+**End of Specification**
+
+This algorithm forms the **foundation** of mdxui's semantic approach. Implementation should prioritize **correctness** first, then **performance**, then **extensibility**.

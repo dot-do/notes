@@ -1,0 +1,577 @@
+# Session Summary - Multi-Repo Architecture & Integration Planning
+
+**Date**: 2025-10-01
+**Duration**: Extended session
+**Focus**: Architecture, integrations, and task delegation
+
+---
+
+## Summary
+
+Established comprehensive multi-repository management system for .do platform with integration specifications for Numerics dashboard, VAPI voice AI, Devin AI, and Cloudflare Containers. Created detailed task assignments for parallel sub-agent execution across all 12 repositories.
+
+---
+
+## Major Accomplishments
+
+### 1. Repository Architecture Established
+
+**12 Total Repositories:**
+- `.do` - Root management repository (this repo)
+- `api.services` - Source monolith (483 TS files, migration source)
+- `api` - Target for API extraction
+- `db` - Target for database extraction
+- `ai` - Target for AI features extraction
+- `ctx` - New repo for entity MDX files (to be created)
+- `mdx` - New repo for MDXE runtime (to be created)
+- `agent` - AI code gen template (needs integration)
+- `app` - Payload CMS template (needs customization)
+- `site` - Public websites (active)
+- `sdk` - 105+ TypeScript SDKs (active)
+- `docs` - Fumadocs documentation site (active)
+- `do.industries` - Business metadata source of truth (active)
+
+**Git Submodule Setup:**
+- Configured 10 existing repos as submodules
+- Created comprehensive CLAUDE.md for all repos
+- Established documentation standards across repos
+
+### 2. Strategic Planning Documents
+
+**2025Q4 OKRs** (README.md):
+- **$1M ARR by EOY** - Primary target
+- **O1**: API.Services platform foundation (5 KRs)
+- **O2**: Services.Delivery marketplace ($500K+ GMV)
+- **O3**: Services.Studio launch (50+ creators)
+
+**Master TODO.md**:
+- 9-phase migration plan over 10 weeks
+- Phase 1: ctx & mdx repos
+- Phase 2: GitHub integration
+- Phase 3-5: db, ai, api migrations
+- Phase 6: GitHub Actions for Claude Code
+- Phase 7-9: Testing, CI/CD, deployment
+
+### 3. Integration Specifications
+
+#### A. Numerics Dashboard Integration
+**File**: `notes/2025-10-01-numerics-integration.md`
+
+**Features**:
+- 16 key metrics functions (visitors → ARR)
+- Numerics JSON widget specification
+- REST API endpoints `/api/metrics/*`
+- MCP integration `metrics.*` tools
+- Apple ecosystem support (TV, Watch, iPhone, Mac)
+- Real-time updates via WebSocket
+
+**Metrics Tracked**:
+- Funnel: visitors, signups, active users
+- Revenue: MRR, ARR ($1M target), GMV, growth rate
+- Marketplace: services, providers, ratings, disputes
+- Creators: total, top 10 revenue
+- Platform: functions catalogued, API calls
+
+**Priority**: P0 - Critical for tracking $1M ARR progress
+
+#### B. VAPI Voice AI Integration
+**File**: `notes/2025-10-01-vapi-integration.md`
+
+**Architecture**:
+```
+Voice Command → VAPI Agent → GitHub Issue → Claude Code → PR
+```
+
+**Features**:
+- Natural language task assignment
+- Conversational brainstorming
+- Voice progress checks (queries Numerics metrics)
+- Real-time status updates
+
+**VAPI Assistant Configuration**:
+- 3 custom functions: create_github_issue, check_project_status, list_open_tasks
+- Webhook handler at `/api/vapi/webhook`
+- GitHub Octokit integration for issue creation
+- Signature verification for security
+
+**Example Workflow**:
+```
+User: "Have Claude add recurring subscriptions to the marketplace"
+VAPI: Creates GitHub issue #42 with [P2] priority and claude-code label
+Claude Code: Implements feature, creates PR
+VAPI: "Issue created! Claude will start working on it shortly."
+```
+
+**Priority**: P1 - Enables conversational workflow
+
+#### C. Devin AI Integration
+**File**: `notes/2025-10-01-devin-integration.md`
+
+**Division of Labor**:
+- **Devin**: Deep implementation (>100 LOC), multi-file changes, production code with tests
+- **Claude Code**: Architecture, planning, quick edits, PR review
+
+**MCP Tools** (6 total):
+1. `devin_create_task` - Assign implementation task
+2. `devin_get_status` - Check session status
+3. `devin_review_pr` - PR review with focus areas
+4. `devin_send_message` - Send feedback to session
+5. `devin_list_sessions` - List all sessions
+6. `devin_cancel_session` - Cancel running session
+
+**Workflow**:
+```
+Voice (VAPI) → Claude Code (plan) → Devin (implement) → Claude Code (review/merge)
+```
+
+**API Client**:
+- Complete DevinClient implementation
+- Session management
+- GitHub integration
+- Contextual prompt building with .do standards
+
+**Priority**: P0 - Enables autonomous coding across all repos
+
+#### D. Cloudflare Container Deployment
+**File**: `notes/2025-10-01-cloudflare-container.md`
+
+**Why Containers** (not Sandboxes):
+- Full Linux environment with git, nodejs, npm
+- Persistent development workspace
+- Durable Object-coupled lifecycle
+- Supports all 12 repos as git submodules
+
+**MCP Server Wrapper** (6 tools):
+1. `claude_code_execute_task` - Execute coding task in workspace
+2. `claude_code_review_pr` - Review pull request
+3. `claude_code_update_docs` - Update documentation files
+4. `claude_code_create_plan` - Create implementation plan
+5. `claude_code_analyze_codebase` - Analyze for patterns/issues
+6. `claude_code_get_workspace_status` - Get workspace state
+
+**Architecture**:
+```
+Worker (Orchestrator)
+    ↓
+Durable Object: .do-workspace
+    ↓
+Container: Full .do workspace with all 12 repos
+    ├── MCP Server (stdio/HTTP)
+    ├── Claude Code CLI
+    ├── Git daemon
+    └── Node.js runtime
+```
+
+**Instance Size**: `basic` (1 GiB) for production
+
+**Priority**: P0 - Foundation for MCP-based integrations
+
+#### E. MDXE Refactor Scope
+**File**: `notes/2025-10-01-mdxe-refactor-scope.md`
+
+**Key Changes**:
+- **Code Mode**: Dynamic worker execution without build step
+- **CapnWeb**: JavaScript RPC library for type-safe communication
+- **Hono/JSX**: Runtime JSX rendering without React
+- **MDXUI**: Schema-driven UI components
+
+**Benefits**:
+- Zero build time
+- Dynamic execution
+- Streaming rendering
+- No React dependency
+
+**Priority**: P0 - Revolutionary architecture for MDXE
+
+### 4. Documentation Standards Established
+
+**notes/ Folder Convention** (added to CLAUDE.md):
+
+**File Naming**:
+```
+notes/
+├── YYYY-MM-DD-feature-description.md
+├── YYYY-MM-DD-session-summary.md
+└── YYYY-MM-DD-architecture-decision.md
+```
+
+**What goes in notes/**:
+- ✅ Implementation specifications
+- ✅ Integration architecture documents
+- ✅ Session work summaries
+- ✅ Feature design documents
+- ✅ Research findings
+- ✅ Migration strategies
+
+**What stays in root**:
+- ✅ README.md - Project overview and OKRs
+- ✅ TODO.md - Master project plan
+- ✅ CLAUDE.md - Development guidelines
+
+**Files Reorganized**:
+- Moved 6 spec documents from root to notes/ with date prefix
+- Established consistent naming convention
+- Cleaned up root directory
+
+### 5. Sub-Agent Task Assignments
+
+**File**: `notes/2025-10-01-sub-agent-task-assignments.md`
+
+**60+ Tasks Across 12 Repositories**:
+
+**api.services** (4 tasks):
+- Fix 87 TypeScript errors
+- Improve test coverage 36% → 80%+
+- Fix 57 failing tests
+- Create migration map
+
+**api** (8 tasks):
+- Initialize Hono framework
+- Implement Numerics metrics API (16 endpoints)
+- Implement MCP server for Devin
+- Implement VAPI webhook handler
+- Port MCP JSON-RPC server
+- Port authentication middleware
+
+**db** (6 tasks):
+- Initialize Drizzle ORM
+- Port schema (14 tables)
+- Port migrations
+- Create query helpers
+- Port data importers
+- Create @dot-do/db package
+
+**ai** (4 tasks):
+- Initialize AI package
+- Port generation functions (5 providers)
+- Port embedding models
+- Create @dot-do/ai package
+
+**ctx** (5 tasks):
+- Create repository
+- Initialize Velite + Zod
+- Create schemas for 7 entity types
+- Create example MDX files
+- Document GitHub integration
+
+**mdx** (5 tasks):
+- Create repository
+- Initialize MDXE runtime
+- Implement Code Mode executor
+- Implement CapnWeb RPC server
+- Implement Hono/JSX rendering
+
+**agent** (3 tasks):
+- Replace D1 with @dot-do/db
+- Use @dot-do/ai for generation
+- Integrate platform authentication
+
+**app** (3 tasks):
+- Configure Payload CMS collections
+- Connect to @dot-do/db
+- Add .do branding
+
+**Plus tasks for**: site, sdk, docs, do.industries
+
+**Parallel Execution Strategy**:
+- **Week 1**: Foundation layer (setup all repos)
+- **Week 2**: Core implementation (features)
+- **Week 3**: Integration layer (connect repos)
+- **Week 4**: Polish & documentation
+
+### 6. GitHub Actions Proposal
+
+**Recommended Setup**: Add Claude Code GitHub Actions to ALL 12 repos
+
+**Benefits**:
+- Issue-driven development in every repo
+- Central coordination from root repo
+- Parallel execution across repos
+- Automated PR creation
+- Voice command support (via VAPI)
+
+**Template Workflow**:
+```yaml
+# .github/workflows/claude-code.yml
+on:
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+
+jobs:
+  claude-code:
+    if: contains(github.event.issue.labels.*.name, 'claude-code')
+    # ... execute Claude Code and create PR
+```
+
+**Task**: Create workflow file in each of 12 repos
+
+---
+
+## Technical Decisions Made
+
+### 1. Multi-Repo vs Monorepo
+**Decision**: Multi-repo with git submodules
+**Rationale**: Independent versioning, separate concerns, easier extraction from api.services
+
+### 2. Containers vs Sandboxes
+**Decision**: Cloudflare Containers
+**Rationale**: Need full Linux environment with persistent state, not just code execution
+
+### 3. Devin vs Claude Code Division
+**Decision**: Devin for implementation, Claude for architecture
+**Rationale**: Devin excels at extended coding sessions; Claude excels at planning and coordination
+
+### 4. MDXE Architecture
+**Decision**: Code Mode + CapnWeb + Hono/JSX
+**Rationale**: Zero build time, dynamic execution, modern streaming rendering
+
+### 5. Notes Organization
+**Decision**: All specs/notes in notes/ with date prefix
+**Rationale**: Follows api.services convention, keeps root clean, maintains chronology
+
+---
+
+## Integration Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  User                                                    │
+│  ├── Voice (VAPI) ────────┐                            │
+│  ├── GitHub Issues ────────┤                            │
+│  └── Direct MCP Calls ─────┤                            │
+└────────────────────────────┼────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────┐
+│  Cloudflare Container (.do workspace)                    │
+│  ┌───────────────────────────────────────────────────┐ │
+│  │  Claude Code (MCP-wrapped)                        │ │
+│  │  - Planning & Architecture                        │ │
+│  │  - Quick edits & reviews                          │ │
+│  │  - Cross-repo coordination                        │ │
+│  └───────────────┬───────────────────────────────────┘ │
+│                  │                                      │
+│                  ├──→ Small tasks: Handle directly     │
+│                  │                                      │
+│                  └──→ Large tasks: Delegate to Devin   │
+└────────────────────────┼────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│  Devin AI (via MCP)                                      │
+│  - Deep implementation                                   │
+│  - Multi-file changes                                    │
+│  - Production code + tests                               │
+│  - PR creation                                           │
+└────────────────────────┬────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│  GitHub                                                  │
+│  - Issues created (VAPI)                                 │
+│  - PRs created (Devin/Claude)                            │
+│  - Actions triggered (claude-code label)                 │
+│  - Code reviewed (Claude)                                │
+│  - Merged (Claude/Manual)                                │
+└────────────────────────┬────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│  Monitoring & Metrics                                    │
+│  - Numerics Dashboard (16 metrics)                       │
+│  - Voice status updates (VAPI)                           │
+│  - Progress tracking (TODO.md)                           │
+│  - Real-time ARR tracking ($1M target)                   │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Files Created/Modified
+
+### Created
+1. `notes/2025-10-01-numerics-integration.md` - Numerics dashboard spec
+2. `notes/2025-10-01-vapi-integration.md` - VAPI voice AI spec
+3. `notes/2025-10-01-devin-integration.md` - Devin AI MCP server spec
+4. `notes/2025-10-01-devin-integration-planning.md` - Implementation notes
+5. `notes/2025-10-01-cloudflare-container.md` - Container deployment spec
+6. `notes/2025-10-01-mdxe-refactor-scope.md` - MDXE refactor architecture
+7. `notes/2025-10-01-monorepo.md` - (existing, moved)
+8. `notes/2025-10-01-sub-agent-task-assignments.md` - Task delegation plan
+9. `notes/2025-10-01-session-summary.md` - This file
+
+### Modified
+1. `README.md` - Added $1M ARR target and 2025Q4 OKRs
+2. `CLAUDE.md` - Added notes/ folder convention
+3. `TODO.md` - (pre-existing, comprehensive 9-phase plan)
+
+### Repository Structure
+```
+.do/
+├── README.md                         # OKRs and goals
+├── TODO.md                          # Master project plan
+├── CLAUDE.md                        # Development guidelines
+├── .gitignore
+├── .gitmodules                      # Submodule configuration
+├── .mcp.json                        # MCP server config
+├── notes/                           # ← All specs and notes here
+│   ├── 2025-10-01-numerics-integration.md
+│   ├── 2025-10-01-vapi-integration.md
+│   ├── 2025-10-01-devin-integration.md
+│   ├── 2025-10-01-devin-integration-planning.md
+│   ├── 2025-10-01-cloudflare-container.md
+│   ├── 2025-10-01-mdxe-refactor-scope.md
+│   ├── 2025-10-01-monorepo.md
+│   ├── 2025-10-01-sub-agent-task-assignments.md
+│   └── 2025-10-01-session-summary.md
+├── api.services/                    # Submodule (source)
+├── api/                             # Submodule (target)
+├── db/                              # Submodule (target)
+├── ai/                              # Submodule (target)
+├── agent/                           # Submodule (template)
+├── app/                             # Submodule (template)
+├── site/                            # Submodule (active)
+├── sdk/                             # Submodule (active)
+├── docs/                            # Submodule (active)
+└── do.industries/                   # Submodule (active)
+```
+
+---
+
+## Key Metrics
+
+### Documentation
+- **Files Created**: 9 specification/planning documents
+- **Total Lines**: ~5,000+ lines of detailed specs and plans
+- **Repositories Documented**: 12 with comprehensive CLAUDE.md files
+
+### Task Planning
+- **Total Tasks Identified**: 60+
+- **Repositories Covered**: 12
+- **Parallel Execution Phases**: 4 weeks
+- **Sub-Agents Involved**: Claude Code + Devin
+
+### Integration Points
+- **MCP Tools Designed**: 18 total
+  - Numerics: 16 metrics
+  - VAPI: 3 custom functions
+  - Devin: 6 tools
+  - Claude Code Container: 6 tools
+- **API Endpoints Planned**: 16+ (Numerics metrics)
+- **Webhooks**: 2 (VAPI, GitHub)
+
+---
+
+## Next Steps (Immediate)
+
+### Priority P0 (This Week)
+
+1. **Obtain API Keys**:
+   - [ ] Numerics API key (if required)
+   - [ ] VAPI API key
+   - [ ] Devin API key
+   - [ ] Ensure ANTHROPIC_API_KEY configured
+
+2. **Create New Repositories**:
+   - [ ] Create `ctx` repo on GitHub
+   - [ ] Create `mdx` repo on GitHub
+   - [ ] Add both as submodules to .do
+
+3. **GitHub Actions Setup**:
+   - [ ] Create `.github/workflows/claude-code.yml` in root repo
+   - [ ] Create same workflow in all 12 repos
+   - [ ] Configure org-wide ANTHROPIC_API_KEY secret
+   - [ ] Test with sample issue
+
+4. **Start Foundation Tasks** (Week 1):
+   - [ ] A2.1-A2.3: Initialize api repo (Claude Code)
+   - [ ] A3.1-A3.3: Initialize db repo (Devin)
+   - [ ] A4.1: Initialize ai repo (Claude Code)
+   - [ ] A5.2-A5.3: Initialize ctx repo (Devin)
+
+### Priority P1 (Next Week)
+
+5. **Implement Core Features**:
+   - [ ] A2.4: Numerics metrics API (Devin)
+   - [ ] A2.5: Devin MCP server (Devin)
+   - [ ] A2.6: VAPI webhook handler (Devin)
+   - [ ] A3.4: Database query helpers (Devin)
+
+6. **Deploy Container**:
+   - [ ] Build Dockerfile for .do workspace
+   - [ ] Deploy to Cloudflare Containers
+   - [ ] Configure Durable Object
+   - [ ] Test MCP server access
+
+---
+
+## Success Criteria Met
+
+### Session Goals
+- ✅ Reorganized notes following api.services convention
+- ✅ Updated CLAUDE.md with notes/ convention
+- ✅ Reviewed all work completed
+- ✅ Created comprehensive task list for sub-agents
+- ✅ Proposed GitHub Actions setup for all repos
+
+### Documentation Quality
+- ✅ All specs include architecture diagrams
+- ✅ All specs include implementation details
+- ✅ All specs include success metrics
+- ✅ All specs include priority and timeline
+- ✅ All specs cross-reference related docs
+
+### Task Assignment Quality
+- ✅ 60+ tasks identified across 12 repos
+- ✅ Each task has assignee (Claude/Devin)
+- ✅ Each task has priority (P0/P1/P2)
+- ✅ Each task has time estimate
+- ✅ Dependencies documented
+- ✅ Parallel execution strategy defined
+
+---
+
+## Risks & Mitigation
+
+### Risk 1: API Key Dependencies
+**Risk**: Cannot proceed without Devin, VAPI, Numerics API keys
+**Mitigation**: Tasks prioritized - can start foundation work (A2.1-A2.3, A3.1-A3.3) while waiting for keys
+
+### Risk 2: Cloudflare Container Beta Access
+**Risk**: Containers still in public beta, may have limitations
+**Mitigation**: Alternative: Run locally or use different container service (Fly.io, Railway)
+
+### Risk 3: Cross-Repo Dependencies
+**Risk**: Tasks blocked by dependencies between repos
+**Mitigation**: Clear dependency graph in task assignments, stagger tasks appropriately
+
+### Risk 4: Sub-Agent Coordination
+**Risk**: 60+ parallel tasks could cause conflicts
+**Mitigation**: GitHub Actions enforce PR flow, Claude Code reviews all PRs before merge
+
+---
+
+## Lessons Learned
+
+1. **Notes Organization Matters**: Moving specs to notes/ keeps root clean and follows established patterns
+2. **MCP is Powerful**: Single protocol enables integration with VAPI, Devin, Claude Code
+3. **Parallel Execution Scales**: 60+ tasks across 12 repos achievable with proper planning
+4. **Documentation is Foundation**: Comprehensive specs enable autonomous execution by sub-agents
+5. **Voice Integration is Game-Changer**: VAPI + GitHub + Claude Code enables natural workflow
+
+---
+
+## Outstanding Questions
+
+1. **Cloudflare Container Pricing**: What is cost for basic (1 GiB) instance running 24/7?
+2. **Devin API Limits**: Are there rate limits or concurrency limits for sessions?
+3. **VAPI Assistant Limits**: How many concurrent calls can VAPI handle?
+4. **GitHub Actions Minutes**: Will org have enough minutes for 12 repos with Claude Code?
+
+---
+
+**Session Status**: ✅ Complete
+**Ready for Execution**: ✅ Yes
+**Next Action**: Create GitHub issues from task list and start Week 1 foundation work

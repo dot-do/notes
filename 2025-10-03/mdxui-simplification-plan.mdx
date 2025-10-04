@@ -1,0 +1,943 @@
+# MDXUI Simplification Plan
+## Comprehensive Research and Implementation Strategy
+
+**Date:** October 3, 2025
+**Issue:** [#6](https://github.com/dot-do/.do/issues/6)
+**Status:** Research Complete → Architecture Design In Progress
+
+---
+
+## Table of Contents
+
+1. [Executive Summary](#executive-summary)
+2. [Current State Analysis](#current-state-analysis)
+3. [UI Library Research](#ui-library-research)
+4. [Abstract Component Architecture](#abstract-component-architecture)
+5. [Semantic MDX Mapping System](#semantic-mdx-mapping-system)
+6. [Implementation Plan](#implementation-plan)
+7. [Parallel Work Streams](#parallel-work-streams)
+8. [Success Metrics](#success-metrics)
+
+---
+
+## Executive Summary
+
+### Vision
+Transform mdxui from a bloated, overcomplicated package into a simple, intuitive collection of higher-order components that support both **props-based** and **MDX-native** (children-based) composition patterns across multiple UI library implementations.
+
+### Key Innovation: Semantic MDX Mapping
+Inspired by **Pico CSS's classless HTML approach**, we'll enable developers to write pure semantic MDX that automatically maps to component props and sub-components. This means you can:
+
+- Write a simple markdown document with frontmatter
+- Have it automatically render as a complete landing page, docs site, dashboard, or chat interface
+- Switch between UI library implementations (shadcn, Tremor, Catalyst, Chakra) without changing the MDX
+
+### Core Principle
+**Write once in MDX, render anywhere with any UI library.**
+
+---
+
+## Current State Analysis
+
+### Existing mdxui Structure
+
+```
+packages/mdxui/
+├── core/              # Base components, Tremor charts, landing page types
+├── shadcn/            # Styled primitives with CVA variants
+├── magicui/           # Animated components (Motion)
+├── ink/               # Terminal UI (React Ink)
+├── reveal/            # Presentation slides (Reveal.js)
+├── remotion/          # Video generation
+├── browser/           # Monaco editor integration
+├── chrome/            # Chrome extension
+├── safari/            # Safari extension
+├── tailwind/          # Shared Tailwind config
+├── slack/             # Slack Block Kit (experimental)
+└── mcp/               # MCP protocol server
+```
+
+### Problems Identified
+
+1. **Architectural Chaos**: Mixed purposes (web UI, terminal, extensions, slides, video)
+2. **Build Inconsistencies**: Different configs, circular dependencies
+3. **Tailwind Version Conflict**: v3 (mdxe) vs v4 (mdxui packages)
+4. **Import/Export Mess**: Broken namespacing, no clear API
+5. **Purpose Confusion**: No separation between environments
+6. **Incomplete Implementations**: Many components exist but lack polish
+
+### Strengths to Preserve
+
+1. **Strong Type System**: `LandingPage.ts` defines excellent section interfaces
+2. **Terminal UI**: The Ink package is well-developed and useful
+3. **Component Variety**: Good coverage of shadcn, magicui components
+4. **Tremor Integration**: Already has data visualization components
+
+---
+
+## UI Library Research
+
+### 1. Tailwind UI (Official)
+**Categories:** Marketing, Application, Ecommerce
+**Component Count:** 500+
+**Formats:** React, Vue, HTML
+
+**Key Patterns:**
+- Heroes, feature sections, newsletter forms (Marketing)
+- Form layouts, tables, modal dialogs (Application)
+- Checkout forms, shopping carts, product views (Ecommerce)
+
+**Use in mdxui:**
+- Pattern inspiration for abstract component types
+- Marketing site templates
+
+---
+
+### 2. Catalyst (Tailwind's React UI Kit)
+**Approach:** Disappearing UI kit (copy to codebase, not npm package)
+**Foundation:** Headless UI + Tailwind CSS
+**Philosophy:** Production-ready components with thoughtfully designed APIs
+
+**Key Features:**
+- Not an npm package - source code integration
+- Modular, framework-agnostic (works with Next.js, Remix, etc)
+- Utility-first styling (no complex CSS)
+- Full TypeScript support
+- Dark mode built-in
+
+**Use in mdxui:**
+- Implementation Stream 3
+- Application UI components
+- Design pattern reference
+
+---
+
+### 3. Tremor (Vercel-backed Data Viz)
+**Focus:** Dashboards and Charts
+**Component Count:** 35+
+**Foundation:** Recharts + Radix UI + Tailwind CSS
+
+**Component Categories:**
+- Chart components (Area, Bar, Line, Donut, etc)
+- KPI cards and metrics
+- Tables and lists
+- Layout components
+
+**Use in mdxui:**
+- Already integrated in `@mdxui/core`
+- Implementation Stream 2
+- Dashboard and analytics templates
+
+---
+
+### 4. shadcn/ui + Registry System
+**Approach:** Copy-paste components with CLI
+**Foundation:** Radix UI + Tailwind CSS
+**Innovation:** Registry system for distributing components
+
+**Registry Architecture:**
+- `registry.json` entry point
+- Blocks (single or complex components)
+- Namespace support for multiple registries
+- JSON schema validation
+
+**Key Concepts:**
+- **Blocks:** Can be single components or complex compositions
+- **Registry Items:** Valid JSON conforming to schema
+- **Dependencies:** Registry deps (components) vs package deps (npm)
+
+**Use in mdxui:**
+- Implementation Stream 1 (primary)
+- Registry system inspiration for our component distribution
+- Block composition patterns
+
+---
+
+### 5. MagicUI (Animated Components)
+**Focus:** Animated backgrounds and interactive effects
+**Foundation:** React + TypeScript + Tailwind + Framer Motion
+**Component Count:** 20+
+
+**Key Background Components:**
+- Warp Background (time warping effect)
+- Animated Grid Pattern
+- Particles
+- Shine Border
+- Flickering Grid, Retro Grid, Ripple
+- Dot Pattern, Grid Pattern, Striped Pattern
+- Light Rays
+
+**Use in mdxui:**
+- Already has `@mdxui/magicui` package
+- Integration with Stream 1 (shadcn + magicui)
+- **User priority:** "especially the background"
+
+---
+
+### 6. Vercel AI SDK (Chat SDK → AI Elements)
+**Evolution:** Chat SDK → AI Elements (more flexible)
+**Foundation:** shadcn/ui principles
+
+**Core Hooks:**
+- `useChat` - conversational UI, message streaming
+- Message streaming in real-time
+- State management (input, messages, status, error)
+
+**AI Elements (New):**
+- `<Message>`, `<Response>`, `<Branch>` components
+- Type-safe UIMessage (source of truth)
+- Generative UI patterns
+- Modular transports (fetch, WebSockets, custom)
+
+**Use in mdxui:**
+- Implementation Stream 1
+- Chat and AI agent interface components
+- Generative UI patterns for vibe coding apps
+
+---
+
+### 7. Chakra Pro
+**Approach:** Premium components built on Chakra UI
+**Categories:** Application, Marketing, Ecommerce
+**Foundation:** Chakra UI (WAI-ARIA, prop-based styling)
+
+**Design Patterns:**
+- Modular components (Box, Flex, Stack)
+- Centralized theming
+- Accessibility built-in
+- Prop-based styling (no CSS classes)
+
+**Related:** Saas UI (60+ components built on Chakra)
+
+**Use in mdxui:**
+- Implementation Stream 4
+- Alternative to Tailwind-based implementations
+
+---
+
+### 8. Nextra (MDX Documentation Theme)
+**Focus:** Documentation sites with MDX
+**Foundation:** Next.js + MDX 3
+**Approach:** Batteries-included theme
+
+**Built-in Components:**
+- Layout: Banner, Head, Navbar, Footer
+- Content: Bleed, Callout, Cards, FileTree, Steps, Tabs
+- Other: MDXRemote, Playground, TSDoc
+
+**MDX Integration:**
+- `mdx-components.js` for style customization
+- Component support inside Markdown
+- Theme configuration via Layout props
+
+**Use in mdxui:**
+- Documentation template patterns
+- MDX component conventions
+
+---
+
+### 9. Fumadocs (React Docs Framework)
+**Tagline:** "The beautiful & flexible React.js docs framework"
+**Foundation:** React Server Components + Tailwind CSS
+
+**Architecture:**
+- **fumadocs-core:** Logic, search, content adapters, Markdown extensions
+- **fumadocs-ui:** Default theme and interactive components
+- **fumadocs-mdx:** Content source (CMS or local)
+- **fumadocs-cli:** Install components, automate customization
+
+**Components:**
+- Accordion, Auto Type Table, Banner
+- Code Block (with dynamic variants)
+- Files, GitHub Info, Graph View
+- Zoomable Image, Inline TOC, Steps, Tabs
+
+**Features:**
+- Syntax highlighting (Shiki), TypeScript Twoslash
+- OpenAPI docs generation
+- Native Orama and Algolia search
+- React Server Components
+- Full Tailwind CSS customization
+
+**Use in mdxui:**
+- Documentation template patterns
+- Code block component patterns
+- Search integration ideas
+
+---
+
+### 10. TweakCN (Visual Theme Editor)
+**Type:** Tool, not component library
+**Purpose:** Visual editor for shadcn/ui customization
+**Approach:** No-code theme customization
+
+**Features:**
+- Customize colors, typography, spacing
+- Real-time preview
+- Export React components or Tailwind CSS
+- Beautiful theme presets
+
+**Current State:**
+- Beta: Button component focus
+- Roadmap: All shadcn/ui components
+
+**Use in mdxui:**
+- Not a direct implementation
+- Inspiration for theme customization API
+- Integration possibility for mdxe
+
+---
+
+### 11. Pico CSS (Semantic Classless HTML)
+**Philosophy:** Semantic syntax, no classes needed
+**Approach:** Style HTML elements directly
+
+**Key Concept:**
+```html
+<!-- Pure HTML, no classes -->
+<header>
+  <nav><a href="/">Home</a></nav>
+</header>
+<main>
+  <article>
+    <h1>Title</h1>
+    <p>Content</p>
+  </article>
+</main>
+```
+
+**Benefits:**
+- Lean HTML, reduced memory usage
+- Accessibility by default (semantic HTML + ARIA)
+- Simple native HTML tags
+- Less than 10 classes in entire framework
+
+**Use in mdxui:**
+- **Primary inspiration for semantic MDX mapping**
+- Enable pure Markdown to render as styled components
+- Infer component structure from content semantics
+
+---
+
+## Abstract Component Architecture
+
+### Design Philosophy
+
+1. **Environment Separation:** Web, Terminal, Extensions, Video
+2. **Layer Architecture:** Base → Styled → Animated → Composed
+3. **Semantic Mapping:** Markdown structure → Component props
+4. **Implementation Agnostic:** Abstract types → Multiple UI libs
+
+### High-Level Component Categories
+
+#### 1. Landing Pages & Marketing Sites
+- **Page-Level Components:**
+  - `<LandingPage>` - Full landing page composition
+  - `<MarketingPage>` - General marketing page
+  - `<ProductPage>` - Product showcase
+  - `<PricingPage>` - Pricing comparison
+
+- **Section-Level Components:**
+  - `<HeroSection>` - Above-the-fold hero
+  - `<FeaturesSection>` - Feature grid/list
+  - `<TestimonialsSection>` - Social proof
+  - `<PricingSection>` - Pricing tables
+  - `<FAQSection>` - Q&A accordion
+  - `<CTASection>` - Call to action
+  - `<TeamSection>` - Team member grid
+  - `<ProblemSection>` - Pain point agitation
+
+#### 2. Directories & Listings
+- **Page-Level Components:**
+  - `<DirectoryPage>` - Full directory with search/filter
+  - `<ListingPage>` - Individual listing detail
+  - `<CategoryPage>` - Category view with listings
+
+- **Component-Level:**
+  - `<DirectoryGrid>` - Card grid layout
+  - `<ListingCard>` - Individual listing card
+  - `<SearchBar>` - Search and filters
+  - `<Pagination>` - Page navigation
+
+#### 3. Documentation Sites
+- **Page-Level Components:**
+  - `<DocsPage>` - Full docs page with sidebar/TOC
+  - `<APIReferencePage>` - API documentation
+  - `<GuidePage>` - Tutorial/guide format
+
+- **Component-Level:**
+  - `<DocsSidebar>` - Navigation sidebar
+  - `<TableOfContents>` - TOC component
+  - `<CodeBlock>` - Syntax highlighted code
+  - `<Callout>` - Info/warning/tip boxes
+  - `<Steps>` - Step-by-step guide
+  - `<Tabs>` - Tabbed content
+  - `<FileTree>` - File/folder structure
+
+#### 4. SaaS Applications
+- **Page-Level Components:**
+  - `<DashboardPage>` - Full dashboard layout
+  - `<SettingsPage>` - Settings/preferences
+  - `<ProfilePage>` - User profile
+  - `<TablePage>` - Data table view
+
+- **Component-Level:**
+  - `<DashboardGrid>` - Widget grid
+  - `<KPICard>` - Key metric display
+  - `<Chart>` - Data visualization (via Tremor)
+  - `<DataTable>` - Sortable/filterable table
+  - `<FormSection>` - Form builder
+  - `<Modal>` - Dialog/modal
+
+#### 5. AI & Chat Applications
+- **Page-Level Components:**
+  - `<ChatPage>` - Full chat interface
+  - `<AgentPage>` - AI agent interaction
+  - `<VibeCodingPage>` - Live coding interface
+
+- **Component-Level:**
+  - `<ChatInterface>` - Message list + input
+  - `<MessageList>` - Scrollable messages
+  - `<MessageBubble>` - Individual message
+  - `<InputBar>` - Chat input with suggestions
+  - `<AgentStatus>` - Agent state indicator
+  - `<CodePreview>` - Live code preview
+  - `<ThinkingIndicator>` - AI processing state
+
+#### 6. Site-Level Components
+For rendering entire sites from single markdown files (inspired by `llms-full.txt`):
+
+- `<FullSite>` - Entire site from one file
+- Frontmatter section markers or `<file>`/`<page>` XML tags
+- Automatic routing and navigation
+- Multi-page from single source
+
+### Component Interface Design
+
+#### Dual API Support
+Every component supports **two APIs**:
+
+1. **Props API** (Explicit)
+```tsx
+<HeroSection
+  headline="Transform Your Workflow"
+  description="Build faster with AI-powered tools"
+  primaryActionText="Get Started"
+  primaryActionLink="/signup"
+  mediaUrl="/hero.png"
+/>
+```
+
+2. **MDX Children API** (Semantic)
+```mdx
+<HeroSection>
+# Transform Your Workflow
+
+Build faster with AI-powered tools
+
+[Get Started](/signup){.primary}
+[Learn More](/docs){.secondary}
+
+![Hero Image](/hero.png)
+</HeroSection>
+```
+
+#### Semantic Mapping Rules
+
+**Headings → Props:**
+- `# Text` → `headline` prop
+- `## Text` → `subheadline` or `description`
+- `### Text` → `sectionTitle`
+
+**Paragraphs → Props:**
+- First `<p>` after heading → `description`
+- Additional paragraphs → `body` or `content`
+
+**Links → Actions:**
+- `[Text](url){.primary}` → `primaryActionText` + `primaryActionLink`
+- `[Text](url){.secondary}` → `secondaryActionText` + `secondaryActionLink`
+- Plain links → regular links in content
+
+**Images → Media:**
+- `![alt](url)` → `mediaUrl` + `mediaAlt`
+- With `{.video}` class → `mediaType: 'video'`
+
+**Lists → Arrays:**
+- `- Item` → `features`, `testimonials`, `faqs` (context-dependent)
+- Nested structures map to object properties
+
+**Frontmatter → Template:**
+```yaml
+---
+$type: LandingPage
+template: saas
+theme: dark
+---
+```
+- `$type` determines which page-level component to use
+- `template` selects variant
+- Additional props override defaults
+
+---
+
+## Semantic MDX Mapping System
+
+### Inspiration: Pico CSS Classless Approach
+
+Pico CSS demonstrates that **well-structured HTML needs no classes** to look great. We extend this concept to **MDX → React components**.
+
+### Core Concept: Semantic Structure Detection
+
+The system analyzes the **structure and context** of MDX content to:
+1. Detect the intent (e.g., "this is a hero section")
+2. Map content to component props
+3. Compose child components automatically
+4. Apply appropriate styling
+
+### Mapping Algorithm
+
+```typescript
+interface SemanticMapper {
+  // Analyze document structure
+  detectIntent(mdx: MDXNode): ComponentIntent
+
+  // Map content to props
+  extractProps(mdx: MDXNode, intent: ComponentIntent): ComponentProps
+
+  // Compose children
+  composeChildren(mdx: MDXNode, intent: ComponentIntent): ReactNode[]
+
+  // Select template
+  selectTemplate(frontmatter: FrontMatter): TemplateConfig
+}
+```
+
+### Example: Hero Section Detection
+
+**Input MDX:**
+```mdx
+---
+$type: LandingPage
+---
+
+# Transform Your Workflow
+
+Build faster with AI-powered tools. Join thousands of developers who ship 10x faster.
+
+[Get Started Free](/signup)
+[Watch Demo](/demo)
+
+![Product Screenshot](/hero.png)
+```
+
+**Detection Logic:**
+1. **Frontmatter:** `$type: LandingPage` → Use `<LandingPage>` wrapper
+2. **First H1:** "Transform Your Workflow" → This is the hero headline
+3. **First paragraph after H1:** → Hero description
+4. **First two links:** → Primary and secondary CTAs
+5. **First image after CTAs:** → Hero media
+
+**Generated Component:**
+```tsx
+<LandingPage>
+  <HeroSection
+    headline="Transform Your Workflow"
+    description="Build faster with AI-powered tools. Join thousands of developers who ship 10x faster."
+    primaryActionText="Get Started Free"
+    primaryActionLink="/signup"
+    secondaryActionText="Watch Demo"
+    secondaryActionLink="/demo"
+    mediaUrl="/hero.png"
+    mediaAlt="Product Screenshot"
+  />
+</LandingPage>
+```
+
+### Context-Aware Mapping
+
+The mapper uses **surrounding context** to determine component types:
+
+**List Context:**
+```mdx
+## Key Features
+
+- **Fast**: Ship 10x faster with AI
+- **Secure**: Enterprise-grade security
+- **Scalable**: Grows with your team
+```
+
+**Detected:** This is a features list → Map to `<FeaturesSection>`
+
+```tsx
+<FeaturesSection
+  headline="Key Features"
+  features={[
+    { title: "Fast", description: "Ship 10x faster with AI" },
+    { title: "Secure", description: "Enterprise-grade security" },
+    { title: "Scalable", description: "Grows with your team" }
+  ]}
+/>
+```
+
+### Section Boundary Detection
+
+**Horizontal Rules as Separators:**
+```mdx
+# Hero Content
+...
+---
+## Features
+...
+---
+## Pricing
+...
+```
+
+Each `---` marks a new section boundary.
+
+**Frontmatter Sections:**
+```mdx
+---
+$type: LandingPage
+sections:
+  - type: hero
+    theme: dark
+  - type: features
+    layout: grid
+  - type: pricing
+    variant: comparison
+---
+```
+
+Explicit section definitions in frontmatter.
+
+### Type Safety
+
+**Published Types Package:**
+```typescript
+// @mdxui/types
+export interface HeroSectionProps { /* ... */ }
+export interface FeaturesSectionProps { /* ... */ }
+// ... all component prop types
+```
+
+**Semantic Mapping Guide:**
+```typescript
+// @mdxui/semantic-mapping
+export const MAPPING_RULES: Record<ComponentType, MappingRule>
+```
+
+---
+
+## Implementation Plan
+
+### Phase 1: Foundation (Week 1)
+**Goal:** Clean architecture, resolve Tailwind conflict, establish standards
+
+#### Week 1 Tasks:
+1. **Resolve Tailwind Version Conflict**
+   - Upgrade mdxe to Tailwind v4
+   - Update all packages to use v4
+   - Test compatibility
+
+2. **Create Abstract Type System**
+   - Define all component interfaces in `@mdxui/types`
+   - Landing pages, docs, dashboards, chat, etc.
+   - Dual API support (props + children)
+
+3. **Build Semantic Mapper**
+   - Create `@mdxui/semantic-mapping` package
+   - Implement detection algorithms
+   - Write mapping rules
+   - Unit tests for all mappings
+
+4. **Standardize Build System**
+   - Single tsup config for all packages
+   - TypeScript strict mode
+   - Vitest for testing
+   - ESLint + Prettier
+
+### Phase 2: Core Implementation (Weeks 2-3)
+**Goal:** Implement abstract components for primary use cases
+
+#### Week 2: Landing Pages + Marketing
+1. Create `@mdxui/abstract` package with base implementations
+2. Implement all landing page section types
+3. Implement marketing page patterns
+4. Semantic mapping for marketing content
+
+#### Week 3: Docs + Directories
+1. Documentation page components
+2. Directory/listing components
+3. Search and navigation patterns
+4. Semantic mapping for docs
+
+### Phase 3: UI Library Implementations (Weeks 4-7)
+**Goal:** Map abstract components to concrete UI libraries
+
+#### Week 4: Stream 1 - Shadcn + MagicUI + Vercel AI SDK
+- Implement all abstract components using shadcn/ui
+- Integrate MagicUI animated backgrounds
+- Add Vercel AI SDK chat components
+- Theme customization support
+
+#### Week 5: Stream 2 - Tremor
+- Dashboard components using Tremor
+- Chart component wrappers
+- KPI cards and metrics
+- Data table implementations
+
+#### Week 6: Stream 3 - Catalyst
+- Application UI components
+- Form layouts and patterns
+- Modal and dialog implementations
+- Dark mode support
+
+#### Week 7: Stream 4 - Chakra Pro
+- Alternative implementation using Chakra
+- Prop-based styling patterns
+- Accessibility focus
+- Theme system integration
+
+### Phase 4: Site-Level Features (Week 8)
+**Goal:** Full-site rendering from single markdown files
+
+1. `<FullSite>` component
+2. Multi-page routing from single file
+3. Section markers (`---` or XML tags)
+4. Automatic navigation generation
+
+### Phase 5: Documentation + Polish (Week 9)
+**Goal:** Complete documentation and examples
+
+1. Comprehensive component documentation
+2. Semantic mapping guide
+3. Example sites for each use case
+4. Migration guide from old mdxui
+5. Registry system for component discovery
+
+### Phase 6: Integration + Testing (Week 10)
+**Goal:** Seamless mdxe integration, thorough testing
+
+1. mdxe integration (zero-config component availability)
+2. E2E tests for all use cases
+3. Performance optimization
+4. Bundle size optimization
+
+---
+
+## Parallel Work Streams
+
+### Stream Assignments
+
+Each stream can be developed **in parallel** by separate sub-agents:
+
+#### Stream 1: Shadcn + MagicUI + Vercel AI SDK + TweakCN
+**Owner:** Sub-agent A
+**Dependencies:** Phase 1 (types, semantic mapping)
+**Timeline:** Week 4
+
+**Tasks:**
+1. Implement all abstract components using shadcn/ui primitives
+2. Integrate MagicUI animated backgrounds (especially priority)
+3. Add Vercel AI SDK chat components (<Message>, <Response>, etc.)
+4. Create theme customization API (inspired by TweakCN)
+5. Ensure all components support both props and MDX children
+6. Write tests for all components
+7. Create example sites (landing page, chat app, vibe coding)
+
+**Deliverables:**
+- `@mdxui/shadcn-impl` package
+- Documentation for all components
+- 3+ example sites
+
+---
+
+#### Stream 2: Tremor
+**Owner:** Sub-agent B
+**Dependencies:** Phase 1 (types, semantic mapping)
+**Timeline:** Week 5
+
+**Tasks:**
+1. Implement dashboard components using Tremor charts
+2. Create KPI card components
+3. Build data table components
+4. Implement metrics and analytics displays
+5. Ensure semantic mapping for data-heavy content
+6. Write tests for all components
+7. Create example dashboard site
+
+**Deliverables:**
+- `@mdxui/tremor-impl` package
+- Documentation for all chart/dashboard components
+- Example dashboard site
+
+---
+
+#### Stream 3: Catalyst
+**Owner:** Sub-agent C
+**Dependencies:** Phase 1 (types, semantic mapping)
+**Timeline:** Week 6
+
+**Tasks:**
+1. Implement application UI components using Catalyst patterns
+2. Create form layouts and patterns
+3. Build modal and dialog implementations
+4. Implement dark mode support
+5. Ensure accessibility compliance
+6. Write tests for all components
+7. Create example application site
+
+**Deliverables:**
+- `@mdxui/catalyst-impl` package
+- Documentation for all application components
+- Example SaaS application site
+
+---
+
+#### Stream 4: Chakra Pro
+**Owner:** Sub-agent D
+**Dependencies:** Phase 1 (types, semantic mapping)
+**Timeline:** Week 7
+
+**Tasks:**
+1. Implement components using Chakra UI patterns
+2. Create prop-based styling system
+3. Build accessible components (WAI-ARIA)
+4. Implement theme system integration
+5. Ensure semantic mapping compatibility
+6. Write tests for all components
+7. Create example site with Chakra theme
+
+**Deliverables:**
+- `@mdxui/chakra-impl` package
+- Documentation for all Chakra components
+- Example site with custom Chakra theme
+
+---
+
+### Coordination Strategy
+
+**Weekly Sync:** All sub-agents sync progress, resolve blockers
+**Shared Resources:**
+- `@mdxui/types` (read-only after Phase 1)
+- `@mdxui/semantic-mapping` (read-only after Phase 1)
+- `@mdxui/abstract` (read-only after Phase 2)
+
+**Integration Points:**
+- All implementations must pass the same test suite
+- All implementations must support the same MDX input
+- Switching implementations should require only changing import
+
+---
+
+## Success Metrics
+
+### Developer Experience
+- [ ] Zero-config: Components work in mdxe without setup
+- [ ] Write pure MDX, no explicit component imports needed
+- [ ] Switch UI libraries with single import change
+- [ ] Clear, intuitive APIs (props or children)
+- [ ] Comprehensive TypeScript types
+
+### Performance
+- [ ] <50KB bundle for essential components (tree-shakeable)
+- [ ] <100ms component initialization
+- [ ] <16ms component render time
+- [ ] Optimized for production builds
+
+### Compatibility
+- [ ] Works in Next.js, Remix, vanilla React
+- [ ] SSR compatible
+- [ ] RSC compatible (React Server Components)
+- [ ] Works with all major frameworks
+
+### Quality
+- [ ] 90%+ test coverage
+- [ ] Zero type errors
+- [ ] Accessibility compliant (WCAG 2.1 AA)
+- [ ] Documentation for every component
+
+### Ecosystem
+- [ ] Seamless mdxe integration
+- [ ] Component registry system
+- [ ] Example sites for every use case
+- [ ] Migration guide from old mdxui
+
+---
+
+## Next Steps
+
+### Immediate Actions (This Week)
+
+1. **Create GitHub Issues for Each Stream**
+   - Issue for Stream 1 (Shadcn + MagicUI + AI SDK)
+   - Issue for Stream 2 (Tremor)
+   - Issue for Stream 3 (Catalyst)
+   - Issue for Stream 4 (Chakra)
+   - Link all to parent issue #6
+
+2. **Set Up Package Structure**
+   ```
+   packages/mdxui/
+   ├── types/              # @mdxui/types (Phase 1)
+   ├── semantic-mapping/   # @mdxui/semantic-mapping (Phase 1)
+   ├── abstract/           # @mdxui/abstract (Phase 2)
+   ├── shadcn-impl/        # Stream 1
+   ├── tremor-impl/        # Stream 2
+   ├── catalyst-impl/      # Stream 3
+   └── chakra-impl/        # Stream 4
+   ```
+
+3. **Begin Phase 1 Work**
+   - Resolve Tailwind v4 migration
+   - Create `@mdxui/types` package
+   - Create `@mdxui/semantic-mapping` package
+   - Write mapping algorithm
+
+4. **Assign Sub-Agents**
+   - Create detailed task breakdowns for each stream
+   - Assign ownership
+   - Set up communication channels
+
+---
+
+## Appendix: Key Decisions
+
+### Why Not NPM Package Like Catalyst?
+**Decision:** Ship as npm packages, not source code
+**Rationale:**
+- Easier distribution and versioning
+- Better tree-shaking with modern bundlers
+- Can still allow customization via themes
+- Simpler for most users
+
+### Why Multiple Implementations?
+**Decision:** Support multiple UI libraries
+**Rationale:**
+- Different projects have different needs
+- Some prefer Tailwind, others prefer Chakra
+- Enterprise users may require specific libraries
+- Demonstrates framework-agnostic architecture
+
+### Why Semantic Mapping?
+**Decision:** Support both props and MDX children
+**Rationale:**
+- Props are explicit and type-safe
+- MDX children feel more natural for content
+- Semantic mapping enables pure Markdown authors
+- Flexibility for different use cases
+
+### Why Site-Level Components?
+**Decision:** Support full-site rendering from single file
+**Rationale:**
+- Useful for AI-generated content (llms-full.txt pattern)
+- Simplifies content management for simple sites
+- Enables novel use cases (site-in-a-file)
+- Aligns with MDX philosophy
+
+---
+
+**End of Document**
+
+*This plan will be refined as implementation progresses. All sub-agents should refer to this document as the source of truth for architecture decisions and patterns.*

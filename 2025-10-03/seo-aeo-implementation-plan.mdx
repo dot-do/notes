@@ -1,0 +1,457 @@
+# SEO/AEO Implementation Plan
+**Priority:** P0 - Foundation for Organic Growth & AI Discovery
+**Status:** Research Complete, Ready for Implementation
+**Timeline:** 4-6 weeks with parallelized workstreams
+
+---
+
+## Executive Summary
+
+Based on comprehensive research across 10+ SEO/AEO domains, this document provides an actionable implementation plan for building maximum SEO/AEO capabilities into the .do platform architecture. The research reveals that success in 2025 requires optimization for both traditional search engines AND AI answer engines.
+
+### Key Insights
+
+- **60-63% of searches** are now zero-click (answered on SERP)
+- **13.14% of queries** trigger AI Overviews (up from 6.49% in Jan 2025)
+- **527% increase** in AI-referred traffic (Jan-May 2025)
+- **40% more citations** for sites with llms.txt
+- **3.2x more AI citations** for content updated within 30 days
+
+### Success Requirements
+
+1. **Technical Excellence** - llms.txt, JSON-LD, Core Web Vitals, mobile-first
+2. **AI Optimization** - AEO/GEO strategies for ChatGPT, Perplexity, Claude, Gemini
+3. **Quality Content** - E-E-A-T signals, original research, comprehensive guides
+4. **Natural Growth** - Editorial link building, Digital PR, organic backlinks
+5. **Multi-Platform Tracking** - Monitor citations across all major AI platforms
+
+---
+
+## Architecture Overview
+
+### Core Components
+
+```
+┌─────────────────────────────────────────────────────────┐
+│           SEO/AEO Platform Architecture                 │
+└─────────────────────────────────────────────────────────┘
+
+┌──────────────┐
+│ seo-crawler/ │  ◄── Bot detection, user agent tracking
+│   Worker     │      - ChatGPT-User, ClaudeBot, PerplexityBot
+└──────┬───────┘      - robots.txt management
+       │              - Access control per bot
+       │
+       ▼
+┌──────────────┐
+│ seo-schema/  │  ◄── Structured data generation
+│   Worker     │      - JSON-LD for all pages
+└──────┬───────┘      - Schema.org validation
+       │              - Rich snippets optimization
+       │
+       ▼
+┌──────────────┐
+│ seo-content/ │  ◄── Content optimization
+│   Worker     │      - E-E-A-T signal extraction
+└──────┬───────┘      - Semantic SEO analysis
+       │              - Freshness tracking
+       │
+       ▼
+┌──────────────┐
+│ seo-monitor/ │  ◄── Performance monitoring
+│   Worker     │      - Core Web Vitals tracking
+└──────┬───────┘      - Google Search Console API
+       │              - AI citation tracking
+       │
+       ▼
+┌──────────────┐
+│ seo-tools/   │  ◄── SEO utilities & tools
+│   Worker     │      - Keyword research
+└──────────────┘      - Rank tracking
+                       - Backlink analysis
+
+Integration:
+- Analytics service (events, metrics)
+- DB service (data storage)
+- Admin (dashboard, controls)
+```
+
+---
+
+## SEO/AEO Primitives & Data Sources
+
+### 1. Technical SEO Infrastructure
+
+**llms.txt Implementation**
+- File at root of every domain
+- Structured markdown with navigation
+- AI-friendly content summary
+- Benefits: 40% more AI citations
+
+**robots.txt Management**
+- Per-bot access controls
+- Strategic AI crawler access
+- Training vs search index rules
+
+**Sitemap Generation**
+- XML sitemap by content type
+- Automatic updates on publish
+- Submit to Search Console
+
+**Core Web Vitals**
+- LCP < 2.5s, INP < 200ms, CLS < 0.1
+- Cloudflare Web Analytics (free)
+- Real-time monitoring
+
+### 2. Structured Data (Schema.org)
+
+**JSON-LD Schemas** (Priority Order):
+1. Organization + SoftwareApplication
+2. Article / TechArticle / HowTo
+3. FAQPage
+4. BreadcrumbList
+5. Person (author profiles)
+6. Product (e-commerce)
+7. LocalBusiness (directories)
+
+**Validation APIs:**
+- Google Rich Results Test
+- Schema.org Validator (validator.schema.org)
+- Schema.dev API
+
+### 3. Data Sources & APIs
+
+**Free APIs:**
+- ✅ **Google Search Console API** - Clicks, impressions, CTR, position
+- ✅ **Cloudflare Web Analytics** - Core Web Vitals, performance
+- ✅ **Schema.org Validator** - Structured data validation
+
+**Freemium APIs:**
+- 🔸 **DataForSEO** - Rank tracking, backlinks, keyword research
+- 🔸 **Serpstat** - Limited keyword difficulty, rank tracking
+- 🔸 **SerpApi** - SERP scraping (100 free credits)
+
+**Content APIs:**
+- ✅ **OpenAI GPT** - Content generation and optimization
+- ✅ **Anthropic Claude** - Technical content review
+- ✅ **Google Gemini** - Multi-modal content analysis
+
+### 4. AI Crawler Detection
+
+**Major Bot User Agents (2025):**
+```
+ChatGPT-User/2.0          # ChatGPT live retrieval
+GPTBot                    # OpenAI training crawler
+ClaudeBot                 # Anthropic training crawler
+Claude-Web                # Claude live retrieval
+anthropic-ai              # Anthropic indexing
+PerplexityBot             # Perplexity search index
+Perplexity-User           # Perplexity live retrieval
+Google-Extended           # Google AI training
+Googlebot                 # Google search
+GoogleOther               # Google non-search
+Bingbot                   # Bing search
+OAI-SearchBot             # OpenAI search index
+```
+
+**Detection Methods:**
+- Server log analysis
+- User-agent string parsing
+- Behavioral fingerprinting
+- Rate limit tracking
+
+### 5. Content Optimization Tools
+
+**E-E-A-T Signals:**
+- Author bios with credentials
+- Publication dates (freshness)
+- Citations and sources
+- Original research
+
+**Semantic SEO:**
+- Entity extraction (NLP)
+- Topic clustering
+- LSI keyword analysis
+- Internal linking graph
+
+**AEO/GEO Strategies:**
+- H2 → H3 → bullet points
+- Clear, direct answers
+- FAQ-style formatting
+- Statistics and data points
+
+### 6. Performance Monitoring
+
+**Core Web Vitals:**
+- Cloudflare Web Analytics (free, automatic)
+- Google PageSpeed Insights
+- Lighthouse CI
+
+**Search Performance:**
+- Google Search Console API
+- Organic traffic trends
+- Click-through rates
+- Position tracking
+
+**AI Citation Tracking:**
+- Manual monitoring (ChatGPT, Claude, Perplexity, Gemini)
+- Third-party tools (Profound, Otterly.AI, Peec) - paid
+
+---
+
+## Parallelized Workstreams
+
+### Workstream 1: SEO Crawler Detection Worker
+**Timeline:** 3-4 days
+**Priority:** P0 - Foundation
+
+**Implementation:**
+- Bot detection service (user agent parsing)
+- robots.txt generator with per-bot rules
+- Access control middleware
+- Crawler log aggregation
+- Real-time bot tracking
+
+**Endpoints:**
+- `POST /track/bot` - Log bot access
+- `GET /bots/summary` - Bot activity summary
+- `GET /robots.txt/generate` - Generate robots.txt
+- `GET /bots/allowed` - Check bot access rules
+- `PUT /bots/rules` - Update access controls
+
+**Dependencies:**
+- Analytics service (event tracking)
+- DB service (bot logs)
+
+---
+
+### Workstream 2: SEO Schema Generator Worker
+**Timeline:** 4-5 days
+**Priority:** P0 - Foundation
+
+**Implementation:**
+- JSON-LD schema generation
+- Schema.org validation
+- Dynamic schema per page type
+- Organization / SoftwareApplication schema
+- Article / HowTo / FAQ schemas
+- Breadcrumb navigation schema
+
+**Endpoints:**
+- `POST /schema/generate` - Generate JSON-LD
+- `POST /schema/validate` - Validate structured data
+- `GET /schema/types` - Available schema types
+- `GET /schema/templates` - Schema templates
+
+**Integrations:**
+- Schema.org Validator API
+- Google Rich Results Test
+
+---
+
+### Workstream 3: SEO Content Optimizer Worker
+**Timeline:** 5-6 days
+**Priority:** P1 - Content Quality
+
+**Implementation:**
+- E-E-A-T signal extraction
+- Semantic keyword analysis
+- Entity recognition (NLP)
+- Content freshness tracking
+- FAQ extraction
+- Meta tag optimization
+
+**Endpoints:**
+- `POST /content/analyze` - Analyze content quality
+- `POST /content/optimize` - Optimize for SEO/AEO
+- `POST /content/entities` - Extract entities
+- `POST /content/keywords` - Semantic keyword extraction
+- `GET /content/freshness` - Check content age
+
+**APIs Used:**
+- OpenAI GPT (content analysis)
+- Claude (technical review)
+
+---
+
+### Workstream 4: SEO Performance Monitor Worker
+**Timeline:** 4-5 days
+**Priority:** P1 - Visibility Tracking
+
+**Implementation:**
+- Core Web Vitals tracking
+- Google Search Console integration
+- Rank tracking (DataForSEO)
+- Backlink monitoring
+- Citation tracking (manual + scraping)
+
+**Endpoints:**
+- `GET /performance/vitals` - Core Web Vitals metrics
+- `GET /performance/search-console` - GSC data
+- `GET /performance/rankings` - Keyword rankings
+- `GET /performance/backlinks` - Backlink profile
+- `GET /performance/citations` - AI citation count
+
+**Integrations:**
+- Google Search Console API (free)
+- Cloudflare Web Analytics (free)
+- DataForSEO API (freemium)
+
+---
+
+### Workstream 5: SEO Tools & Utilities Worker
+**Timeline:** 5-6 days
+**Priority:** P2 - Power User Features
+
+**Implementation:**
+- Keyword research tool
+- Competitor analysis
+- SERP preview generator
+- llms.txt generator
+- Sitemap generator
+- Technical SEO audit
+
+**Endpoints:**
+- `POST /tools/keyword-research` - Find keywords
+- `POST /tools/competitor-analysis` - Analyze competitors
+- `GET /tools/serp-preview` - Generate SERP preview
+- `POST /tools/llms-txt` - Generate llms.txt
+- `GET /tools/sitemap` - Generate sitemap.xml
+- `POST /tools/audit` - Technical SEO audit
+
+**APIs Used:**
+- DataForSEO (keyword data)
+- SerpApi (SERP data)
+
+---
+
+### Workstream 6: SEO Admin Dashboard
+**Timeline:** 3-4 days
+**Priority:** P2 - Management Interface
+
+**Implementation:**
+- SEO metrics dashboard
+- Bot activity visualization
+- Schema validation interface
+- Content optimization queue
+- Performance reports
+
+**Features:**
+- Real-time bot tracking
+- Core Web Vitals charts
+- Rank tracking graphs
+- Citation monitoring
+- Content freshness alerts
+
+---
+
+### Workstream 7: SEO Types Package (SDK)
+**Timeline:** 2-3 days
+**Priority:** P1 - Type Safety
+
+**Implementation:**
+- TypeScript types for all SEO data
+- Bot user agent definitions
+- Schema.org types
+- Google Search Console types
+- Core Web Vitals types
+
+**Package:** `@dot-do/seo-types`
+
+---
+
+## Implementation Timeline
+
+```
+Week 1:
+├── Workstream 1: SEO Crawler Detection (P0) ✅
+├── Workstream 2: SEO Schema Generator (P0) ✅
+└── Workstream 7: SEO Types Package (P1) ✅
+
+Week 2:
+├── Workstream 3: SEO Content Optimizer (P1) ✅
+└── Workstream 4: SEO Performance Monitor (P1) ✅
+
+Week 3:
+├── Workstream 5: SEO Tools & Utilities (P2) ✅
+└── Workstream 6: SEO Admin Dashboard (P2) ✅
+
+Week 4:
+├── Integration testing
+├── Performance optimization
+└── Documentation
+```
+
+---
+
+## Success Metrics
+
+### Month 1 (Post-Launch):
+- [ ] All AI crawlers accessing site (ChatGPT, Claude, Perplexity, Gemini)
+- [ ] 100% of pages have JSON-LD schema
+- [ ] Core Web Vitals: LCP < 2.5s, INP < 200ms, CLS < 0.1
+- [ ] llms.txt on all primary domains
+- [ ] Google Search Console integration active
+
+### Month 3:
+- [ ] 20% increase in AI citations
+- [ ] 10% improvement in featured snippets
+- [ ] 15% increase in organic traffic
+- [ ] 50+ high-quality backlinks
+
+### Month 6:
+- [ ] 40-60% increase in AI citations
+- [ ] 25% boost in brand mentions
+- [ ] 30% increase in organic traffic
+- [ ] Top 3 citations in target queries
+
+---
+
+## Technical Requirements
+
+### Worker Services:
+1. `seo-crawler` - Bot detection and tracking
+2. `seo-schema` - Structured data generation
+3. `seo-content` - Content optimization
+4. `seo-monitor` - Performance tracking
+5. `seo-tools` - SEO utilities
+
+### Infrastructure:
+- Cloudflare Workers (hosting)
+- Cloudflare KV (caching)
+- Cloudflare R2 (log storage)
+- PostgreSQL (structured data)
+- Analytics Engine (metrics)
+
+### External APIs:
+- Google Search Console API (free)
+- Cloudflare Web Analytics (free)
+- Schema.org Validator (free)
+- DataForSEO (freemium)
+- OpenAI / Claude (content)
+
+---
+
+## Next Steps
+
+1. **Create GitHub Issues** for each workstream
+2. **Assign priorities** (P0, P1, P2)
+3. **Parallel implementation** of P0 workstreams
+4. **Integration testing** after each workstream
+5. **Deploy to production** incrementally
+6. **Monitor and iterate** based on metrics
+
+---
+
+## Related Documentation
+
+- [AI SEO Trends Report](./2025-10-03-ai-seo-trends-comprehensive-report.md)
+- [SEO Platform Strategy](./2025-10-03-seo-platform-strategy.md)
+- [Content Type Strategies](./2025-10-03-content-type-seo-strategies-2025.md)
+- [Autonomous SEO Businesses](./2025-10-03-autonomous-seo-businesses/)
+
+---
+
+**Created:** 2025-10-03
+**Status:** Research Complete, Ready for Implementation
+**Priority:** P0 - Critical for Organic Growth

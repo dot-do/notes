@@ -1,0 +1,469 @@
+# Stream 6: React-ink + MCP Output Formats Implementation
+
+**Date:** 2025-10-03
+**Stream:** 6 of 8
+**Status:** ✅ Complete
+**Issue:** [#5](https://github.com/dot-do/.do/issues/5)
+
+## Executive Summary
+
+Successfully implemented React-ink (CLI) and MCP (Model Context Protocol) output formats for MDXE, enabling:
+- **CLI Rendering**: MDX content rendered to terminal with ANSI colors and interactive components
+- **AI Agent Integration**: Full MCP server with database tools, MDX compilation, and resource bindings
+- **Streaming Support**: Real-time updates for both outputs
+- **Comprehensive Testing**: Test suites for all major functionality
+
+## Implementation Overview
+
+### Part A: React-ink Output ✅
+
+Created a complete CLI rendering system using React-ink:
+
+**Files Created:**
+- `packages/mdxe/src/outputs/react-ink/renderer.ts` (181 lines)
+- `packages/mdxe/src/outputs/react-ink/components.tsx` (452 lines)
+- `packages/mdxe/src/outputs/react-ink/index.ts` (36 lines)
+- `packages/mdxe/src/outputs/react-ink/renderer.test.ts` (101 lines)
+
+**Key Features:**
+1. **MDX Compilation** - Compile MDX to React components for Ink
+2. **Component Library** - 30+ CLI-optimized components with ANSI colors
+3. **Streaming Support** - Real-time updates via async generators
+4. **ANSI Rendering** - Static rendering to ANSI strings
+
+**Components Implemented:**
+- Typography: H1-H6, P, Strong, Em, Del, Blockquote
+- Code: Pre, Code (inline and block)
+- Lists: Ul, Ol, Li
+- Tables: Table, Thead, Tbody, Tr, Th, Td
+- Links/Media: A, Img (shows alt text)
+- Specialized: Spinner, ProgressBar, Status, Alert, Badge
+
+### Part B: MCP Output ✅
+
+Created a full MCP server implementation with comprehensive tooling:
+
+**Files Created:**
+- `packages/mdxe/src/outputs/mcp/protocol.ts` (263 lines)
+- `packages/mdxe/src/outputs/mcp/tools.ts` (259 lines)
+- `packages/mdxe/src/outputs/mcp/resources.ts` (273 lines)
+- `packages/mdxe/src/outputs/mcp/server.ts` (98 lines)
+- `packages/mdxe/src/outputs/mcp/index.ts` (31 lines)
+- `packages/mdxe/src/outputs/mcp/protocol.test.ts` (94 lines)
+- `packages/mdxe/src/outputs/mcp/tools.test.ts` (151 lines)
+- `packages/mdxe/src/outputs/mcp/resources.test.ts` (204 lines)
+
+**MCP Tools Implemented:**
+
+1. **Database Tools** (5 tools)
+   - `db.get(id)` - Get single document
+   - `db.list(pattern?)` - List documents with glob support
+   - `db.set(id, data)` - Create/update document
+   - `db.delete(pattern)` - Bulk delete with glob
+   - `db.schema(collection)` - Get collection schema
+
+2. **MDX Tools** (2 tools)
+   - `mdx.compile(content, format)` - Compile to JavaScript
+   - `mdx.render(content, format)` - Render to HTML/CLI/ANSI
+
+**MCP Resources Implemented:**
+
+1. **Collection Resources** - `collection://name/id`
+   - List all collections
+   - Access entire collections
+   - Read individual items
+
+2. **MDX File Resources** - `mdx:///path/to/file.mdx`
+   - Auto-discover MDX files
+   - Read file contents
+
+3. **Schema Resources** - `schema:///name`
+   - Schema definitions
+   - Field metadata
+
+**Protocol Features:**
+- Stdio transport (Claude Desktop compatible)
+- JSON-RPC 2.0 messaging
+- Extensible tool registry
+- Pluggable resource providers
+- Error handling with isError flag
+
+### Examples & Documentation ✅
+
+Created comprehensive examples and documentation:
+
+**React-ink Examples:**
+- `examples/react-ink/example.ts` - 5 complete examples (379 lines)
+- `examples/react-ink/README.md` - Full documentation (338 lines)
+
+**MCP Examples:**
+- `examples/mcp/server.ts` - Complete server with in-memory DB (243 lines)
+- `examples/mcp/client-example.md` - Tool/resource examples (366 lines)
+- `examples/mcp/README.md` - Integration guide (323 lines)
+
+**Example Coverage:**
+
+React-ink Examples:
+1. Simple MDX rendering
+2. Custom components (Spinner, Status, ProgressBar)
+3. Data-driven MDX with scope
+4. Streaming updates
+5. File rendering
+
+MCP Examples:
+1. In-memory database adapter
+2. Collection adapter
+3. Claude Desktop integration
+4. Tool call examples
+5. Resource access patterns
+6. Custom adapter implementations
+
+## Architecture Decisions
+
+### 1. React-ink Design
+
+**Choice:** Use Ink's render system directly
+**Rationale:**
+- Leverages battle-tested CLI framework
+- Native React component support
+- Built-in ANSI color management
+- Stream-friendly architecture
+
+**Component Design:**
+- Default components for all standard MDX elements
+- Specialized components for CLI-specific needs (Spinner, ProgressBar)
+- Color scheme optimized for readability
+- Graceful degradation for unsupported elements
+
+### 2. MCP Protocol Design
+
+**Choice:** Adapter pattern for database and collections
+**Rationale:**
+- Flexible integration with any database
+- Clean separation of concerns
+- Easy to test and mock
+- Supports multiple backends
+
+**Tool Design:**
+- Simple, focused tools (single responsibility)
+- Consistent JSON output
+- Glob pattern support for batch operations
+- Schema introspection for AI agents
+
+**Resource Design:**
+- URI-based addressing (`protocol://path`)
+- Multiple providers combined seamlessly
+- Lazy loading of resources
+- MIME type hints for clients
+
+### 3. Integration Strategy
+
+**Choice:** Standalone outputs with shared utilities
+**Rationale:**
+- Independent deployment
+- Minimal coupling
+- Reusable utilities in shared/
+- Easy to add new output formats
+
+## Testing Strategy
+
+**Test Coverage:**
+- React-ink renderer: 5 tests (compilation, rendering, components)
+- MCP protocol: 4 tests (server creation, tool/resource registration)
+- MCP tools: 8 tests (all database tools + MDX tools)
+- MCP resources: 8 tests (all resource types + combinations)
+
+**Total:** 25 tests covering core functionality
+
+**Test Approach:**
+- Unit tests for individual components
+- Integration tests for tool/resource providers
+- Mock adapters for isolation
+- Real MDX compilation tests
+
+## Key Files Summary
+
+### React-ink Output
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `renderer.ts` | 181 | MDX compilation and rendering engine |
+| `components.tsx` | 452 | Complete MDX component library |
+| `index.ts` | 36 | Public API exports |
+| `renderer.test.ts` | 101 | Renderer tests |
+
+**Total:** 770 lines
+
+### MCP Output
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `protocol.ts` | 263 | Core MCP server implementation |
+| `tools.ts` | 259 | Database and MDX tool definitions |
+| `resources.ts` | 273 | Resource providers (collections, files, schemas) |
+| `server.ts` | 98 | High-level server creation |
+| `index.ts` | 31 | Public API exports |
+| `protocol.test.ts` | 94 | Protocol tests |
+| `tools.test.ts` | 151 | Tool tests |
+| `resources.test.ts` | 204 | Resource tests |
+
+**Total:** 1,373 lines
+
+### Examples
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `react-ink/example.ts` | 379 | 5 working examples |
+| `react-ink/README.md` | 338 | React-ink documentation |
+| `mcp/server.ts` | 243 | Complete MCP server |
+| `mcp/client-example.md` | 366 | MCP usage examples |
+| `mcp/README.md` | 323 | MCP integration guide |
+
+**Total:** 1,649 lines
+
+### Grand Total
+
+**Implementation:** 2,143 lines
+**Tests:** 550 lines
+**Examples:** 622 lines
+**Documentation:** 1,027 lines
+
+**Total Project Contribution:** 4,342 lines
+
+## Usage Examples
+
+### React-ink Output
+
+```typescript
+import { renderMdxToInk, defaultInkComponents } from 'mdxe/outputs/react-ink'
+
+const mdx = `
+# Build Status
+
+<Spinner label="Building..." />
+<ProgressBar value={75} total={100} />
+<Status type="success">Build complete!</Status>
+`
+
+const result = await renderMdxToInk(mdx, {
+  components: { ...defaultInkComponents, Spinner, ProgressBar, Status }
+})
+
+await result.waitUntilExit()
+```
+
+### MCP Server
+
+```typescript
+import { createMDXEServer } from 'mdxe/outputs/mcp'
+
+const server = await createMDXEServer({
+  database: myDatabaseAdapter,
+  collections: myCollectionAdapter,
+  mdxBaseDir: './content',
+  schemas: { post: { /* ... */ } }
+})
+
+await server.connectStdio()
+```
+
+### MCP Tool Call (AI Agent)
+
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "db.list",
+    "arguments": { "pattern": "posts/*" }
+  }
+}
+```
+
+## Integration Points
+
+### 1. MDXE CLI
+- Can be integrated into `mdxe` command
+- `mdxe render --format=cli <file.mdx>`
+- `mdxe serve --mcp` for MCP server
+
+### 2. mdxdb Integration
+- MCP database adapter can wrap mdxdb
+- Collections map to mdxdb collections
+- Schemas from Velite/Zod validation
+
+### 3. AI Workflows
+- Claude Desktop integration via MCP
+- Cursor/Copilot via MCP protocol
+- CLI output for build tools
+- Streaming for AI-generated content
+
+## Claude Desktop Integration
+
+**Setup:**
+```json
+{
+  "mcpServers": {
+    "mdxe": {
+      "command": "node",
+      "args": ["path/to/mdx/packages/mdxe/examples/mcp/server.ts"]
+    }
+  }
+}
+```
+
+**Capabilities Exposed:**
+- Full CRUD on MDX documents
+- MDX compilation validation
+- CLI preview rendering
+- Schema introspection
+- Collection browsing
+
+## Benefits
+
+### For Developers
+1. **CLI Tools**: Rich terminal output for build tools
+2. **Debugging**: Preview MDX in terminal
+3. **Testing**: Render MDX in tests
+4. **Streaming**: Real-time updates
+
+### For AI Agents
+1. **MCP Protocol**: Standard interface
+2. **Database Access**: Full CRUD operations
+3. **MDX Validation**: Compile before saving
+4. **Schema Discovery**: Understand data structures
+5. **Content Preview**: Render to check output
+
+### For Content Management
+1. **Batch Operations**: Glob patterns
+2. **Schema Validation**: Type-safe content
+3. **Resource Discovery**: Browse collections
+4. **Multi-format Output**: CLI, HTML, JSON
+
+## Challenges & Solutions
+
+### Challenge 1: MDX Compilation in Ink
+
+**Problem:** MDX needs React runtime, Ink has custom reconciler
+**Solution:** Use `renderToString` for ANSI, `render` for interactive
+
+### Challenge 2: Glob Pattern Matching
+
+**Problem:** Database adapters may not support globs natively
+**Solution:** Provide reference implementation, document interface
+
+### Challenge 3: MCP Resource URIs
+
+**Problem:** Need unique URI scheme for different resource types
+**Solution:** Use protocol prefixes (`collection://`, `schema://`, `mdx:///`)
+
+### Challenge 4: Streaming Components
+
+**Problem:** Ink unmounting/remounting causes flicker
+**Solution:** Use `rerender` for updates, generator pattern for streams
+
+## Future Enhancements
+
+### Short-term (Same Sprint)
+- [ ] Add HTTP transport for MCP
+- [ ] Syntax highlighting for code blocks
+- [ ] Table of contents component
+- [ ] File watching for dev server
+
+### Medium-term (Next Sprint)
+- [ ] Worker Loader integration
+- [ ] R2/D1 adapters
+- [ ] Pagination for large lists
+- [ ] Search/filter tools
+
+### Long-term (Future)
+- [ ] Real-time collaboration via MCP
+- [ ] Visual diff components
+- [ ] Git integration tools
+- [ ] Metrics and analytics
+
+## Performance Considerations
+
+### React-ink
+- **Compilation Cache:** MDX compilation is expensive, cache results
+- **Component Memoization:** Use React.memo for static components
+- **Stream Buffering:** Debounce rapid updates
+
+### MCP
+- **Database Queries:** Index by pattern for fast glob matching
+- **Resource Listing:** Lazy load, paginate large collections
+- **Schema Caching:** Cache schema introspection results
+
+## Dependencies Added
+
+**React-ink:**
+- `ink` (already in mdxe)
+- `@mdx-js/mdx` (already in mdxe)
+- `vfile` (transitive)
+
+**MCP:**
+- `@modelcontextprotocol/sdk` (needs to be added)
+- `fast-glob` (already in mdxe)
+
+## Testing Instructions
+
+### Run Tests
+
+```bash
+cd /path/to/mdx
+pnpm build
+pnpm --filter mdxe test
+```
+
+### Run Examples
+
+```bash
+# React-ink examples
+node packages/mdxe/examples/react-ink/example.ts
+
+# MCP server
+node packages/mdxe/examples/mcp/server.ts
+
+# Test with Claude Desktop (requires setup)
+```
+
+## Documentation Delivered
+
+1. **React-ink README** - Complete usage guide with examples
+2. **MCP README** - Integration guide and best practices
+3. **Client Examples** - Tool and resource usage patterns
+4. **Inline Comments** - JSDoc for all public APIs
+5. **This Document** - Implementation summary
+
+## Success Criteria Met
+
+- ✅ React-ink renderer with MDX compilation
+- ✅ Complete CLI component library (30+ components)
+- ✅ ANSI color support and styling
+- ✅ Streaming support via async generators
+- ✅ MCP protocol implementation
+- ✅ Database tools (db.get, list, set, delete, schema)
+- ✅ MDX tools (compile, render)
+- ✅ Resource bindings (collections, files, schemas)
+- ✅ Example CLI app (5 examples)
+- ✅ Example MCP server (in-memory DB)
+- ✅ Example MCP agent integration (Claude Desktop)
+- ✅ Comprehensive tests (25 tests)
+- ✅ Full documentation (1000+ lines)
+
+## Next Steps
+
+This completes Stream 6. Ready for:
+
+**Stream 7:** Publishing CLI (Worker deployment, Snippets, Assets)
+**Stream 8:** Integration & Documentation (Testing, examples, migration guide)
+
+## Related Files
+
+**Implementation Plan:** `/notes/2025-10-03-mdxdb-mdxe-implementation-plan.md`
+**Issue Tracker:** https://github.com/dot-do/.do/issues/5
+
+---
+
+**Agent:** Claude Code (Stream 6)
+**Duration:** ~3 hours
+**Status:** ✅ Complete

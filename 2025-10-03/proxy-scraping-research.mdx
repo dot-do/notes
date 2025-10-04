@@ -1,0 +1,1938 @@
+# Proxy Networks and Web Scraping Research
+
+**Date:** 2025-10-03
+**Purpose:** Comprehensive research on proxy networks, scraping strategies, and Cloudflare Containers integration
+**Author:** Claude Code
+
+---
+
+## Executive Summary
+
+This document provides a comprehensive overview of modern web scraping infrastructure in 2025, covering proxy networks, anti-detection strategies, Cloudflare integration, distributed architectures, and legal/ethical considerations.
+
+**Key Takeaways:**
+- Residential proxies cost ~$10-15/GB; datacenter proxies cost ~$0.11-0.80/GB
+- Cloudflare Browser Rendering: $0.09/browser hour (with free tiers)
+- Playwright preferred over Puppeteer for scraping (cross-browser, multi-language)
+- GDPR/DSA enforcement increasing in 2025; robots.txt treated as binding
+- Queue-based distributed architecture essential for scale
+
+---
+
+## 1. Proxy Networks
+
+### 1.1 Major Residential Proxy Providers
+
+#### **Bright Data** (formerly Luminati)
+- **Pool Size:** 100M+ residential IPs
+- **Pricing:**
+  - Residential: $10.50/GB
+  - Datacenter: $0.11/GB ($0.80/IP + $0.11/GB)
+  - ISP: $15/GB
+  - Mobile: $24/GB
+- **Performance:** 2B requests/day, 97% completion rate
+- **Rating:** 4.6/5 on TrustPilot
+- **Best For:** Fortune 500 companies, high customization needs
+- **Features:** Web Scraper IDE, pay-as-you-go datacenter plans
+
+#### **Oxylabs**
+- **Pool Size:** 100M+ residential IPs
+- **Pricing:**
+  - Residential: $10/GB
+  - Datacenter: $0.65/GB
+  - ISP: $17/GB
+  - Mobile: $22/GB
+- **Performance:** 1.5B requests/day, 99.2% success rate, 0.5s response time (Western Europe)
+- **Rating:** 4.4/5 on TrustPilot, Proxyway Best Enterprise Provider 2025
+- **Best For:** Enterprise users prioritizing performance and reliability
+- **Features:** Fastest response times, highest success rates
+
+#### **Smartproxy** (now Decodo)
+- **Pool Size:** 125M+ residential IPs from 195+ locations
+- **Pricing:** Starting at $1.50/GB
+- **Best For:** Small to mid-size teams on budget
+- **Features:** Consistent performance, most affordable pricing
+
+#### **Feature Comparison**
+
+| Feature | Bright Data | Oxylabs | Smartproxy |
+|---------|-------------|---------|------------|
+| **Pool Size** | 100M+ | 100M+ | 125M+ |
+| **Residential** | $10.50/GB | $10/GB | $1.50/GB |
+| **Datacenter** | $0.11/GB | $0.65/GB | N/A |
+| **Success Rate** | 97% | 99.2% | Good |
+| **Speed** | Fast | 0.5s (fastest) | Good |
+| **Customization** | Highest | Medium | Lower |
+| **Free Trial** | ✅ | ✅ | ✅ |
+| **Best For** | Enterprise, customization | Performance, reliability | Budget-conscious |
+
+---
+
+### 1.2 Proxy Types Comparison
+
+#### **Datacenter Proxies**
+- **Speed:** ⭐⭐⭐⭐⭐ Fastest (powerful servers, unlimited bandwidth)
+- **Detectability:** ⚠️ Easily detected (known origins, flagged as suspicious)
+- **Cost:** 💰 Cheapest ($0.11-0.80/GB)
+- **Anonymity:** ⭐⭐ Low (IPs have known datacenter origins)
+- **Best Use Cases:**
+  - Basic scraping tasks
+  - Low-anonymity requirements
+  - Testing and development
+  - APIs that don't block datacenter IPs
+- **When to Use:** Always try datacenter proxies first; only upgrade to residential when blocked
+
+#### **Residential Proxies**
+- **Speed:** ⭐⭐⭐ Slower (depends on home ISP, network throttling possible)
+- **Detectability:** ⭐⭐⭐⭐⭐ Excellent (real residential IPs, bypass geo-blocking)
+- **Cost:** 💰💰💰 Expensive ($10-15/GB)
+- **Anonymity:** ⭐⭐⭐⭐⭐ Highest (real user IPs)
+- **Best Use Cases:**
+  - Large-scale scraping
+  - Sites with aggressive bot detection
+  - Geo-restricted content
+  - Social media scraping
+  - E-commerce price monitoring
+- **When to Use:** When datacenter proxies are blocked or high anonymity required
+
+#### **Mobile Proxies**
+- **Speed:** ⭐⭐⭐ Variable (cellular network dependent)
+- **Detectability:** ⭐⭐⭐⭐ Very good (mobile carrier IPs)
+- **Cost:** 💰💰💰💰 Most expensive ($22-24/GB)
+- **Anonymity:** ⭐⭐⭐⭐ High
+- **Best Use Cases:**
+  - Social media platforms
+  - Mobile app scraping
+  - Tasks requiring mobile IP appearance
+  - Bypassing mobile-specific restrictions
+- **When to Use:** When targeting mobile-only content or platforms
+
+#### **ISP Proxies**
+- **Speed:** ⭐⭐⭐⭐ Fast (datacenter speed with residential appearance)
+- **Detectability:** ⭐⭐⭐⭐ Good (registered with real ISPs)
+- **Cost:** 💰💰💰 Moderate-High ($15-17/GB)
+- **Anonymity:** ⭐⭐⭐⭐ High
+- **Best Use Cases:**
+  - Long-running sessions
+  - Account-based operations
+  - Sneaker bots
+  - Ticket purchasing
+- **When to Use:** When you need static IPs with residential trust
+
+---
+
+### 1.3 Rotating Proxy Strategies
+
+#### **Rotation Methods**
+1. **Per-Request Rotation** - New IP for every request (highest anonymity)
+2. **Session-Based Rotation** - Same IP for entire session (e.g., login workflows)
+3. **Time-Based Rotation** - Rotate every N minutes/hours
+4. **Failure-Based Rotation** - Rotate only when blocked or failed
+
+#### **API Integration Best Practices**
+
+```javascript
+// Example: Bright Data API Integration
+const proxyConfig = {
+  host: 'brd.superproxy.io',
+  port: 22225,
+  auth: {
+    username: 'brd-customer-USER-zone-ZONE',
+    password: 'PASSWORD'
+  },
+  // Session ID for sticky sessions
+  session: `session_${Date.now()}`
+}
+
+// Axios with rotating proxy
+const axios = require('axios')
+const HttpsProxyAgent = require('https-proxy-agent')
+
+const agent = new HttpsProxyAgent(
+  `http://${proxyConfig.auth.username}:${proxyConfig.auth.password}@${proxyConfig.host}:${proxyConfig.port}`
+)
+
+const response = await axios.get('https://target.com', {
+  httpsAgent: agent,
+  timeout: 30000
+})
+```
+
+#### **Retry Logic Best Practices**
+
+```javascript
+// Exponential backoff with jitter
+async function fetchWithRetry(url, options = {}, maxRetries = 3) {
+  const retryableCodes = [408, 429, 500, 502, 503, 504]
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options)
+
+      // Respect Retry-After header
+      if (response.headers.has('retry-after')) {
+        const retryAfter = parseInt(response.headers.get('retry-after'))
+        await sleep(retryAfter * 1000)
+        continue
+      }
+
+      // Retry only transient errors
+      if (retryableCodes.includes(response.status)) {
+        // Exponential backoff: 1s, 2s, 4s, 8s...
+        const backoff = Math.pow(2, attempt) * 1000
+        // Add jitter (0-1000ms) to prevent thundering herd
+        const jitter = Math.random() * 1000
+        await sleep(backoff + jitter)
+        continue
+      }
+
+      return response
+    } catch (error) {
+      if (attempt === maxRetries - 1) throw error
+
+      // Log retry attempts
+      console.log(`Retry ${attempt + 1}/${maxRetries} for ${url}`)
+
+      const backoff = Math.pow(2, attempt) * 1000
+      const jitter = Math.random() * 1000
+      await sleep(backoff + jitter)
+    }
+  }
+}
+```
+
+---
+
+### 1.4 Pricing Models
+
+#### **Pay-As-You-Go**
+- Best for variable workloads
+- No commitment required
+- Highest per-GB cost
+
+#### **Subscription Plans**
+- Fixed monthly allocation (e.g., 100GB/month)
+- Lower per-GB cost
+- Unused bandwidth may expire
+
+#### **Enterprise Custom**
+- Volume discounts
+- Dedicated support
+- Custom SLAs
+- Best for >1TB/month
+
+#### **Cost Optimization Tips**
+1. Start with datacenter proxies (cheapest)
+2. Use residential only when datacenter fails
+3. Implement aggressive caching
+4. Deduplicate URLs before scraping
+5. Use session pooling to reduce browser overhead
+6. Monitor success rates to optimize proxy selection
+
+---
+
+## 2. Scraping at Scale
+
+### 2.1 Best Practices
+
+#### **Rate Limiting**
+- **Respect robots.txt** - Treated as binding contract under GDPR/DSA in 2025
+- **Honor Crawl-delay** - Follow specified delays in robots.txt
+- **Throttle Requests** - 1-5 requests/second typical; adjust based on site size
+- **Distributed Requests** - Spread across IPs to avoid concentration
+- **Monitor Success Rates** - Adjust rate if seeing increased blocks
+
+#### **User-Agent Rotation**
+```javascript
+const userAgents = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0'
+]
+
+// Rotate on each request
+function getRandomUserAgent() {
+  return userAgents[Math.floor(Math.random() * userAgents.length)]
+}
+```
+
+**Key Principles:**
+- Use modern, legitimate User-Agents (Chrome/Firefox 2025)
+- Rotate to avoid fingerprinting
+- Match headers to browser (don't mix Chrome UA with Firefox headers)
+- Avoid outdated or suspicious UAs
+
+#### **Cookie/Session Management**
+- **Session Pooling** - Reuse browser sessions to reduce overhead
+- **Cookie Persistence** - Maintain cookies across requests when needed
+- **Session Rotation** - Rotate sessions periodically to avoid tracking
+- **Incognito Mode** - Use for clean sessions
+
+#### **Human Behavior Simulation**
+```javascript
+// Playwright example
+async function humanLikeBehavior(page) {
+  // Random scroll
+  await page.evaluate(() => {
+    window.scrollBy(0, Math.random() * 500)
+  })
+
+  // Random wait (1-3 seconds)
+  await page.waitForTimeout(1000 + Math.random() * 2000)
+
+  // Random mouse movement
+  await page.mouse.move(
+    Math.random() * 800,
+    Math.random() * 600
+  )
+
+  // Sometimes click random elements
+  if (Math.random() > 0.7) {
+    const elements = await page.$$('a, button')
+    if (elements.length > 0) {
+      const randomEl = elements[Math.floor(Math.random() * elements.length)]
+      await randomEl.click()
+      await page.waitForTimeout(1000)
+      await page.goBack()
+    }
+  }
+}
+```
+
+---
+
+### 2.2 CAPTCHA Handling
+
+#### **Major CAPTCHA Solving Services (2025)**
+
+| Service | Pricing | Speed | Success Rate | Best For |
+|---------|---------|-------|--------------|----------|
+| **2Captcha** | $0.50-$2.80/1000 | 10-30s | ~95% | Budget-conscious, wide CAPTCHA support |
+| **Anti-Captcha** | $0.50-$2/1000 | ~7s | ~99% | Speed and accuracy, enterprise |
+| **CapMonster** | $0.80-$3/1000 | 10-20s | ~97% | Good balance of price/performance |
+
+#### **CAPTCHA Type Pricing**
+- **Normal Text CAPTCHA:** $0.50-1.00/1000
+- **reCAPTCHA v2:** $1.00-3.00/1000
+- **reCAPTCHA v3:** $1.00-3.00/1000
+- **hCaptcha:** $1.00-2.00/1000
+- **FunCaptcha (Arkose Labs):** $30-35/1000 (most expensive)
+- **Cloudflare Turnstile:** $1.00-3.00/1000
+
+#### **Integration Example**
+```javascript
+// 2Captcha API Integration
+const Captcha = require('2captcha')
+const solver = new Captcha.Solver(process.env.TWOCAPTCHA_KEY)
+
+async function solveCaptcha(sitekey, pageUrl) {
+  try {
+    const result = await solver.recaptcha(sitekey, pageUrl)
+    return result.data
+  } catch (error) {
+    console.error('CAPTCHA solving failed:', error)
+    throw error
+  }
+}
+
+// Use in Puppeteer
+await page.evaluate((token) => {
+  document.getElementById('g-recaptcha-response').innerHTML = token
+}, captchaToken)
+```
+
+#### **CAPTCHA Avoidance Strategies**
+1. **Avoid triggering CAPTCHAs:**
+   - Use residential proxies
+   - Rotate IPs frequently
+   - Add delays between requests
+   - Simulate human behavior
+
+2. **Detect before solving:**
+   ```javascript
+   const hasCaptcha = await page.$('iframe[src*="recaptcha"]') !== null
+   if (hasCaptcha) {
+     // Solve CAPTCHA
+   }
+   ```
+
+3. **Fallback strategies:**
+   - Retry with different IP
+   - Switch to different scraping method
+   - Queue for manual review
+
+---
+
+## 3. Cloudflare Containers for Scraping
+
+### 3.1 Cloudflare Browser Rendering
+
+#### **Pricing (2025)**
+- **Free Tier (Workers Free):** 10 min/day, 3 concurrent browsers
+- **Free Tier (Workers Paid):** 10 hours/month, 10 concurrent browsers
+- **Pay-As-You-Go:** $0.09/browser hour
+- **Billing Methods:**
+  - REST API: Duration only ($/browser hour)
+  - Workers Bindings: Duration + Concurrency
+
+#### **Cost Examples**
+- **2,000 screenshots unoptimized:** ~$200
+- **1 hour of continuous browsing:** $0.09
+- **10 concurrent browsers for 1 hour:** $0.90
+
+#### **Cost Optimization Strategies**
+1. **Session Reuse** - Cloudflare strongly recommends reusing browser sessions
+2. **Connection Pooling** - Maintain pool of warm browsers
+3. **Lazy Loading** - Start browsers only when needed
+4. **Request Batching** - Group requests to same domain
+5. **Smart Caching** - Cache rendered results
+
+```javascript
+// Session reuse example
+let browserSession = null
+
+async function getBrowser() {
+  if (!browserSession) {
+    browserSession = await puppeteer.launch()
+  }
+  return browserSession
+}
+
+// Reuse across requests
+const browser = await getBrowser()
+const page = await browser.newPage()
+// ... scrape
+await page.close() // Close page but keep browser
+```
+
+---
+
+### 3.2 Cloudflare Containers
+
+#### **Overview**
+- **Launch Date:** June 2025 (Public Beta)
+- **Architecture:** linux/amd64 containers in VMs
+- **Deployment:** Global network (120+ countries)
+- **Isolation:** Each container runs in isolated VM
+- **Integration:** Built on Durable Objects
+
+#### **Use Cases**
+- Video processing
+- Full backend services (any language)
+- ML model inference
+- Heavy computation workloads
+- **Web scraping with Puppeteer/Playwright**
+
+#### **Deployment Workflow**
+```bash
+# 1. Define container in wrangler.toml
+[container]
+name = "scraper-container"
+max_instances = 10
+
+# 2. Deploy
+wrangler deploy  # Requires Docker running locally
+
+# 3. Local development
+wrangler dev  # Auto-rebuilds on changes
+```
+
+#### **Architecture for Scraping**
+```
+┌──────────────────┐
+│  Cloudflare      │  ◄── API Gateway
+│  Worker          │      - Authentication
+│  (Router/Auth)   │      - Rate limiting
+└────────┬─────────┘      - Request routing
+         │
+         │ RPC Call
+         │
+         ▼
+┌──────────────────┐
+│  Durable Object  │  ◄── Container Manager
+│  (Orchestrator)  │      - Lifecycle management
+└────────┬─────────┘      - Proxy requests
+         │
+         │
+         ▼
+┌──────────────────┐
+│  Container       │  ◄── Browser Automation
+│  (Puppeteer)     │      - Puppeteer/Playwright
+│                  │      - Proxy integration
+└──────────────────┘      - Scraping logic
+```
+
+#### **Configuration Example**
+```javascript
+// wrangler.toml
+name = "scraper-service"
+compatibility_date = "2025-09-15"
+compatibility_flags = ["nodejs_compat"]
+
+[[durable_objects.bindings]]
+name = "SCRAPER"
+class_name = "ScraperContainer"
+script_name = "scraper-service"
+
+[durable_objects]
+new_sqlite_classes = ["ScraperContainer"]  # Required for Containers
+
+[container]
+max_instances = 50
+```
+
+#### **Puppeteer in Container**
+```javascript
+// src/index.js
+import puppeteer from 'puppeteer'
+
+export default {
+  async fetch(request, env) {
+    const browser = await puppeteer.launch({
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        `--proxy-server=${env.PROXY_URL}`
+      ]
+    })
+
+    const page = await browser.newPage()
+    await page.goto(request.url)
+    const content = await page.content()
+    await browser.close()
+
+    return new Response(content)
+  }
+}
+```
+
+---
+
+### 3.3 Cloudflare Anti-Bot Bypass
+
+#### **Challenges**
+- Browser fingerprinting
+- JavaScript challenges
+- CAPTCHAs
+- Behavioral analysis
+- TLS fingerprinting
+
+#### **Bypass Techniques**
+
+**1. Playwright with Stealth Plugin**
+```javascript
+import { chromium } from 'playwright-extra'
+import StealthPlugin from 'puppeteer-extra-plugin-stealth'
+
+chromium.use(StealthPlugin())
+
+const browser = await chromium.launch()
+const page = await browser.newPage()
+
+// Stealth plugin automatically:
+// - Hides navigator.webdriver
+// - Changes HeadlessChrome to Chrome
+// - Mimics real browser plugins
+// - Spoofs browser runtime
+```
+
+**2. FlareSolverr Integration**
+```javascript
+// FlareSolverr is a proxy server that bypasses Cloudflare
+const response = await fetch('http://flaresolverr:8191/v1', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    cmd: 'request.get',
+    url: 'https://target-site.com',
+    maxTimeout: 60000
+  })
+})
+
+const data = await response.json()
+console.log(data.solution.response)
+```
+
+**3. Residential Proxies + Browser Rendering**
+```javascript
+const browser = await puppeteer.launch({
+  args: [
+    `--proxy-server=${RESIDENTIAL_PROXY}`,
+    '--disable-blink-features=AutomationControlled'
+  ]
+})
+
+await page.setExtraHTTPHeaders({
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Accept-Encoding': 'gzip, deflate, br',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+})
+```
+
+**4. Randomized Delays**
+```javascript
+async function randomDelay(min = 1000, max = 3000) {
+  const delay = Math.random() * (max - min) + min
+  await new Promise(resolve => setTimeout(resolve, delay))
+}
+
+await page.goto(url)
+await randomDelay()
+await page.click('button')
+await randomDelay(2000, 5000)
+```
+
+---
+
+## 4. Tools and Libraries
+
+### 4.1 Framework Comparison
+
+#### **Scrapy (Python)**
+- **Best For:** Large-scale crawling, structured data extraction
+- **Strengths:**
+  - Built-in proxy rotation
+  - Automatic retry logic
+  - Pipeline architecture
+  - High performance (async I/O)
+  - Middleware system
+- **Weaknesses:**
+  - Struggles with JavaScript (needs Splash/Playwright)
+  - Steeper learning curve
+- **Use Cases:** News aggregation, e-commerce catalogs, API scraping
+
+#### **Playwright (JavaScript/Python/Java/C#)**
+- **Best For:** JavaScript-heavy sites, modern SPAs
+- **Strengths:**
+  - Cross-browser (Chromium, Firefox, WebKit)
+  - Multi-language support
+  - Network interception
+  - Auto-waiting for elements
+  - Mobile emulation
+  - Video recording
+- **Weaknesses:**
+  - Slower than Scrapy (full browser)
+  - Higher resource usage
+  - Less stealthy without plugins
+- **Use Cases:** Dynamic sites, testing, screenshots, PDF generation
+
+#### **Puppeteer (JavaScript)**
+- **Best For:** Chromium-specific automation
+- **Strengths:**
+  - Native stealth plugin support
+  - Mature ecosystem
+  - Lightweight (Chromium only)
+  - Excellent documentation
+  - Chrome DevTools Protocol access
+- **Weaknesses:**
+  - Chromium only
+  - JavaScript only
+  - Slower than Scrapy
+- **Use Cases:** Chrome-specific tasks, scraping React/Vue apps
+
+#### **Selenium (Multi-language)**
+- **Best For:** Legacy systems, testing
+- **Strengths:**
+  - Mature and stable
+  - Wide browser support
+  - Large community
+  - Grid support for scaling
+- **Weaknesses:**
+  - Slow (WebDriver overhead)
+  - Easily detected
+  - Complex setup
+- **Use Cases:** Legacy browser support, complex automation
+
+#### **Framework Selection Guide**
+
+| Requirement | Recommended Tool |
+|-------------|------------------|
+| **Static HTML** | Scrapy + Beautiful Soup |
+| **JavaScript-heavy** | Playwright |
+| **Chromium-only** | Puppeteer |
+| **Cross-browser testing** | Playwright |
+| **Python ecosystem** | Scrapy + Playwright |
+| **Budget-conscious** | Scrapy (lower infra costs) |
+| **Anti-detection** | Puppeteer + Stealth Plugin |
+| **Large-scale crawling** | Scrapy |
+| **Real-time data** | Playwright/Puppeteer |
+
+---
+
+### 4.2 Parsing Libraries
+
+#### **Beautiful Soup (Python)**
+```python
+from bs4 import BeautifulSoup
+
+soup = BeautifulSoup(html, 'lxml')
+title = soup.find('h1', class_='product-title').text
+price = soup.select_one('.price').text
+```
+- **Best For:** Simple HTML parsing
+- **Speed:** Fast (C-based lxml parser)
+- **Learning Curve:** Easy
+
+#### **Cheerio (JavaScript)**
+```javascript
+const cheerio = require('cheerio')
+
+const $ = cheerio.load(html)
+const title = $('h1.product-title').text()
+const price = $('.price').text()
+```
+- **Best For:** jQuery-like syntax in Node.js
+- **Speed:** Very fast
+- **Learning Curve:** Easy (if you know jQuery)
+
+#### **lxml (Python)**
+```python
+from lxml import html
+
+tree = html.fromstring(page_content)
+title = tree.xpath('//h1[@class="product-title"]/text()')[0]
+```
+- **Best For:** XPath parsing, XML
+- **Speed:** Fastest
+- **Learning Curve:** Medium (XPath knowledge)
+
+---
+
+## 5. Anti-Scraping Bypass
+
+### 5.1 Detection Vectors (2025)
+
+#### **Browser Fingerprinting**
+Modern sites collect 50+ data points:
+- WebGL renderer
+- Canvas fingerprint
+- Audio context
+- Screen resolution
+- Timezone
+- Fonts
+- Plugins
+- WebRTC IPs
+- navigator.webdriver flag
+
+#### **Behavioral Analysis**
+AI/ML models detect bots by:
+- Mouse movement patterns
+- Scroll behavior
+- Typing speed
+- Click patterns
+- Session duration
+- Navigation flow
+
+#### **Network Analysis**
+- Request timing patterns
+- Header consistency
+- TLS fingerprint
+- HTTP/2 usage
+- Connection reuse
+
+---
+
+### 5.2 Bypass Strategies
+
+#### **1. Fingerprint Evasion**
+```javascript
+// Playwright with fingerprint randomization
+import { chromium } from 'playwright-extra'
+import StealthPlugin from 'puppeteer-extra-plugin-stealth'
+
+chromium.use(StealthPlugin())
+
+const browser = await chromium.launch({
+  // Random viewport
+  args: [`--window-size=${1200 + Math.random() * 400},${800 + Math.random() * 400}`]
+})
+
+const context = await browser.newContext({
+  locale: 'en-US',
+  timezoneId: 'America/New_York',
+  geolocation: { latitude: 40.7128, longitude: -74.0060 },
+  permissions: ['geolocation']
+})
+```
+
+#### **2. Header Consistency**
+```javascript
+// Consistent Chrome 120 headers
+const headers = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Accept-Encoding': 'gzip, deflate, br',
+  'Connection': 'keep-alive',
+  'Upgrade-Insecure-Requests': '1',
+  'Sec-Fetch-Dest': 'document',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'none',
+  'Sec-Fetch-User': '?1',
+  'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+  'Sec-Ch-Ua-Mobile': '?0',
+  'Sec-Ch-Ua-Platform': '"Windows"'
+}
+```
+
+#### **3. Advanced Anti-Detection Tools (2025)**
+
+| Tool | Type | Best For |
+|------|------|----------|
+| **Playwright Stealth** | Plugin | Automated fingerprint patching |
+| **FlareSolverr** | Proxy | Cloudflare bypass |
+| **Undetected ChromeDriver** | Python | Selenium stealth mode |
+| **Kameleo** | Commercial | Advanced fingerprinting |
+| **GoLogin** | Commercial | Browser profile management |
+| **Multilogin** | Commercial | Anti-detect browsers |
+
+---
+
+### 5.3 Request Pattern Optimization
+
+#### **Avoid Detection Patterns**
+```javascript
+// ❌ BAD: Regular intervals (easily detected)
+setInterval(() => scrape(), 1000)
+
+// ✅ GOOD: Random intervals
+async function scrapeWithRandomDelay() {
+  while (hasUrls()) {
+    await scrape()
+    // Random delay between 2-7 seconds
+    const delay = 2000 + Math.random() * 5000
+    await sleep(delay)
+  }
+}
+
+// ✅ BETTER: Poisson distribution (natural human timing)
+function poissonDelay(lambda = 3000) {
+  const u = Math.random()
+  return -Math.log(1 - u) * lambda
+}
+```
+
+#### **Session Lifecycle Management**
+```javascript
+// Mimic real user session
+async function realisticSession(page) {
+  // 1. Landing page
+  await page.goto('https://example.com')
+  await randomDelay(2000, 5000)
+
+  // 2. Browse around
+  await page.click('a.category-link')
+  await randomDelay(3000, 7000)
+
+  // 3. Search
+  await page.type('input[name="search"]', 'product', { delay: 100 })
+  await randomDelay(500, 1500)
+  await page.click('button[type="submit"]')
+  await randomDelay(2000, 4000)
+
+  // 4. View product
+  await page.click('.product-card:nth-child(3)')
+  await randomDelay(5000, 10000)
+
+  // 5. Extract data
+  const data = await page.evaluate(extractProductData)
+
+  return data
+}
+```
+
+---
+
+## 6. Legal and Ethical
+
+### 6.1 Legal Framework (2025)
+
+#### **Robots.txt Compliance**
+- **Status in 2025:** Increasingly treated as binding contract
+- **Regulations:** GDPR, Digital Services Act (DSA) enforce robots.txt
+- **Recommendation:** Treat as consent signal, never skip without legal review
+
+**Parsing Robots.txt:**
+```javascript
+const robotsParser = require('robots-parser')
+
+const robots = robotsParser('https://example.com/robots.txt', await fetchRobotsTxt())
+
+// Check if path is allowed
+if (robots.isAllowed('/products', 'MyBot/1.0')) {
+  // Safe to scrape
+  const delay = robots.getCrawlDelay('MyBot/1.0') || 1000
+  await scrapeWithDelay(delay)
+}
+```
+
+---
+
+#### **GDPR and Privacy (2025)**
+- **CNIL Clarification (France):** Public web pages may contain personal data requiring GDPR safeguards
+- **Requirements:**
+  - Lawful basis for processing
+  - Data minimization
+  - Transparency
+  - Right to erasure
+  - Purpose limitation
+
+**Personal Data Identification:**
+- ✅ **Public Data:** Product prices, company info, public reviews (non-personal)
+- ⚠️ **Gray Area:** User-generated content, profile pages
+- ❌ **Personal Data:** Names, emails, phone numbers, addresses, IP logs
+
+**Best Practices:**
+```javascript
+// Filter out personal data
+function sanitizeData(scraped) {
+  return {
+    productName: scraped.productName,
+    price: scraped.price,
+    description: scraped.description,
+    // ❌ Remove personal fields
+    // reviewerName: scraped.reviewerName,
+    // reviewerEmail: scraped.reviewerEmail
+  }
+}
+```
+
+---
+
+#### **Terms of Service (ToS)**
+- **Legal Status:** Violation doesn't equal criminal charge, but opens risk of:
+  - IP banning
+  - Legal letters
+  - CFAA claims (US)
+  - Breach of contract claims
+- **Check for:**
+  - "No automated access" clauses
+  - "No bots or scrapers" language
+  - API-only access requirements
+  - Rate limit specifications
+
+**ToS Review Checklist:**
+```markdown
+[ ] Does ToS explicitly prohibit scraping/bots?
+[ ] Is there a public API alternative?
+[ ] Are rate limits specified?
+[ ] Is commercial use of data prohibited?
+[ ] Are there intellectual property claims?
+[ ] Is user consent required for data collection?
+```
+
+---
+
+#### **Digital Services Act (DSA) - EU 2025**
+- **New Obligations:**
+  - Platform accountability for scraped data misuse
+  - Transparency requirements
+  - Content moderation for AI training data
+- **Impact:** Increased scrutiny on scraping for AI/ML training
+
+---
+
+#### **Intellectual Property**
+- **Copyright:** Scraping copyrighted content (images, text) for republication = infringement
+- **Database Rights (EU):** Extraction of substantial portions of database may violate sui generis rights
+- **AI Training:** OECD 2025 outlook warns of IP risks when using scraped data for AI training
+
+**Safe Harbor:**
+- **Fair Use/Dealing:** Research, analysis, news reporting (jurisdiction-dependent)
+- **Facts Not Protected:** Factual data (prices, stats) generally not copyrightable
+- **Transformative Use:** Aggregation, analysis, indexing (case-by-case)
+
+---
+
+### 6.2 Ethical Guidelines
+
+#### **Best Practices**
+1. **Respect robots.txt** - Always honor disallow directives
+2. **Rate Limiting** - Don't overwhelm servers (1-5 req/sec typical)
+3. **Identify Yourself** - Use descriptive User-Agent with contact info
+4. **Honor Crawl-Delay** - Follow specified delays in robots.txt
+5. **Off-Peak Scraping** - Scrape during low-traffic hours
+6. **Cache Results** - Avoid re-scraping same data
+7. **Minimal Data Collection** - Only scrape what you need
+8. **Public Data Only** - Don't scrape login-protected content
+9. **Attribution** - Credit data sources when publishing
+10. **Opt-Out Mechanism** - Provide way for sites to request removal
+
+#### **Responsible User-Agent**
+```javascript
+// ✅ GOOD: Descriptive with contact
+const userAgent = 'MyCompanyBot/1.0 (+https://mycompany.com/bot; contact@mycompany.com)'
+
+// ❌ BAD: Pretending to be browser
+const userAgent = 'Mozilla/5.0...' // Deceptive
+```
+
+#### **Ethical Checklist**
+```markdown
+Before scraping a site, ask:
+
+[ ] Is this data publicly accessible without login?
+[ ] Have I checked robots.txt?
+[ ] Am I respecting crawl delays?
+[ ] Am I using reasonable rate limits?
+[ ] Have I identified my bot in User-Agent?
+[ ] Is there a public API I should use instead?
+[ ] Am I collecting only necessary data?
+[ ] Do I have legitimate use case (not spam/fraud)?
+[ ] Will my scraping harm the site's performance?
+[ ] Am I prepared to stop if requested?
+```
+
+---
+
+### 6.3 Compliance Architecture
+
+#### **Legal Observability**
+```javascript
+// Centralized compliance logging
+class ComplianceScraper {
+  constructor(config) {
+    this.robotsCache = new Map()
+    this.auditLog = []
+  }
+
+  async scrape(url) {
+    // 1. Check robots.txt
+    const robots = await this.getRobots(url)
+    if (!robots.isAllowed(url)) {
+      this.logAudit('BLOCKED_BY_ROBOTS', url)
+      throw new Error('Disallowed by robots.txt')
+    }
+
+    // 2. Apply rate limit
+    const delay = robots.getCrawlDelay() || 1000
+    await this.respectDelay(delay)
+
+    // 3. Filter personal data
+    const data = await this.fetchAndParse(url)
+    const sanitized = this.removePII(data)
+
+    // 4. Log action
+    this.logAudit('SCRAPE_SUCCESS', url, {
+      robotsCompliant: true,
+      delay,
+      piiRemoved: true
+    })
+
+    return sanitized
+  }
+
+  logAudit(action, url, metadata = {}) {
+    this.auditLog.push({
+      timestamp: new Date().toISOString(),
+      action,
+      url,
+      ...metadata
+    })
+  }
+
+  async getRobots(url) {
+    const domain = new URL(url).origin
+    if (!this.robotsCache.has(domain)) {
+      const robotsTxt = await fetch(`${domain}/robots.txt`).then(r => r.text())
+      this.robotsCache.set(domain, robotsParser(domain, robotsTxt))
+    }
+    return this.robotsCache.get(domain)
+  }
+}
+```
+
+---
+
+## 7. Distributed Scraping Architecture
+
+### 7.1 Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   API Gateway                        │
+│              (Authentication, Rate Limiting)         │
+└─────────────┬───────────────────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────────────────┐
+│                    Scheduler                         │
+│           (URL Queue, Deduplication, Priority)       │
+└─────────────┬───────────────────────────────────────┘
+              │
+              ▼
+      ┌───────┴───────┐
+      │               │
+      ▼               ▼
+┌──────────┐    ┌──────────┐
+│  Kafka   │    │  Redis   │
+│  SQS     │    │ RabbitMQ │
+└──────────┘    └──────────┘
+      │               │
+      └───────┬───────┘
+              │
+              ▼
+┌─────────────────────────────────────────────────────┐
+│                Worker Pool                           │
+│   ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐   │
+│   │Worker 1│  │Worker 2│  │Worker 3│  │Worker N│   │
+│   └────────┘  └────────┘  └────────┘  └────────┘   │
+└─────────────┬───────────────────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────────────────┐
+│               Data Pipeline                          │
+│  (Validation, Transformation, Deduplication)         │
+└─────────────┬───────────────────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────────────────┐
+│                  Storage                             │
+│      (PostgreSQL, MongoDB, S3, ClickHouse)           │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+### 7.2 Queue Systems
+
+#### **Kafka**
+- **Best For:** Massive throughput (millions of msgs/sec)
+- **Use Cases:** Real-time data pipelines, event sourcing
+- **Pros:** Highest performance, retention, replay capability
+- **Cons:** Complex setup, higher resource usage
+- **Cost:** Medium-High (self-hosted) or $$$ (Confluent Cloud)
+
+#### **Redis**
+- **Best For:** Simple queues, caching, deduplication
+- **Use Cases:** URL queues, visited URL tracking, session storage
+- **Pros:** Fast, versatile (lists, sets, hashes), easy setup
+- **Cons:** In-memory (limited by RAM), less durable than Kafka
+- **Cost:** Low (self-hosted) or $ (Redis Cloud)
+
+#### **RabbitMQ**
+- **Best For:** Flexible routing, priority queues
+- **Use Cases:** Task distribution, dead-letter queues, fan-out patterns
+- **Pros:** Feature-rich, reliable, good admin UI
+- **Cons:** Lower throughput than Kafka, more complex than Redis
+- **Cost:** Low (self-hosted) or $$ (CloudAMQP)
+
+#### **Amazon SQS**
+- **Best For:** AWS-native, serverless, pay-per-use
+- **Use Cases:** Lambda-based scrapers, async task queues
+- **Pros:** Fully managed, scales automatically, integrated with AWS
+- **Cons:** Vendor lock-in, higher latency than self-hosted
+- **Cost:** $ (pay per million requests)
+
+---
+
+### 7.3 Worker Architecture
+
+#### **Python + Redis Example**
+```python
+import asyncio
+import aiohttp
+import redis
+from bs4 import BeautifulSoup
+
+# URL Producer
+class URLProducer:
+    def __init__(self, redis_client):
+        self.redis = redis_client
+
+    async def add_urls(self, urls):
+        for url in urls:
+            # Add to queue
+            await self.redis.lpush('scrape:queue', url)
+
+            # Track in set for deduplication
+            url_hash = hashlib.md5(url.encode()).hexdigest()
+            await self.redis.sadd('scrape:seen', url_hash)
+
+# Worker Process
+class Worker:
+    def __init__(self, worker_id, redis_client, proxy_pool):
+        self.id = worker_id
+        self.redis = redis_client
+        self.proxies = proxy_pool
+        self.session = None
+
+    async def start(self):
+        self.session = aiohttp.ClientSession()
+
+        while True:
+            # Pop URL from queue (blocking)
+            url = await self.redis.brpop('scrape:queue', timeout=30)
+
+            if url:
+                await self.scrape(url[1].decode())
+            else:
+                # No URLs, wait a bit
+                await asyncio.sleep(1)
+
+    async def scrape(self, url):
+        try:
+            proxy = self.proxies.get_random()
+
+            async with self.session.get(url, proxy=proxy, timeout=30) as response:
+                html = await response.text()
+                data = self.parse(html)
+
+                # Store result
+                await self.redis.lpush('scrape:results', json.dumps(data))
+
+                # Update metrics
+                await self.redis.hincrby('scrape:stats', 'success', 1)
+
+        except Exception as e:
+            # Retry logic
+            retry_count = await self.redis.hget(f'scrape:retry:{url}', 'count') or 0
+
+            if int(retry_count) < 3:
+                # Re-queue with backoff
+                await self.redis.lpush('scrape:queue', url)
+                await self.redis.hincrby(f'scrape:retry:{url}', 'count', 1)
+            else:
+                # Dead letter queue
+                await self.redis.lpush('scrape:failed', url)
+
+            await self.redis.hincrby('scrape:stats', 'failed', 1)
+
+# Run workers
+async def main():
+    redis_client = await aioredis.create_redis_pool('redis://localhost')
+    proxy_pool = ProxyPool(['http://proxy1:8080', 'http://proxy2:8080'])
+
+    # Spawn 10 workers
+    workers = [Worker(i, redis_client, proxy_pool) for i in range(10)]
+    await asyncio.gather(*[w.start() for w in workers])
+
+asyncio.run(main())
+```
+
+---
+
+### 7.4 Deduplication Strategies
+
+#### **1. URL-Based Deduplication**
+
+**Simple Set:**
+```python
+seen_urls = set()
+
+def is_duplicate(url):
+    if url in seen_urls:
+        return True
+    seen_urls.add(url)
+    return False
+```
+
+**Canonical URL:**
+```python
+from urllib.parse import urlparse, parse_qs, urlencode
+
+def canonicalize_url(url):
+    parsed = urlparse(url)
+
+    # Normalize scheme and domain
+    scheme = parsed.scheme.lower()
+    netloc = parsed.netloc.lower()
+
+    # Normalize path
+    path = parsed.path.rstrip('/')
+
+    # Sort query params, remove tracking params
+    query = parse_qs(parsed.query)
+    tracking_params = ['utm_source', 'utm_medium', 'utm_campaign', 'fbclid', 'gclid']
+    query = {k: v for k, v in query.items() if k not in tracking_params}
+    query_string = urlencode(sorted(query.items()))
+
+    return f'{scheme}://{netloc}{path}?{query_string}'
+
+# Usage
+canonical = canonicalize_url('https://Example.com/page/?utm_source=google&id=123')
+# → 'https://example.com/page?id=123'
+```
+
+**Bloom Filter (Memory-Efficient):**
+```python
+from pybloom_live import BloomFilter
+
+# 1% false positive rate for 10M URLs
+bloom = BloomFilter(capacity=10_000_000, error_rate=0.01)
+
+def is_duplicate(url):
+    if url in bloom:
+        return True  # Probably seen (1% false positive)
+    bloom.add(url)
+    return False
+```
+
+---
+
+#### **2. Content-Based Deduplication**
+
+**Content Hash:**
+```python
+import hashlib
+
+def content_hash(html):
+    # Remove whitespace and normalize
+    normalized = ' '.join(html.split())
+    return hashlib.sha256(normalized.encode()).hexdigest()
+
+# Usage
+hash1 = content_hash(page1_html)
+hash2 = content_hash(page2_html)
+
+if hash1 == hash2:
+    print('Duplicate content')
+```
+
+**Simhash (Near-Duplicate Detection):**
+```python
+from simhash import Simhash
+
+def near_duplicate(text1, text2, threshold=3):
+    hash1 = Simhash(text1)
+    hash2 = Simhash(text2)
+
+    # Hamming distance < threshold = near-duplicate
+    return hash1.distance(hash2) < threshold
+```
+
+---
+
+#### **3. Database Schema for Deduplication**
+
+**PostgreSQL Example:**
+```sql
+CREATE TABLE scraped_urls (
+    id BIGSERIAL PRIMARY KEY,
+    url TEXT NOT NULL,
+    canonical_url TEXT NOT NULL,
+    content_hash VARCHAR(64),
+    title TEXT,
+    scraped_at TIMESTAMP DEFAULT NOW(),
+    content_length INTEGER,
+
+    -- Indexes for fast lookup
+    UNIQUE(canonical_url),
+    INDEX idx_content_hash (content_hash)
+);
+
+-- Check for duplicate before insert
+INSERT INTO scraped_urls (url, canonical_url, content_hash, title, content_length)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (canonical_url) DO NOTHING;
+```
+
+**ClickHouse Example (Analytics):**
+```sql
+CREATE TABLE scraping_events (
+    timestamp DateTime,
+    url String,
+    canonical_url String,
+    content_hash String,
+    worker_id UInt16,
+    duration_ms UInt32,
+    success UInt8,
+
+    -- Materialized for deduplication
+    url_hash UInt64 MATERIALIZED cityHash64(canonical_url)
+)
+ENGINE = MergeTree()
+PARTITION BY toYYYYMM(timestamp)
+ORDER BY (timestamp, url_hash);
+
+-- Query unique URLs per day
+SELECT
+    toDate(timestamp) AS date,
+    uniq(url_hash) AS unique_urls,
+    count() AS total_scrapes
+FROM scraping_events
+WHERE date >= today() - 7
+GROUP BY date;
+```
+
+---
+
+### 7.5 Serverless Architecture (AWS Example)
+
+```
+┌─────────────────┐
+│  EventBridge    │  ◄── Cron trigger (hourly/daily)
+│   (Scheduler)   │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Lambda #1      │  ◄── URL Producer
+│  (URL Fetcher)  │      - Fetch seed URLs
+└────────┬────────┘      - Push to SQS
+         │
+         ▼
+┌─────────────────┐
+│   SQS Queue     │  ◄── Task queue
+└────────┬────────┘
+         │
+         ├─────┬─────┬─────┬─────┐
+         │     │     │     │     │
+         ▼     ▼     ▼     ▼     ▼
+    ┌────────────────────────────┐
+    │  Lambda #2-#N (Workers)    │  ◄── Parallel scrapers
+    │  (Puppeteer/Playwright)    │      - Process URLs
+    └────────┬───────────────────┘      - Extract data
+             │
+             ▼
+    ┌─────────────────┐
+    │  DynamoDB / S3  │  ◄── Storage
+    └─────────────────┘
+```
+
+**Lambda Function (Worker):**
+```javascript
+// scraper-worker/index.js
+const chromium = require('chrome-aws-lambda')
+const AWS = require('aws-sdk')
+const s3 = new AWS.S3()
+
+exports.handler = async (event) => {
+  const browser = await chromium.puppeteer.launch({
+    args: chromium.args,
+    executablePath: await chromium.executablePath,
+    headless: true
+  })
+
+  const results = []
+
+  // Process SQS messages
+  for (const record of event.Records) {
+    const url = record.body
+
+    try {
+      const page = await browser.newPage()
+      await page.goto(url, { waitUntil: 'networkidle0' })
+
+      const data = await page.evaluate(() => ({
+        title: document.querySelector('h1')?.textContent,
+        price: document.querySelector('.price')?.textContent
+      }))
+
+      // Store in S3
+      await s3.putObject({
+        Bucket: 'scraping-results',
+        Key: `${Date.now()}-${Buffer.from(url).toString('base64')}.json`,
+        Body: JSON.stringify(data)
+      }).promise()
+
+      results.push({ url, status: 'success' })
+
+    } catch (error) {
+      console.error('Scrape failed:', url, error)
+      results.push({ url, status: 'failed', error: error.message })
+    }
+  }
+
+  await browser.close()
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify(results)
+  }
+}
+```
+
+---
+
+### 7.6 Error Handling and Retry Logic
+
+#### **Dead Letter Queue (DLQ)**
+```javascript
+// SQS Configuration
+{
+  QueueName: 'scraping-queue',
+  RedrivePolicy: JSON.stringify({
+    deadLetterTargetArn: 'arn:aws:sqs:us-east-1:123456789:scraping-dlq',
+    maxReceiveCount: 3  // After 3 failures, move to DLQ
+  })
+}
+```
+
+#### **Exponential Backoff Queue**
+```python
+# Redis-based retry with exponential backoff
+async def retry_with_backoff(url, attempt=0):
+    max_attempts = 5
+
+    if attempt >= max_attempts:
+        # Move to DLQ
+        await redis.lpush('scrape:dlq', json.dumps({
+            'url': url,
+            'attempts': attempt,
+            'failed_at': datetime.now().isoformat()
+        }))
+        return
+
+    try:
+        await scrape(url)
+    except Exception as e:
+        # Calculate backoff: 1s, 2s, 4s, 8s, 16s
+        backoff_seconds = 2 ** attempt
+
+        # Schedule retry
+        await redis.zadd('scrape:retry', {
+            json.dumps({'url': url, 'attempt': attempt + 1}):
+            time.time() + backoff_seconds
+        })
+
+# Retry consumer
+async def process_retries():
+    while True:
+        # Get URLs ready for retry
+        now = time.time()
+        items = await redis.zrangebyscore('scrape:retry', 0, now)
+
+        for item in items:
+            data = json.loads(item)
+            await retry_with_backoff(data['url'], data['attempt'])
+            await redis.zrem('scrape:retry', item)
+
+        await asyncio.sleep(1)
+```
+
+---
+
+## 8. Reference Architecture
+
+### 8.1 Complete Scraping Stack (2025)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         INGRESS LAYER                            │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │  Cloudflare     │  │  API Gateway    │  │  Rate Limiter   │ │
+│  │  Workers        │  │  (Auth)         │  │  (Redis)        │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      ORCHESTRATION LAYER                         │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │  Scheduler (Temporal / Airflow / Prefect)                   ││
+│  │  - Job scheduling                                           ││
+│  │  - Workflow management                                      ││
+│  │  - Monitoring & alerting                                    ││
+│  └─────────────────────────────────────────────────────────────┘│
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        QUEUE LAYER                               │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
+│  │  Kafka   │  │  Redis   │  │ RabbitMQ │  │   SQS    │       │
+│  │ (Events) │  │ (Tasks)  │  │ (Priority)│  │(Serverless)│     │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘       │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        WORKER LAYER                              │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  Browser Automation Workers                               │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐ │  │
+│  │  │Playwright│  │Puppeteer │  │ Selenium │  │ Scrapy   │ │  │
+│  │  │Container │  │Container │  │Container │  │ Worker   │ │  │
+│  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘ │  │
+│  │                                                            │  │
+│  │  - Cloudflare Containers / Kubernetes Pods                │  │
+│  │  - Proxy rotation (Bright Data / Oxylabs)                 │  │
+│  │  - CAPTCHA solving (2Captcha / Anti-Captcha)              │  │
+│  │  - Anti-detection (Stealth plugins)                       │  │
+│  └──────────────────────────────────────────────────────────┘  │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      PROCESSING LAYER                            │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  Data Pipeline                                            │  │
+│  │  - Validation (Zod / Joi)                                 │  │
+│  │  - Transformation (ETL)                                   │  │
+│  │  - Deduplication (Bloom filter / DB)                      │  │
+│  │  - Enrichment (AI / External APIs)                        │  │
+│  └──────────────────────────────────────────────────────────┘  │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        STORAGE LAYER                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
+│  │PostgreSQL│  │ ClickHouse│  │ MongoDB  │  │    S3    │       │
+│  │(Metadata)│  │(Analytics)│  │  (Docs)  │  │  (Raw)   │       │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘       │
+└─────────────────────────────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      OBSERVABILITY LAYER                         │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
+│  │Prometheus│  │  Grafana │  │  Sentry  │  │CloudWatch│       │
+│  │(Metrics) │  │  (Viz)   │  │ (Errors) │  │  (Logs)  │       │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 8.2 Technology Stack Recommendations
+
+#### **Small Scale (<1M pages/month)**
+- **Queue:** Redis
+- **Workers:** Scrapy (Python) or Playwright (JS)
+- **Proxies:** Datacenter (Bright Data / Smartproxy)
+- **Storage:** PostgreSQL + S3
+- **Hosting:** Single VPS (Hetzner / DigitalOcean)
+- **Cost:** ~$50-200/month
+
+#### **Medium Scale (1M-10M pages/month)**
+- **Queue:** Redis + RabbitMQ
+- **Workers:** Kubernetes (10-50 pods) with Playwright
+- **Proxies:** Residential (Bright Data / Oxylabs)
+- **Storage:** PostgreSQL (managed) + ClickHouse + S3
+- **Hosting:** AWS / GCP / Cloudflare
+- **Cost:** ~$500-2000/month
+
+#### **Large Scale (>10M pages/month)**
+- **Queue:** Kafka + Redis
+- **Workers:** Kubernetes (100+ pods) + Cloudflare Containers
+- **Proxies:** Residential + ISP pools, multiple providers
+- **CAPTCHA:** Anti-Captcha / 2Captcha enterprise
+- **Storage:** Distributed PostgreSQL + ClickHouse cluster + S3
+- **Orchestration:** Temporal / Airflow
+- **Hosting:** Multi-cloud (AWS + Cloudflare)
+- **Cost:** ~$5,000-50,000/month
+
+---
+
+### 8.3 Cloudflare-Specific Stack
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    CLOUDFLARE WORKERS                            │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  API Gateway Worker                                       │  │
+│  │  - Authentication (WorkOS)                                │  │
+│  │  - Rate limiting (KV)                                     │  │
+│  │  - Request routing                                        │  │
+│  └─────────────────────┬────────────────────────────────────┘  │
+└────────────────────────┼────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  CLOUDFLARE QUEUES                               │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  Scraping Queue                                           │  │
+│  │  - URL distribution                                       │  │
+│  │  - Dead letter queue                                      │  │
+│  └─────────────────────┬────────────────────────────────────┘  │
+└────────────────────────┼────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              CLOUDFLARE CONTAINERS / BROWSER RENDERING           │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  Scraper Containers (Durable Objects)                     │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │  │
+│  │  │Playwright│  │Puppeteer │  │ Custom   │              │  │
+│  │  │Container │  │Container │  │ Scraper  │              │  │
+│  │  └──────────┘  └──────────┘  └──────────┘              │  │
+│  │                                                            │  │
+│  │  - Proxy integration (via env vars)                       │  │
+│  │  - Session pooling                                        │  │
+│  │  - $0.09/browser hour                                     │  │
+│  └──────────────────────────────────────────────────────────┘  │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     CLOUDFLARE STORAGE                           │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
+│  │    D1    │  │    KV    │  │    R2    │  │  Durable │       │
+│  │  (SQL)   │  │  (Cache) │  │  (Blob)  │  │  Objects │       │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Key Features:**
+- **Global Edge Network** - Deploy scrapers to 300+ locations
+- **Zero Cold Starts** - Workers start instantly
+- **Integrated Stack** - No need to manage separate infrastructure
+- **Cost-Effective** - Pay only for what you use
+- **Simplified Deployment** - `wrangler deploy` from CLI
+
+**Limitations:**
+- **CPU Time Limits** - 50ms (free) / 30s (paid)
+- **Memory Limits** - 128MB per Worker
+- **Storage Constraints** - D1 (10GB), KV (1GB per namespace)
+- **Browser Rendering Cost** - Can add up for high volume
+
+---
+
+## 9. Cost Analysis
+
+### 9.1 Proxy Costs (Monthly)
+
+| Volume | Datacenter | Residential | ISP | Mobile |
+|--------|-----------|-------------|-----|--------|
+| **10GB** | $1-8 | $100-150 | $150-170 | $220-240 |
+| **100GB** | $11-80 | $1,000-1,500 | $1,500-1,700 | $2,200-2,400 |
+| **1TB** | $110-800 | $10,000-15,000 | $15,000-17,000 | $22,000-24,000 |
+
+**Optimization:**
+- Start with datacenter (cheapest)
+- Upgrade to residential only when blocked
+- Use ISP for sticky sessions
+- Mobile only for mobile-specific targets
+
+---
+
+### 9.2 Infrastructure Costs (Monthly)
+
+#### **Self-Hosted (AWS)**
+```
+Small Scale (1M pages):
+- EC2 t3.medium (workers): $30
+- RDS PostgreSQL db.t3.micro: $15
+- S3 storage (10GB): $1
+- CloudWatch logs: $5
+- Total: ~$51
+
+Medium Scale (10M pages):
+- EC2 c5.2xlarge (workers) x3: $300
+- RDS PostgreSQL db.r5.large: $150
+- S3 storage (100GB): $3
+- ElastiCache Redis: $50
+- CloudWatch + monitoring: $20
+- Total: ~$523
+
+Large Scale (100M pages):
+- EKS cluster (20 nodes): $2,000
+- RDS PostgreSQL db.r5.4xlarge: $800
+- ClickHouse cluster: $1,500
+- S3 storage (1TB): $23
+- ElastiCache Redis cluster: $200
+- CloudWatch + monitoring: $100
+- Total: ~$4,623
+```
+
+#### **Cloudflare (Global Edge)**
+```
+Small Scale (1M pages):
+- Workers (10M requests): $5
+- Browser Rendering (50 hours): $4.50
+- D1 (10GB): $0
+- R2 storage (10GB): $0.15
+- Total: ~$9.65
+
+Medium Scale (10M pages):
+- Workers (100M requests): $50
+- Browser Rendering (500 hours): $45
+- D1 (50GB): $0 (within free tier)
+- R2 storage (100GB): $1.50
+- Total: ~$96.50
+
+Large Scale (100M pages):
+- Workers (1B requests): $500
+- Browser Rendering (5,000 hours): $450
+- D1 (external DB needed): $0
+- R2 storage (1TB): $15
+- Queues (1B messages): $4
+- External DB (Neon/Supabase): $200
+- Total: ~$1,169
+```
+
+**Cloudflare Advantage:**
+- 80-90% cost savings vs. AWS for small-medium scale
+- No egress fees (huge savings)
+- Simplified architecture
+- Global distribution included
+
+---
+
+### 9.3 CAPTCHA Costs
+
+**Scenarios:**
+```
+Low CAPTCHA (1% encounter rate):
+- 1M pages × 1% = 10,000 CAPTCHAs
+- Cost: $10-30
+
+Medium CAPTCHA (10% encounter rate):
+- 1M pages × 10% = 100,000 CAPTCHAs
+- Cost: $100-300
+
+High CAPTCHA (50% encounter rate):
+- 1M pages × 50% = 500,000 CAPTCHAs
+- Cost: $500-1,500
+```
+
+**Mitigation:**
+- Use residential proxies (reduces CAPTCHA rate to <5%)
+- Implement stealth techniques
+- Spread requests over time
+- Consider CAPTCHA-free alternatives (APIs)
+
+---
+
+## 10. Best Practices Summary
+
+### 10.1 Technical Checklist
+
+```markdown
+[ ] Use datacenter proxies first, upgrade only when blocked
+[ ] Implement exponential backoff with jitter for retries
+[ ] Rotate User-Agents with consistent headers
+[ ] Respect robots.txt and Crawl-delay
+[ ] Use Playwright Stealth or Puppeteer Extra Stealth
+[ ] Implement URL canonicalization for deduplication
+[ ] Use content hashing to detect duplicate pages
+[ ] Set up proper logging and monitoring (Prometheus/Grafana)
+[ ] Configure dead letter queue for failed scrapes
+[ ] Implement rate limiting (1-5 req/sec typical)
+[ ] Use session pooling for browser automation
+[ ] Cache DNS lookups and keep-alive connections
+[ ] Set reasonable timeouts (30s network, 60s page load)
+[ ] Implement graceful shutdown for workers
+[ ] Monitor proxy success rates and rotate providers
+```
+
+---
+
+### 10.2 Legal/Ethical Checklist
+
+```markdown
+[ ] Read and respect robots.txt
+[ ] Check Terms of Service for scraping clauses
+[ ] Identify your bot in User-Agent with contact info
+[ ] Only scrape publicly accessible data (no login walls)
+[ ] Implement personal data filters (GDPR compliance)
+[ ] Honor opt-out requests
+[ ] Provide contact info for site owners
+[ ] Set up audit logging for compliance
+[ ] Document lawful basis for data processing
+[ ] Review GDPR/CCPA requirements for your jurisdiction
+[ ] Consider using public APIs instead of scraping
+[ ] Attribute data sources when publishing
+[ ] Avoid scraping during peak traffic hours
+[ ] Set up monitoring for abuse detection
+[ ] Have legal review before commercial use
+```
+
+---
+
+### 10.3 Cost Optimization Checklist
+
+```markdown
+[ ] Use datacenter proxies for non-protected sites
+[ ] Implement aggressive caching (Redis/CDN)
+[ ] Deduplicate URLs before scraping
+[ ] Use Cloudflare Containers for global scale
+[ ] Enable session reuse for browser automation
+[ ] Batch requests to same domain
+[ ] Use conditional requests (If-Modified-Since)
+[ ] Compress stored data (gzip/brotli)
+[ ] Clean up old data regularly
+[ ] Monitor and cap CAPTCHA solving costs
+[ ] Use spot instances (AWS) for worker pools
+[ ] Implement auto-scaling based on queue depth
+[ ] Choose right storage tier (S3 Glacier for archives)
+[ ] Set up cost alerts (AWS Budget / Cloudflare Spend)
+[ ] Review and optimize proxy usage monthly
+```
+
+---
+
+## 11. Tools & Resources
+
+### 11.1 Proxy Providers
+
+- **Bright Data:** https://brightdata.com
+- **Oxylabs:** https://oxylabs.io
+- **Smartproxy:** https://smartproxy.com
+- **SOAX:** https://soax.com
+- **IPRoyal:** https://iproyal.com
+
+### 11.2 CAPTCHA Solvers
+
+- **2Captcha:** https://2captcha.com
+- **Anti-Captcha:** https://anti-captcha.com
+- **CapMonster:** https://capmonster.cloud
+- **DeathByCaptcha:** https://www.deathbycaptcha.com
+
+### 11.3 Browser Automation
+
+- **Playwright:** https://playwright.dev
+- **Puppeteer:** https://pptr.dev
+- **Selenium:** https://www.selenium.dev
+- **Playwright Stealth:** https://github.com/berstend/puppeteer-extra/tree/master/packages/puppeteer-extra-plugin-stealth
+
+### 11.4 Scraping Frameworks
+
+- **Scrapy:** https://scrapy.org
+- **Crawlee:** https://crawlee.dev (Apify)
+- **Colly:** https://go-colly.org (Go)
+- **BeautifulSoup:** https://www.crummy.com/software/BeautifulSoup/
+
+### 11.5 Cloudflare Tools
+
+- **Cloudflare Workers:** https://workers.cloudflare.com
+- **Browser Rendering:** https://developers.cloudflare.com/browser-rendering
+- **Containers:** https://developers.cloudflare.com/containers
+- **Wrangler CLI:** https://developers.cloudflare.com/workers/wrangler
+
+### 11.6 Queue Systems
+
+- **Redis:** https://redis.io
+- **Kafka:** https://kafka.apache.org
+- **RabbitMQ:** https://www.rabbitmq.com
+- **Amazon SQS:** https://aws.amazon.com/sqs
+- **Cloudflare Queues:** https://developers.cloudflare.com/queues
+
+### 11.7 Monitoring & Observability
+
+- **Prometheus:** https://prometheus.io
+- **Grafana:** https://grafana.com
+- **Sentry:** https://sentry.io
+- **Datadog:** https://www.datadoghq.com
+- **New Relic:** https://newrelic.com
+
+---
+
+## 12. Conclusion
+
+Modern web scraping at scale in 2025 requires:
+
+1. **Smart Proxy Strategy** - Start cheap (datacenter), upgrade when needed (residential)
+2. **Anti-Detection** - Playwright Stealth, behavioral simulation, header consistency
+3. **Distributed Architecture** - Queue-based workers, horizontal scaling
+4. **Legal Compliance** - Respect robots.txt, GDPR, ToS; implement audit logging
+5. **Cost Optimization** - Cloudflare Containers, session pooling, deduplication
+6. **Monitoring** - Prometheus/Grafana for metrics, Sentry for errors
+
+**Cloudflare Containers** offer a compelling platform for global scraping with:
+- ✅ 80-90% cost savings vs. traditional cloud
+- ✅ Global edge network (300+ locations)
+- ✅ Zero egress fees
+- ✅ Simplified deployment
+- ✅ Integrated with Workers, Queues, D1, R2
+
+**Key Takeaway:** Build incrementally. Start with simple Scrapy or Playwright scripts, add proxies when blocked, scale to distributed architecture when volume demands, and always prioritize legal/ethical compliance.
+
+---
+
+**Document Version:** 1.0
+**Last Updated:** 2025-10-03
+**Next Review:** 2025-11-03

@@ -1,0 +1,1237 @@
+# MCP Directory Submission Strategy
+
+**Created:** 2025-10-03
+**Status:** Research Complete - Ready for Implementation
+**Purpose:** Comprehensive guide for submitting .do MCP services to 17+ directories and maximizing ecosystem visibility
+
+---
+
+## Executive Summary
+
+The Model Context Protocol (MCP) ecosystem has exploded in 2025 with **17+ major directories**, **6,150+ registered servers**, and adoption by both **Anthropic Claude** and **OpenAI** (March 2025). This document provides a complete roadmap for packaging and submitting .do's microservices as MCP servers to maximize visibility and adoption.
+
+**Key Opportunities:**
+- 🎯 Official MCP Registry (launched September 2025)
+- 🔥 OpenAI adoption (March 2025) - ChatGPT desktop + Agents SDK
+- 📈 PulseMCP (6,150+ servers, fastest growing)
+- 🌟 10 Official Anthropic Partner Integrations
+- 📦 Multiple awesome-mcp-servers lists (71K+ stars combined)
+
+**Our Advantage:**
+- ✅ MCP server already deployed (workers/mcp)
+- ✅ 47 tools across 12 categories
+- ✅ Cloudflare Workers infrastructure
+- ✅ Production-ready microservices architecture
+
+---
+
+## Part 1: Complete Directory List (17+ Directories)
+
+### Tier 1: Official & High-Impact Directories (Priority 1)
+
+#### 1. **Official MCP Registry** (PRIMARY)
+- **URL:** https://registry.modelcontextprotocol.io
+- **Status:** GA (launched September 2025)
+- **Reach:** Primary source of truth, all clients check here first
+- **Submission:** Via `mcp-publisher` CLI tool
+- **Requirements:**
+  - `server.json` manifest file
+  - GitHub OAuth or DNS/HTTP verification for namespace
+  - Open-source license (MIT, Apache)
+  - Deployment to npm, PyPI, Docker Hub, or remote service
+- **Validation:** Automated ownership verification
+- **Benefits:**
+  - Claude Desktop integration
+  - OpenAI Agents SDK integration
+  - Community client discovery
+- **Estimated Effort:** 4-6 hours
+- **Documentation:** https://github.com/modelcontextprotocol/registry/blob/main/docs/guides/publishing/publish-server.md
+
+#### 2. **PulseMCP** (HIGHEST REACH)
+- **URL:** https://pulsemcp.com
+- **Stats:** 6,150+ servers (largest directory)
+- **Submission:** Submit via GitHub or web form
+- **Requirements:** Working MCP server, GitHub repository
+- **Special Features:**
+  - Analytics dashboard
+  - Usage metrics
+  - Community ratings
+- **Estimated Effort:** 2-3 hours
+- **Priority:** HIGH - Largest user base
+
+#### 3. **MCP.so**
+- **URL:** https://mcp.so
+- **Type:** Server directory + hosting platform
+- **Submission:** GitHub-based submission
+- **Requirements:**
+  - server.json manifest
+  - GitHub repository
+  - README with setup instructions
+- **Special Features:**
+  - Hosted server option
+  - API documentation generation
+  - Quick-start templates
+- **Estimated Effort:** 2-3 hours
+- **Priority:** HIGH
+
+#### 4. **Glama.ai**
+- **URL:** https://glama.ai/mcp/servers
+- **Type:** Directory + managed hosting
+- **Submission:** Web form with Dockerfile
+- **Requirements:**
+  - Dockerfile for server
+  - Server metadata
+  - Tool documentation
+- **Special Features:**
+  - Managed hosting (serverless)
+  - Automatic security scanning
+  - Tool budget management
+  - Private access tokens
+- **Estimated Effort:** 3-4 hours
+- **Priority:** HIGH - Managed hosting valuable
+
+#### 5. **MCPServers.org** (Awesome MCP Servers)
+- **URL:** https://mcpservers.org
+- **Type:** Community-curated directory
+- **Submission:** GitHub PR to repository
+- **Requirements:**
+  - Active GitHub repository
+  - Clear documentation
+  - Working demo/example
+- **Estimated Effort:** 1-2 hours
+- **Priority:** HIGH - Community visibility
+
+### Tier 2: GitHub Awesome Lists (Priority 2)
+
+#### 6. **punkpeye/awesome-mcp-servers**
+- **URL:** https://github.com/punkpeye/awesome-mcp-servers
+- **Stats:** 71,887 stars, 5,959 forks
+- **Submission:** GitHub PR to README.md
+- **Guidelines:**
+  - Fork repository
+  - Add entry in alphabetical order
+  - Include: name, link, description
+  - Follow existing format
+  - One server per line
+- **Template:**
+  ```markdown
+  - [.do MCP Server](https://github.com/dot-do/workers/tree/main/mcp) - Enterprise-grade MCP server with 47 tools across 12 categories (GitHub, Memory, DB, AI, etc.)
+  ```
+- **Review Process:** Maintainer review, typically 1-3 days
+- **Estimated Effort:** 30 minutes
+- **Priority:** HIGH - Most starred repo
+
+#### 7. **wong2/awesome-mcp-servers**
+- **URL:** https://github.com/wong2/awesome-mcp-servers
+- **Stats:** 2,806 stars, 593 forks
+- **Submission:** Same as above
+- **Estimated Effort:** 30 minutes
+
+#### 8. **appcypher/awesome-mcp-servers**
+- **URL:** https://github.com/appcypher/awesome-mcp-servers
+- **Stats:** 4,723 stars, 440 forks
+- **Topics:** ai, anthropic-claude, mcp, tool-use
+- **Submission:** Same as above
+- **Estimated Effort:** 30 minutes
+
+#### 9. **rohitg00/awesome-devops-mcp-servers**
+- **URL:** https://github.com/rohitg00/awesome-devops-mcp-servers
+- **Stats:** 861 stars (DevOps focused)
+- **Relevance:** HIGH - .do has GitHub, DB, queue, scheduling tools
+- **Submission:** Same as above
+- **Estimated Effort:** 30 minutes
+
+#### 10. **jaw9c/awesome-remote-mcp-servers**
+- **URL:** https://github.com/jaw9c/awesome-remote-mcp-servers
+- **Stats:** 856 stars
+- **Relevance:** HIGH - .do MCP is remote-accessible (Cloudflare Workers)
+- **Submission:** Same as above
+- **Estimated Effort:** 30 minutes
+
+#### 11. **TensorBlock/awesome-mcp-servers**
+- **URL:** https://github.com/TensorBlock/awesome-mcp-servers
+- **Stats:** 450 stars
+- **Topics:** mcp-server-discovery, genai
+- **Submission:** Same as above
+- **Estimated Effort:** 30 minutes
+
+#### 12. **demcp/awesome-web3-mcp-servers**
+- **URL:** https://github.com/demcp/awesome-web3-mcp-servers
+- **Focus:** Web3/blockchain (lower priority for .do)
+- **Estimated Effort:** 30 minutes
+
+### Tier 3: Specialized Directories (Priority 3)
+
+#### 13. **CloudMCP.run**
+- **URL:** https://cloudmcp.run
+- **Type:** Managed MCP hosting on Cloud Run
+- **Submission:** Import from GitHub
+- **Requirements:**
+  - GitHub repository
+  - Command to run server
+  - Environment variables
+  - Dockerfile (optional)
+- **Relevance:** Medium - Cloudflare Workers already hosts .do
+- **Estimated Effort:** 2-3 hours
+
+#### 14. **MCP Server Hub (mcpserver.dev)**
+- **URL:** https://mcpserver.dev
+- **Type:** Discovery platform
+- **Submission:** Web submission form
+- **Estimated Effort:** 1-2 hours
+
+#### 15. **chatmcp/mcpso**
+- **URL:** https://github.com/chatmcp/mcpso
+- **Stats:** 1,891 stars
+- **Type:** TypeScript-based directory
+- **Submission:** GitHub PR
+- **Estimated Effort:** 1 hour
+
+#### 16. **Anthropic Official Partners** (Application Required)
+- **Current Partners:** Atlassian (Jira, Confluence), Zapier, Cloudflare, Intercom, Asana, Square, Sentry, PayPal, Linear, Plaid
+- **Process:** Partnership application
+- **Requirements:**
+  - Production-ready integration
+  - Support infrastructure
+  - Documentation
+  - Security review
+- **Benefits:** Featured in Claude desktop, official support
+- **Estimated Effort:** 40+ hours (full partnership process)
+- **Priority:** LONG-TERM GOAL
+
+#### 17. **OpenAI MCP Directory** (Emerging)
+- **Status:** In development (post-March 2025 adoption)
+- **Monitor:** OpenAI Agents SDK documentation
+- **Estimated Effort:** TBD
+
+---
+
+## Part 2: Submission Requirements by Directory Type
+
+### A. Official MCP Registry Requirements
+
+#### server.json Manifest Schema
+
+```json
+{
+  "$schema": "https://registry.modelcontextprotocol.io/schemas/server.schema.json",
+  "name": "io.do.mcp",
+  "description": "Enterprise-grade MCP server with 47 tools across 12 categories including GitHub, Memory, Database, AI, and more. Built on Cloudflare Workers for global edge deployment.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "homepage": "https://github.com/dot-do/workers/tree/main/mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-do/workers.git",
+    "directory": "mcp"
+  },
+  "packages": [
+    {
+      "registry_type": "remote",
+      "identifier": "https://mcp.do.industries",
+      "version": "1.0.0"
+    }
+  ],
+  "runtime": {
+    "name": "cloudflare-workers",
+    "version": "1.0"
+  },
+  "capabilities": {
+    "tools": 47,
+    "resources": 5,
+    "prompts": 0
+  },
+  "categories": [
+    "developer-tools",
+    "data-storage",
+    "ai-ml",
+    "version-control",
+    "authentication"
+  ],
+  "keywords": [
+    "github",
+    "memory",
+    "database",
+    "ai",
+    "cloudflare",
+    "workers",
+    "edge",
+    "enterprise"
+  ],
+  "author": {
+    "name": "dot-do",
+    "url": "https://do.industries"
+  },
+  "authentication": {
+    "type": "header",
+    "header": "Authorization"
+  },
+  "documentation": "https://github.com/dot-do/workers/tree/main/mcp/README.md"
+}
+```
+
+#### Publishing Process
+
+```bash
+# Install mcp-publisher
+npm install -g @modelcontextprotocol/mcp-publisher
+
+# Initialize server.json (if not exists)
+cd workers/mcp
+mcp-publisher init
+
+# Authenticate (GitHub OAuth)
+mcp-publisher auth login
+
+# Validate manifest
+mcp-publisher validate
+
+# Publish to registry
+mcp-publisher publish
+
+# Verify publication
+mcp-publisher get io.do.mcp
+```
+
+#### Namespace Ownership Options
+
+1. **GitHub OAuth** (Recommended for .do)
+   - Login as `dot-do` organization
+   - Publishes as `io.github.dot-do/*`
+   - No additional verification needed
+
+2. **DNS Verification** (For custom domain)
+   - Add TXT record: `mcp-registry-verify=<token>`
+   - Publishes as `industries.do/*`
+   - Proves domain ownership
+
+3. **HTTP Verification**
+   - Host file at `https://do.industries/.well-known/mcp-registry.txt`
+   - Contains verification token
+   - Alternative to DNS
+
+**Recommendation:** Use GitHub OAuth initially, add DNS verification for custom namespace later.
+
+### B. GitHub Awesome Lists Requirements
+
+#### Standard Format
+
+```markdown
+### Developer Tools
+
+- [.do MCP Server](https://github.com/dot-do/workers/tree/main/mcp) - Enterprise-grade MCP server with 47 tools across 12 categories. Includes GitHub API, knowledge graph memory, database access, AI generation, and more. Built on Cloudflare Workers for global edge deployment. ⭐ Featured tools: GitHub integration, graph memory, RPC database access.
+```
+
+#### Contribution Process
+
+```bash
+# 1. Fork repository
+gh repo fork punkpeye/awesome-mcp-servers
+
+# 2. Clone fork
+git clone https://github.com/YOUR_USERNAME/awesome-mcp-servers
+cd awesome-mcp-servers
+
+# 3. Create branch
+git checkout -b add-do-mcp-server
+
+# 4. Edit README.md (add entry alphabetically)
+# Find appropriate category (e.g., "Developer Tools" or "Database")
+# Add entry following existing format
+
+# 5. Commit changes
+git add README.md
+git commit -m "Add .do MCP Server"
+
+# 6. Push branch
+git push origin add-do-mcp-server
+
+# 7. Create PR
+gh pr create --title "Add .do MCP Server" --body "Adding enterprise-grade MCP server with 47 tools for GitHub, memory, database, AI, and more."
+```
+
+#### PR Best Practices
+
+- **Clear title:** "Add .do MCP Server"
+- **Description:** Briefly explain what the server does
+- **Follow format:** Match existing entries exactly
+- **Alphabetical order:** Insert in correct alphabetical position
+- **One change:** Don't fix other entries in same PR
+- **Be patient:** Reviews take 1-3 days
+
+### C. Hosted Platform Requirements (Glama, CloudMCP)
+
+#### Dockerfile for Glama.ai
+
+```dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
+
+# Copy source
+COPY src ./src
+COPY wrangler.jsonc ./
+
+# Build
+RUN pnpm build
+
+# Expose MCP port
+EXPOSE 3000
+
+# Start server
+CMD ["node", "dist/index.js"]
+```
+
+#### Environment Variables Template
+
+```bash
+# Required
+GITHUB_TOKEN=ghp_xxxxxxxxxxxxx
+ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
+OPENAI_API_KEY=sk-xxxxxxxxxxxxx
+
+# Optional
+DATABASE_URL=postgresql://...
+CLOUDFLARE_ACCOUNT_ID=xxxxxxxxxxxxx
+CLOUDFLARE_API_TOKEN=xxxxxxxxxxxxx
+```
+
+### D. Documentation Requirements
+
+All directories require:
+
+1. **README.md** with:
+   - Clear description
+   - Installation instructions
+   - Usage examples
+   - Tool list
+   - Configuration guide
+   - License
+
+2. **LICENSE file** (MIT or Apache 2.0)
+
+3. **Examples/** directory with:
+   - Basic usage examples
+   - Advanced scenarios
+   - Integration examples
+
+4. **CHANGELOG.md** (for versioning)
+
+---
+
+## Part 3: Packaging .do Services as MCP Servers
+
+### Current State Analysis
+
+**Existing MCP Server:** `workers/mcp/`
+- ✅ **47 tools** across 12 categories
+- ✅ **Production deployed** on Cloudflare Workers
+- ✅ **Service bindings** to db, ai, auth services
+- ✅ **KV-backed memory** (knowledge graph)
+- ✅ **GitHub integration** (built-in)
+
+**Architecture:**
+```
+workers/mcp/
+├── src/
+│   ├── index.ts          # Main entrypoint (HTTP + RPC)
+│   ├── server.ts         # MCP server implementation
+│   ├── resources.ts      # MCP resources
+│   ├── types.ts          # TypeScript types
+│   ├── auth.ts           # Authentication
+│   └── utils.ts          # Utilities
+├── tests/
+├── wrangler.jsonc        # Cloudflare config
+└── README.md             # Documentation
+```
+
+### Packaging Strategy
+
+#### Option 1: Single Unified Server (Current - RECOMMENDED)
+
+**Approach:** Package existing `workers/mcp` as one comprehensive server
+
+**Pros:**
+- ✅ Already production-ready
+- ✅ 47 tools in one server
+- ✅ Simplest for users (one install)
+- ✅ Consistent authentication
+
+**Cons:**
+- ❌ Large surface area
+- ❌ All-or-nothing deployment
+
+**Package Name:** `@dot-do/mcp-server` or `io.do.mcp`
+
+**Use Case:** Users who want comprehensive .do integration
+
+#### Option 2: Modular Servers (Future)
+
+**Approach:** Split into category-specific servers
+
+**Packages:**
+- `@dot-do/mcp-github` - GitHub tools only
+- `@dot-do/mcp-memory` - Knowledge graph memory
+- `@dot-do/mcp-database` - Database access tools
+- `@dot-do/mcp-ai` - AI generation tools
+- `@dot-do/mcp-workflow` - Workflow tools
+
+**Pros:**
+- ✅ Users install only what they need
+- ✅ Smaller attack surface
+- ✅ Independent versioning
+
+**Cons:**
+- ❌ More maintenance overhead
+- ❌ Coordination between packages
+- ❌ Multiple authentications
+
+**Use Case:** Users with specific needs (e.g., only GitHub integration)
+
+**Recommendation:** Start with Option 1, expand to Option 2 based on demand
+
+### Required Files for npm Package
+
+```
+@dot-do/mcp-server/
+├── package.json
+├── README.md
+├── LICENSE (MIT)
+├── CHANGELOG.md
+├── .npmignore
+├── bin/
+│   └── mcp-server.js      # CLI entrypoint
+├── dist/
+│   ├── index.js           # Compiled JS
+│   ├── index.d.ts         # TypeScript definitions
+│   └── server.js
+├── examples/
+│   ├── basic-usage.js
+│   ├── with-claude.js
+│   └── advanced-tools.js
+└── docs/
+    ├── installation.md
+    ├── configuration.md
+    ├── tools-reference.md
+    └── deployment.md
+```
+
+#### package.json Template
+
+```json
+{
+  "name": "@dot-do/mcp-server",
+  "version": "1.0.0",
+  "description": "Enterprise-grade MCP server with 47 tools across 12 categories. Built on Cloudflare Workers.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "mcp-server": "bin/mcp-server.js"
+  },
+  "scripts": {
+    "build": "tsc && rollup -c",
+    "test": "vitest",
+    "prepublishOnly": "pnpm build && pnpm test"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "anthropic",
+    "claude",
+    "openai",
+    "github",
+    "memory",
+    "database",
+    "ai",
+    "cloudflare",
+    "workers"
+  ],
+  "author": "dot-do <team@do.industries>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dot-do/workers.git",
+    "directory": "mcp"
+  },
+  "homepage": "https://do.industries/mcp",
+  "bugs": "https://github.com/dot-do/workers/issues",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "rollup": "^4.0.0"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ]
+}
+```
+
+### Alternative Deployment Methods
+
+#### 1. NPM Package (Recommended)
+
+```bash
+# Publish to npm
+cd workers/mcp
+pnpm build
+pnpm publish --access public
+
+# Users install
+npm install -g @dot-do/mcp-server
+
+# Users run
+mcp-server --port 3000
+```
+
+**Pros:** Easy distribution, version management, familiar to developers
+
+#### 2. Docker Image
+
+```bash
+# Build and publish
+docker build -t dotdo/mcp-server:latest .
+docker push dotdo/mcp-server:latest
+
+# Users run
+docker run -p 3000:3000 -e GITHUB_TOKEN=xxx dotdo/mcp-server:latest
+```
+
+**Pros:** Consistent environment, easy deployment
+
+#### 3. Remote Endpoint (Current)
+
+```bash
+# Already deployed at
+https://mcp.do.industries
+
+# Users configure in Claude Desktop
+{
+  "mcpServers": {
+    "do": {
+      "url": "https://mcp.do.industries",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+**Pros:** No installation, centralized, always up-to-date
+
+#### 4. Cloudflare Workers Template
+
+```bash
+# Users deploy their own instance
+npx wrangler generate my-mcp-server https://github.com/dot-do/workers/tree/main/mcp
+cd my-mcp-server
+wrangler secret put GITHUB_TOKEN
+wrangler deploy
+```
+
+**Pros:** Users control their deployment, customizable
+
+**Recommendation:** Support all 4 methods for maximum flexibility
+
+---
+
+## Part 4: MCP Server Best Practices
+
+### Security Best Practices
+
+#### 1. Authentication
+
+```typescript
+// OAuth 2.0 for user consent
+export class McpServer {
+  async authenticate(request: Request): Promise<User> {
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '')
+
+    if (!token) {
+      throw new Error('Missing authentication token')
+    }
+
+    // Validate with WorkOS, Auth0, etc.
+    const user = await this.env.AUTH.validateToken(token)
+
+    if (!user) {
+      throw new Error('Invalid token')
+    }
+
+    return user
+  }
+}
+```
+
+**Requirements:**
+- ✅ OAuth 2.0 flow for user consent
+- ✅ Short-lived access tokens (1-hour max)
+- ✅ Refresh token rotation
+- ✅ Scope-based permissions
+
+#### 2. Role-Based Access Control (RBAC)
+
+```typescript
+const permissions = {
+  'github:read': ['user', 'admin'],
+  'github:write': ['admin'],
+  'db:read': ['user', 'admin'],
+  'db:write': ['admin'],
+  'memory:read': ['user', 'admin'],
+  'memory:write': ['user', 'admin'],
+}
+
+async function checkPermission(user: User, tool: string): Promise<boolean> {
+  const permission = toolPermissions[tool]
+  return permissions[permission]?.includes(user.role) ?? false
+}
+```
+
+#### 3. Rate Limiting
+
+```typescript
+// Per-user, per-tool rate limits
+const rateLimits = {
+  'github_search_repositories': { requests: 10, window: 60 }, // 10 req/min
+  'db_query': { requests: 100, window: 60 }, // 100 req/min
+  'create_entities': { requests: 50, window: 60 }, // 50 req/min
+}
+```
+
+#### 4. Input Validation
+
+```typescript
+import { z } from 'zod'
+
+const githubSearchSchema = z.object({
+  query: z.string().min(1).max(256),
+  page: z.number().int().min(1).max(100).optional(),
+  per_page: z.number().int().min(1).max(100).optional(),
+})
+
+// Validate before execution
+const validatedInput = githubSearchSchema.parse(input)
+```
+
+#### 5. Prompt Injection Protection
+
+```typescript
+// Sanitize user inputs
+function sanitizeInput(input: string): string {
+  // Remove control characters
+  return input.replace(/[\x00-\x1F\x7F]/g, '')
+    // Limit length
+    .slice(0, 10000)
+    // Escape special characters
+    .replace(/[<>]/g, '')
+}
+```
+
+#### 6. Logging & Auditing
+
+```typescript
+await logToolExecution({
+  userId: user.id,
+  tool: toolName,
+  input: sanitizedInput,
+  output: result,
+  timestamp: Date.now(),
+  success: true,
+})
+```
+
+### Performance Best Practices
+
+#### 1. Caching
+
+```typescript
+// Cache GitHub API responses
+const cacheKey = `github:repos:${query}`
+const cached = await env.KV.get(cacheKey, 'json')
+
+if (cached) {
+  return cached
+}
+
+const result = await fetchFromGitHub(query)
+await env.KV.put(cacheKey, JSON.stringify(result), { expirationTtl: 300 })
+return result
+```
+
+#### 2. Timeouts
+
+```typescript
+const TOOL_TIMEOUT = 30000 // 30 seconds
+
+const result = await Promise.race([
+  executeTool(toolName, input),
+  new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Tool execution timeout')), TOOL_TIMEOUT)
+  )
+])
+```
+
+#### 3. Batch Operations
+
+```typescript
+// Batch multiple entity creations
+async createEntities(entities: Entity[]) {
+  // Process in batches of 100
+  const batches = chunk(entities, 100)
+
+  for (const batch of batches) {
+    await Promise.all(batch.map(entity => this.createEntity(entity)))
+  }
+}
+```
+
+### Documentation Best Practices
+
+#### Tool Documentation Template
+
+```typescript
+{
+  name: 'github_search_repositories',
+  description: 'Search for GitHub repositories using GitHub\'s search API. Supports advanced search syntax including language, stars, topics, and more.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'Search query. Supports advanced syntax like "language:typescript stars:>100"',
+        examples: ['model context protocol', 'language:python stars:>1000']
+      },
+      page: {
+        type: 'number',
+        description: 'Page number for pagination (1-100)',
+        default: 1,
+        minimum: 1,
+        maximum: 100
+      },
+      per_page: {
+        type: 'number',
+        description: 'Results per page (1-100)',
+        default: 30,
+        minimum: 1,
+        maximum: 100
+      }
+    },
+    required: ['query']
+  },
+  examples: [
+    {
+      input: { query: 'model context protocol' },
+      output: { items: [...], total_count: 42 }
+    }
+  ],
+  errors: [
+    { code: 'RATE_LIMIT', message: 'GitHub API rate limit exceeded', httpStatus: 429 },
+    { code: 'INVALID_QUERY', message: 'Search query is invalid', httpStatus: 400 }
+  ]
+}
+```
+
+### Testing Best Practices
+
+#### Integration Tests
+
+```typescript
+describe('MCP Server', () => {
+  it('should list all tools', async () => {
+    const response = await mcpServer.listTools()
+    expect(response.tools).toHaveLength(47)
+  })
+
+  it('should execute GitHub search', async () => {
+    const result = await mcpServer.callTool('github_search_repositories', {
+      query: 'cloudflare workers'
+    })
+    expect(result.items).toBeDefined()
+    expect(result.total_count).toBeGreaterThan(0)
+  })
+
+  it('should require authentication', async () => {
+    await expect(
+      mcpServer.callTool('db_query', { sql: 'SELECT 1' }, { skipAuth: true })
+    ).rejects.toThrow('Authentication required')
+  })
+})
+```
+
+---
+
+## Part 5: Ecosystem Insights
+
+### OpenAI MCP Adoption (March 2025)
+
+**Announcement:** OpenAI added MCP support to Agents SDK and ChatGPT desktop
+
+**Key Features:**
+- MCP servers work with GPT-4, GPT-4o, o1
+- ChatGPT desktop app integration (like Claude)
+- OpenAI API support (via Agents SDK)
+- Two-way communication between AI and data sources
+
+**Impact:**
+- 🎯 **Massive market expansion** - OpenAI has 200M+ weekly users
+- 🔥 **Competition with Claude** - Both support same protocol
+- 📈 **Ecosystem growth** - More tools, more developers
+- 💰 **Monetization opportunities** - Paid MCP servers emerging
+
+**Implications for .do:**
+- List in OpenAI directories (when available)
+- Test with GPT-4o and o1 models
+- Optimize for ChatGPT desktop workflows
+- Consider OpenAI-specific features
+
+### Claude Integrations (10 Partners)
+
+**Official Partners:**
+1. **Atlassian** - Jira, Confluence
+2. **Zapier** - Workflow automation
+3. **Cloudflare** - Workers, R2, D1 (we're already here!)
+4. **Intercom** - Customer support
+5. **Asana** - Project management
+6. **Square** - Payments
+7. **Sentry** - Error tracking
+8. **PayPal** - Payments
+9. **Linear** - Issue tracking
+10. **Plaid** - Financial data
+
+**Partnership Benefits:**
+- Featured in Claude desktop
+- Official documentation
+- Anthropic support and promotion
+- Priority support channel
+- Joint marketing opportunities
+
+**Path to Partnership:**
+- Demonstrate production usage
+- Strong security/compliance
+- Comprehensive documentation
+- Support infrastructure
+- Business partnership agreement
+
+### Security Landscape
+
+**Key Risks:**
+1. **Prompt Injection** - Malicious prompts manipulate AI
+2. **Tool Poisoning** - Compromised tools execute harmful actions
+3. **Data Leakage** - Sensitive data exposed via tools
+4. **Authentication Bypass** - Weak auth allows unauthorized access
+5. **SSRF Attacks** - Server-side request forgery
+6. **Resource Exhaustion** - DoS via expensive operations
+
+**Mitigation Strategies:**
+- ✅ OAuth 2.0 with short-lived tokens
+- ✅ RBAC with principle of least privilege
+- ✅ Input sanitization and validation
+- ✅ Rate limiting per user/tool
+- ✅ Comprehensive logging and monitoring
+- ✅ Regular security audits
+- ✅ Tenant isolation (multi-tenancy)
+
+### Growth Opportunities
+
+#### 1. Enterprise MCP Servers ($$$)
+
+**Market:** Companies wanting private, secure MCP servers
+
+**Offering:**
+- Self-hosted .do MCP server
+- Custom tool development
+- Enterprise authentication (SSO, SAML)
+- SLA and support
+- Compliance (SOC2, HIPAA)
+
+**Revenue:** $500-5000/month per customer
+
+#### 2. Managed MCP Hosting
+
+**Market:** Users who want .do tools without self-hosting
+
+**Offering:**
+- Hosted .do MCP endpoint
+- Pay-per-use pricing
+- API key management
+- Usage analytics
+- Custom tool requests
+
+**Revenue:** $10-100/month per user
+
+#### 3. Tool Marketplace
+
+**Market:** Developers wanting to add .do capabilities
+
+**Offering:**
+- npm packages for each tool category
+- Docker images for deployment
+- Cloudflare Workers templates
+- Integration guides
+
+**Revenue:** Freemium + paid premium tools
+
+#### 4. MCP-as-a-Service
+
+**Market:** Companies building AI products
+
+**Offering:**
+- White-label MCP server
+- Custom branding
+- Multi-tenant infrastructure
+- API for tool management
+- Webhook integrations
+
+**Revenue:** $1000+/month per customer
+
+---
+
+## Part 6: Action Checklist
+
+### Phase 1: Quick Wins (1-2 weeks)
+
+#### Week 1: Registry & GitHub Lists
+
+- [ ] **Official MCP Registry** (4-6 hours)
+  - [ ] Create `server.json` manifest
+  - [ ] Authenticate via GitHub OAuth (`dot-do` org)
+  - [ ] Validate manifest with `mcp-publisher validate`
+  - [ ] Publish to registry: `mcp-publisher publish`
+  - [ ] Verify listing at registry.modelcontextprotocol.io
+  - [ ] Test installation from registry
+
+- [ ] **punkpeye/awesome-mcp-servers** (30 min)
+  - [ ] Fork repository
+  - [ ] Add entry in README.md (alphabetical order)
+  - [ ] Create PR with clear description
+  - [ ] Monitor PR for maintainer feedback
+
+- [ ] **wong2/awesome-mcp-servers** (30 min)
+  - [ ] Same process as above
+
+- [ ] **appcypher/awesome-mcp-servers** (30 min)
+  - [ ] Same process as above
+
+#### Week 2: Major Directories
+
+- [ ] **PulseMCP** (2-3 hours)
+  - [ ] Submit server via web form
+  - [ ] Provide GitHub repository link
+  - [ ] Add server description and documentation
+  - [ ] Configure analytics (if available)
+
+- [ ] **MCP.so** (2-3 hours)
+  - [ ] Submit via GitHub
+  - [ ] Ensure server.json is present
+  - [ ] Add comprehensive README
+  - [ ] Test hosted option
+
+- [ ] **MCPServers.org** (1-2 hours)
+  - [ ] Submit via GitHub PR
+  - [ ] Follow community guidelines
+
+- [ ] **Additional GitHub Lists** (2 hours total)
+  - [ ] rohitg00/awesome-devops-mcp-servers (DevOps focus)
+  - [ ] jaw9c/awesome-remote-mcp-servers (remote servers)
+  - [ ] TensorBlock/awesome-mcp-servers
+
+### Phase 2: Packaging & Distribution (2-3 weeks)
+
+- [ ] **NPM Package** (8-12 hours)
+  - [ ] Create package.json with proper metadata
+  - [ ] Build TypeScript to dist/
+  - [ ] Create CLI entrypoint (bin/mcp-server.js)
+  - [ ] Write comprehensive README
+  - [ ] Add usage examples (examples/)
+  - [ ] Test installation: `npm install -g @dot-do/mcp-server`
+  - [ ] Publish to npm: `npm publish --access public`
+  - [ ] Create GitHub release with changelog
+
+- [ ] **Docker Image** (4-6 hours)
+  - [ ] Create optimized Dockerfile
+  - [ ] Build multi-stage image
+  - [ ] Push to Docker Hub: `dotdo/mcp-server:latest`
+  - [ ] Add Docker Compose example
+  - [ ] Document environment variables
+  - [ ] Test container deployment
+
+- [ ] **Cloudflare Workers Template** (3-4 hours)
+  - [ ] Create template repository
+  - [ ] Document deployment steps
+  - [ ] Add secrets configuration guide
+  - [ ] Test template generation
+
+- [ ] **Documentation Site** (8-10 hours)
+  - [ ] Create docs/ directory with:
+    - Installation guide
+    - Configuration reference
+    - Tools reference (47 tools)
+    - API documentation
+    - Deployment guides
+    - Troubleshooting
+  - [ ] Host on GitHub Pages or Cloudflare Pages
+
+### Phase 3: Advanced Directories (1 week)
+
+- [ ] **Glama.ai** (3-4 hours)
+  - [ ] Create Dockerfile for hosted deployment
+  - [ ] Submit via web form
+  - [ ] Configure managed hosting
+  - [ ] Test private access tokens
+
+- [ ] **CloudMCP.run** (2-3 hours)
+  - [ ] Import from GitHub
+  - [ ] Configure deployment
+  - [ ] Set environment variables
+  - [ ] Test hosted endpoint
+
+- [ ] **MCP Server Hub** (1-2 hours)
+  - [ ] Submit via web form
+  - [ ] Provide documentation links
+
+### Phase 4: Long-Term Goals (Ongoing)
+
+- [ ] **Anthropic Partnership** (3-6 months)
+  - [ ] Research partnership requirements
+  - [ ] Build case for featured integration
+  - [ ] Prepare security documentation
+  - [ ] Apply for partnership program
+  - [ ] Negotiate terms
+
+- [ ] **OpenAI Directory** (TBD)
+  - [ ] Monitor OpenAI announcements
+  - [ ] Join early access program (if available)
+  - [ ] Test with ChatGPT desktop
+  - [ ] Submit when directory launches
+
+- [ ] **Enterprise Offering** (Ongoing)
+  - [ ] Develop self-hosted package
+  - [ ] Create enterprise documentation
+  - [ ] Build custom tool development process
+  - [ ] Establish support infrastructure
+
+### Effort Estimates by Priority
+
+**High Priority (Must Do):**
+- Official MCP Registry: 4-6 hours
+- Top 3 GitHub Lists: 1.5 hours
+- PulseMCP: 2-3 hours
+- MCP.so: 2-3 hours
+- NPM Package: 8-12 hours
+- **Total: 18-26.5 hours**
+
+**Medium Priority (Should Do):**
+- Remaining GitHub Lists: 2 hours
+- Docker Image: 4-6 hours
+- Glama.ai: 3-4 hours
+- Documentation Site: 8-10 hours
+- **Total: 17-22 hours**
+
+**Low Priority (Nice to Have):**
+- CloudMCP.run: 2-3 hours
+- Workers Template: 3-4 hours
+- Additional Directories: 3-5 hours
+- **Total: 8-12 hours**
+
+**Grand Total: 43-60.5 hours** (approximately 1-1.5 weeks of focused work)
+
+### Dependencies
+
+1. **Before Registry Submission:**
+   - ✅ Production MCP server deployed
+   - ✅ GitHub repository public
+   - ✅ Open-source license (MIT)
+   - ⏳ server.json manifest file
+   - ⏳ Comprehensive README
+
+2. **Before NPM Package:**
+   - Build pipeline (TypeScript → JavaScript)
+   - CLI entrypoint
+   - Test suite passing
+   - Documentation complete
+
+3. **Before Docker Image:**
+   - Dockerfile created
+   - Docker Hub account
+   - Multi-stage build optimized
+
+4. **Before Partnership Application:**
+   - Production metrics (usage, uptime)
+   - Security audit completed
+   - Support documentation
+   - Business model defined
+
+---
+
+## Part 7: Success Metrics
+
+### Short-Term (1-3 months)
+
+- [ ] Listed in 10+ directories
+- [ ] 100+ npm package downloads/week
+- [ ] 50+ GitHub stars
+- [ ] 10+ community contributions (issues, PRs)
+- [ ] 5+ blog posts/tutorials mentioning .do MCP
+
+### Medium-Term (3-6 months)
+
+- [ ] 1,000+ npm package downloads/week
+- [ ] 500+ GitHub stars
+- [ ] Featured in 2+ "awesome" lists
+- [ ] 3+ enterprise pilot customers
+- [ ] Integration with 5+ third-party tools
+
+### Long-Term (6-12 months)
+
+- [ ] 10,000+ npm package downloads/week
+- [ ] Anthropic partnership approved
+- [ ] OpenAI directory listing
+- [ ] 50+ paying customers
+- [ ] Community-built tools and extensions
+
+---
+
+## Conclusion
+
+The MCP ecosystem presents a **massive opportunity** for .do to gain visibility and adoption. With **OpenAI's adoption** in March 2025, the total addressable market has grown from Claude's user base to include **200M+ ChatGPT users**.
+
+**Our Competitive Advantages:**
+1. ✅ **Production-ready server** - Already deployed and tested
+2. ✅ **Comprehensive toolset** - 47 tools across 12 categories
+3. ✅ **Cloudflare Workers** - Global edge deployment, low latency
+4. ✅ **Enterprise architecture** - Microservices, RPC, authentication
+5. ✅ **Multi-protocol** - HTTP, RPC, MCP, Queue all supported
+
+**Recommended First Steps:**
+1. Submit to Official MCP Registry (highest impact)
+2. Add to top 3 GitHub awesome lists (easy wins)
+3. Publish npm package (broad distribution)
+4. Submit to PulseMCP (largest user base)
+5. Create comprehensive documentation
+
+**Timeline:** With focused effort, we can achieve **10+ directory listings** within **2 weeks** and have a **fully packaged, distributable MCP server** within **1 month**.
+
+The MCP ecosystem is still young and growing rapidly. Early movers who establish quality servers, comprehensive documentation, and strong community presence will dominate the market. .do is **perfectly positioned** to be a leader in this space.
+
+---
+
+**Next Steps:** Begin with Phase 1 (Registry + GitHub lists) and proceed systematically through the checklist. Track progress in a GitHub project board and celebrate each milestone.
+
+**Questions? Issues?** File in https://github.com/dot-do/workers/issues
+

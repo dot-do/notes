@@ -1,0 +1,577 @@
+---
+title: Domain Exclusions Report
+date: 2025-10-04T12:40:58.390Z
+tags: [domains, exclusions, filtering]
+---
+
+# Domain Exclusions Report
+
+**Generated:** 2025-10-04T12:40:58.390Z
+
+## Exclusion Rules
+
+### By TLD
+- `.vin` - Vehicle-related domains - separate project
+
+### By Pattern
+- `driv.ly` - Driv.ly platform - separate project
+- `*.driv.ly` - Driv.ly platform - separate project
+- `auto.dev` - Auto-related domains - separate project
+
+### Exact Domains
+- `driv.ly` - Driv.ly platform - separate project
+
+## Results
+
+- **Total Domains:** 431
+- **Excluded:** 29 (6.7%)
+- **Included:** 402 (93.3%)
+
+### Excluded By Reason
+
+**By TLD:**
+- `.vin`: 27 domains
+
+**By Pattern:**
+- `auto.dev`: 1 domains
+- `driv.ly`: 1 domains
+- `*.driv.ly`: 1 domains
+
+## Included Domains (402)
+
+These domains are **in scope** for the .do industries project:
+
+### By TLD
+
+- `.do`: 105 domains
+- `.com`: 34 domains
+- `.studio`: 30 domains
+- `.dev`: 21 domains
+- `.cfd`: 19 domains
+- `.ng`: 16 domains
+- `.ai`: 13 domains
+- `.se`: 13 domains
+- `.md`: 13 domains
+- `.management`: 11 domains
+- `.as`: 8 domains
+- `.mt`: 7 domains
+- `.org`: 7 domains
+- `.sb`: 5 domains
+- `.page`: 5 domains
+- `.to`: 5 domains
+- `.associates`: 4 domains
+- `.cf`: 4 domains
+- `.io`: 4 domains
+- `.domains`: 3 domains
+- `.ax`: 3 domains
+- `.email`: 3 domains
+- `.sh`: 3 domains
+- `.td`: 3 domains
+- `.st`: 3 domains
+- `.mw`: 3 domains
+- `.directory`: 3 domains
+- `.at`: 2 domains
+- `.cloud`: 2 domains
+- `.by`: 2 domains
+- `.tg`: 2 domains
+- `.co`: 2 domains
+- `.llc`: 2 domains
+- `.sn`: 2 domains
+- `.games`: 2 domains
+- `.hm`: 2 domains
+- `.autos`: 2 domains
+- `.group`: 1 domains
+- `.monster`: 1 domains
+- `.bingo`: 1 domains
+- `.fishing`: 1 domains
+- `.forsale`: 1 domains
+- `.luxury`: 1 domains
+- `.makeup`: 1 domains
+- `.rodeo`: 1 domains
+- `.exposed`: 1 domains
+- `.shop`: 1 domains
+- `.land`: 1 domains
+- `.xyz`: 1 domains
+- `.hn`: 1 domains
+- `.sr`: 1 domains
+- `.ly`: 1 domains
+- `.uy`: 1 domains
+- `.app`: 1 domains
+- `.media`: 1 domains
+- `.enterprises`: 1 domains
+- `.equipment`: 1 domains
+- `.ge`: 1 domains
+- `.sd`: 1 domains
+- `.ac`: 1 domains
+- `.miami`: 1 domains
+- `.boutique`: 1 domains
+- `.broker`: 1 domains
+- `.es`: 1 domains
+- `.is`: 1 domains
+- `.photo`: 1 domains
+- `.video`: 1 domains
+- `.run`: 1 domains
+- `.us`: 1 domains
+- `.services`: 1 domains
+- `.industries`: 1 domains
+
+<details>
+<summary>Click to expand full list</summary>
+
+- 402.do (Driv.ly)
+- accounts.management (Semantics.dev)
+- ach.do (Driv.ly)
+- action.do (Driv.ly)
+- actions.do (Driv.ly)
+- actions.org.ai (Driv.ly)
+- admin.cfd (Semantics.dev)
+- advertis.ng (Semantics.dev)
+- aged.by (Semantics.dev)
+- agent.as (Semantics.dev)
+- agents.do (Driv.ly)
+- agents.org.ai (Driv.ly)
+- agi.do (Driv.ly)
+- aicontent.studio (Semantics.dev)
+- aini.ng (Semantics.dev)
+- airtable.do (Driv.ly)
+- airtableapi.com (Semantics.dev)
+- amy.do (Driv.ly)
+- analytics.do (Driv.ly)
+- analytics.monster (Semantics.dev)
+- api.associates (Semantics.dev)
+- api.bingo (Semantics.dev)
+- api.cf (Driv.ly)
+- api.com.se (Semantics.dev)
+- api.fishing (Semantics.dev)
+- api.forsale (Semantics.dev)
+- api.luxury (Semantics.dev)
+- api.makeup (Semantics.dev)
+- api.management (Semantics.dev)
+- api.mt (Semantics.dev)
+- api.mw (Driv.ly)
+- api.net.ai (Semantics.dev)
+- api.rodeo (Semantics.dev)
+- api.sb (Semantics.dev)
+- api.services (Driv.ly)
+- apỉ.studio (Semantics.dev)
+- api.us.org (Semantics.dev)
+- apidev.studio (Semantics.dev)
+- apiproxy.studio (Semantics.dev)
+- apis.autos (Driv.ly)
+- apis.ax (Semantics.dev)
+- apis.cfd (Semantics.dev)
+- apis.dev (Semantics.dev)
+- apis.directory (Driv.ly)
+- apis.do (Driv.ly)
+- apis.email (Semantics.dev)
+- apis.exposed (Semantics.dev)
+- apis.md (Driv.ly)
+- apis.shop (Semantics.dev)
+- apistatus.page (Semantics.dev)
+- app.associates (Semantics.dev)
+- app.com.se (Semantics.dev)
+- app.gr.com (Semantics.dev)
+- app.net.ai (Semantics.dev)
+- appli.dev (Semantics.dev)
+- apps.ax (Semantics.dev)
+- ari.do (Driv.ly)
+- ast.md (Driv.ly)
+- atlanticluxuryimports.com (Semantics.dev)
+- atlanticmercedes.com (Semantics.dev)
+- auth.us.org (Semantics.dev)
+- auth8.dev (Semantics.dev)
+- automates.cfd (Semantics.dev)
+- bdr.do (Driv.ly)
+- benchmarks.do (Driv.ly)
+- blogg.ng (Semantics.dev)
+- blogs.sh (Semantics.dev)
+- bots.do (Driv.ly)
+- browse.do (Driv.ly)
+- browser.do (Driv.ly)
+- browsers.do (Driv.ly)
+- builder.domains (Builder.Domains)
+- business-as-code.dev (Driv.ly)
+- businesses.do (Driv.ly)
+- cach.ng (Semantics.dev)
+- car.cfd (Semantics.dev)
+- cardkit.dev (Semantics.dev)
+- cards.land (Semantics.dev)
+- careers.do (Driv.ly)
+- cartopia.xyz (Semantics.dev)
+- cdn.co.at (Driv.ly)
+- cfo.do (Driv.ly)
+- cli.do (Driv.ly)
+- cloud-motors.com (Semantics.dev)
+- cloudformed.cfd (Semantics.dev)
+- cloudy.management (Semantics.dev)
+- cname.do (Driv.ly)
+- cname.to (Semantics.dev)
+- cntnt.management (Semantics.dev)
+- coach.do (Driv.ly)
+- collecting.domains (NathanClevenger.com)
+- colo.do (Driv.ly)
+- companies.do (Driv.ly)
+- conciergebuy.com (Driv.ly)
+- context.do (Driv.ly)
+- converts.to (Semantics.dev)
+- coo.do (Driv.ly)
+- crawl.ng (Semantics.dev)
+- cro.do (Driv.ly)
+- ctx.as (Semantics.dev)
+- ctx.do (Driv.ly)
+- ctx.md (Driv.ly)
+- currentventures.com (Semantics.dev)
+- d1.do (Driv.ly)
+- dara.do (Driv.ly)
+- data.mt (Semantics.dev)
+- database.do (Driv.ly)
+- databases.do (Driv.ly)
+- datasets.do (Driv.ly)
+- db.hn (Semantics.dev)
+- db.mw (Driv.ly)
+- db.sb (Semantics.dev)
+- db.td (Semantics.dev)
+- dbx.md (Driv.ly)
+- desertluxuryimports.com (Semantics.dev)
+- dev.sr (Semantics.dev)
+- dev.td (Semantics.dev)
+- developers.cfd (Semantics.dev)
+- developers.sh (Semantics.dev)
+- devs.do (Driv.ly)
+- directory.sb (Semantics.dev)
+- do.cf (Driv.ly)
+- do.industries (Driv.ly)
+- documentation.do (Driv.ly)
+- dotdo.ai (Driv.ly)
+- drively.com.ai (Driv.ly)
+- drively.dev (Driv.ly)
+- drively.email (Driv.ly)
+- drivelyai.com (Driv.ly)
+- drivly.ai (Driv.ly)
+- drivly.co (Driv.ly)
+- drivly.dev (Driv.ly)
+- drivly.email (Driv.ly)
+- drivly.studio (Driv.ly)
+- drivlyai.com (Driv.ly)
+- drivlycars.com (Semantics.dev)
+- drivlymotors.com (Semantics.dev)
+- dropshippi.ng (Semantics.dev)
+- ed.com.se (Semantics.dev)
+- emails.do (Driv.ly)
+- epcis.dev (EPCIS.dev)
+- esbuild.do (Driv.ly)
+- evals.do (Driv.ly)
+- everyvin.com (Driv.ly)
+- experiments.do (Driv.ly)
+- extract.do (Driv.ly)
+- faq.management (Semantics.dev)
+- fetch.do (Driv.ly)
+- fetch.ng (Semantics.dev)
+- fleet-concierge.com (Driv.ly)
+- function.cf (Driv.ly)
+- function.do (Driv.ly)
+- functions.do (Driv.ly)
+- functions.org.ai (Driv.ly)
+- fy.com.se (Semantics.dev)
+- gcp.do (Driv.ly)
+- generate.md (Driv.ly)
+- germanluxurymotors.com (Semantics.dev)
+- get-pre-approved.com (Semantics.dev)
+- goals.do (Driv.ly)
+- godrivly.com (Semantics.dev)
+- gpt.do (Driv.ly)
+- graph.do (Driv.ly)
+- graphdl.org (Driv.ly)
+- greatlakesimports.com (Semantics.dev)
+- gs1.org.ai (EPCIS.dev)
+- habits.dev (Semantics.dev)
+- headless.ly (Semantics.dev)
+- hood.by (Semantics.dev)
+- hq.com.se (Semantics.dev)
+- hq.uy (Semantics.dev)
+- hub.tg (Semantics.dev)
+- humans.do (Driv.ly)
+- ial.app (Semantics.dev)
+- ial.media (Semantics.dev)
+- id0.co (Semantics.dev)
+- ideaflow.dev (Semantics.dev)
+- industries.directory (Driv.ly)
+- infobox.page (Semantics.dev)
+- ing.associates (Semantics.dev)
+- ing.com.se (Semantics.dev)
+- ing.enterprises (Semantics.dev)
+- ing.equipment (Semantics.dev)
+- ing.gr.com (Semantics.dev)
+- ing.management (Semantics.dev)
+- ing.us.org (Semantics.dev)
+- inspection.studio (Semantics.dev)
+- integrations.do (Driv.ly)
+- integrations.studio (Semantics.dev)
+- interm.at (Longtail.Studio)
+- io.mw (Driv.ly)
+- io.sb (Semantics.dev)
+- ion.com.se (Semantics.dev)
+- issues.do (Driv.ly)
+- ist.com.se (Semantics.dev)
+- ivy.do (Driv.ly)
+- ılıl.com (Semantics.dev)
+- jsonld.studio (Semantics.dev)
+- kafka.do (Driv.ly)
+- kit.mt (Semantics.dev)
+- kpis.do (Driv.ly)
+- kv.cf (Driv.ly)
+- landingpa.ge (Semantics.dev)
+- landingpage.studio (Semantics.dev)
+- lena.do (Driv.ly)
+- lexi.do (Driv.ly)
+- link.cfd (Semantics.dev)
+- lists.do (Driv.ly)
+- llc.st (Semantics.dev)
+- llm.do (Driv.ly)
+- locode.studio (Semantics.dev)
+- lodash.do (Driv.ly)
+- luminati.group (xyz)
+- luxuryimportmotors.com (Semantics.dev)
+- luxurymotors.cloud (Driv.ly)
+- ly.com.se (Semantics.dev)
+- management.st (Semantics.dev)
+- management.studio (Semantics.dev)
+- marketplaces.dev (Semantics.dev)
+- marketplaces.studio (Semantics.dev)
+- markt.ng (Semantics.dev)
+- mcp.do (Driv.ly)
+- mdb.as (Semantics.dev)
+- mdx.do (Driv.ly)
+- mdx.org.ai (Driv.ly)
+- mdx.sh (Semantics.dev)
+- mdxld.org (Driv.ly)
+- midwestluxuryimports.com (Semantics.dev)
+- midwestmercedes.com (Semantics.dev)
+- models.do (Driv.ly)
+- mongo.as (Semantics.dev)
+- mongo.do (Driv.ly)
+- mountainsideimports.com (Semantics.dev)
+- mqtt.do (Driv.ly)
+- nameservers.cfd (Semantics.dev)
+- nates.domains (NathanClevenger.com)
+- nathanclevenger.com (NathanClevenger.com)
+- ng.com.se (Semantics.dev)
+- nouns.do (Driv.ly)
+- oauth.do (Driv.ly)
+- occupations.directory (Driv.ly)
+- offleaseluxury.com (Semantics.dev)
+- okr.do (Driv.ly)
+- okrs.do (Driv.ly)
+- opengraph.studio (Semantics.dev)
+- opensaas.org (Semantics.dev)
+- or.com.se (Semantics.dev)
+- orchestration.studio (Semantics.dev)
+- outsourcing.studio (Semantics.dev)
+- pacificluxuryimports.com (Semantics.dev)
+- pacificmercedes.com (Semantics.dev)
+- page.as (Semantics.dev)
+- page.ax (Semantics.dev)
+- pages.do (Driv.ly)
+- perf.do (Driv.ly)
+- permutations.dev (Semantics.dev)
+- pkg.do (Driv.ly)
+- plann.ng (Semantics.dev)
+- plans.do (Driv.ly)
+- platforms.cfd (Semantics.dev)
+- platforms.management (Semantics.dev)
+- pp.sd (Semantics.dev)
+- pre-owned-luxury-imports.com (Semantics.dev)
+- pre-owned-luxury-motors.com (Semantics.dev)
+- primitives.org.ai (Driv.ly)
+- product.md (Driv.ly)
+- products.do (Driv.ly)
+- programm.ng (Semantics.dev)
+- projects.do (Driv.ly)
+- proxy.as (Semantics.dev)
+- prxy.do (Driv.ly)
+- prxy.to (Semantics.dev)
+- queue.do (Driv.ly)
+- redirection.studio (Semantics.dev)
+- reference.do (Driv.ly)
+- research.do (Driv.ly)
+- resources.do (Driv.ly)
+- restapi.studio (Semantics.dev)
+- rewriter.studio (Semantics.dev)
+- rpa.do (Driv.ly)
+- saas-affiliates.com (Semantics.dev)
+- saas.ac (Semantics.dev)
+- saas.associates (Semantics.dev)
+- saas.cfd (Semantics.dev)
+- saas.dev (Semantics.dev)
+- saas.llc (Semantics.dev)
+- saas.management (Semantics.dev)
+- saas.miami (Semantics.dev)
+- saas.mt (Semantics.dev)
+- saas.studio (Semantics.dev)
+- saaskit.ai (Semantics.dev)
+- saaskit.studio (Semantics.dev)
+- sale.td (Semantics.dev)
+- salesbuilder.dev (Semantics.dev)
+- schema.cfd (Semantics.dev)
+- schema.page (Semantics.dev)
+- schema.us.org (Semantics.dev)
+- schemas.studio (Semantics.dev)
+- scrape.md (Driv.ly)
+- scrapers.do (Driv.ly)
+- scraping.studio (Semantics.dev)
+- scripting.studio (Semantics.dev)
+- sdb.do (Driv.ly)
+- sdk.do (Driv.ly)
+- sdk.management (Semantics.dev)
+- sdk.studio (Semantics.dev)
+- sdr.do (Driv.ly)
+- searches.do (Driv.ly)
+- sells.to (Semantics.dev)
+- semantics.cfd (Semantics.dev)
+- semantics.dev (Semantics.dev)
+- serp.ng (Semantics.dev)
+- service.sn (Semantics.dev)
+- services.boutique (Semantics.dev)
+- services.broker (Semantics.dev)
+- services.studio (Semantics.dev)
+- shipp.ng (Semantics.dev)
+- site.as (Semantics.dev)
+- site.cfd (Semantics.dev)
+- site.mt (Semantics.dev)
+- site.tg (Semantics.dev)
+- sites.do (Driv.ly)
+- sitestatus.page (Semantics.dev)
+- slide.md (Driv.ly)
+- socialauth.dev (Semantics.dev)
+- source.mt (Semantics.dev)
+- sources.studio (Semantics.dev)
+- southernluxuryimports.com (Semantics.dev)
+- sql.ng (Semantics.dev)
+- src.as (Semantics.dev)
+- src.do (Driv.ly)
+- src.md (Driv.ly)
+- src.ng (Semantics.dev)
+- srvcs.llc (Semantics.dev)
+- startup.games (Semantics.dev)
+- startupbuilder.dev (Longtail.Studio)
+- startups.do (Driv.ly)
+- startups.studio (Semantics.dev)
+- storekit.dev (Semantics.dev)
+- storybrand.studio (Semantics.dev)
+- storybrands.dev (Semantics.dev)
+- strtp.studio (Semantics.dev)
+- studỉo.com (Semantics.dev)
+- studio.com.se (Semantics.dev)
+- studio.do (Driv.ly)
+- studio.hm (Semantics.dev)
+- studio.mt (Semantics.dev)
+- studio.sb (Semantics.dev)
+- subdomains.dev (Semantics.dev)
+- suffix.es (Semantics.dev)
+- summarize.do (Driv.ly)
+- svc.do (Driv.ly)
+- svc.st (Semantics.dev)
+- svcs.md (Driv.ly)
+- swr.ng (Semantics.dev)
+- tags.management (Semantics.dev)
+- taski.ng (Semantics.dev)
+- tasks.do (Driv.ly)
+- thinking.do (Driv.ly)
+- thng.is (Semantics.dev)
+- tion.games (Semantics.dev)
+- to-a.photo (Semantics.dev)
+- to-a.video (Semantics.dev)
+- todos.md (Driv.ly)
+- trace.do (Driv.ly)
+- traces.do (Driv.ly)
+- transform.do (Driv.ly)
+- trigger.cfd (Semantics.dev)
+- trigger.do (Driv.ly)
+- triggers.do (Driv.ly)
+- ty.com.se (Semantics.dev)
+- vehicles.do (Driv.ly)
+- verb.cfd (Semantics.dev)
+- verbs.do (Driv.ly)
+- visibility.cloud (EPCIS.dev)
+- webhook.page (Semantics.dev)
+- webhooks.do (Driv.ly)
+- webhooks.to (Semantics.dev)
+- webproxy.studio (Semantics.dev)
+- website.cfd (Semantics.dev)
+- webtask.dev (Semantics.dev)
+- wholesale-fleet.com (Driv.ly)
+- wiki.cfd (Semantics.dev)
+- worker.do (Driv.ly)
+- workers.do (Driv.ly)
+- workflow.md (Driv.ly)
+- workflows.cfd (Semantics.dev)
+- workflows.do (Driv.ly)
+- workflows.management (Semantics.dev)
+- workflows.md (Driv.ly)
+- workflows.org.ai (Driv.ly)
+- workflows.run (Semantics.dev)
+- xyz.hm (Semantics.dev)
+- yaml.cfd (Semantics.dev)
+- ymm.autos (Driv.ly)
+- ymm.do (Driv.ly)
+- zap.sn (Driv.ly)
+- zoommotors.us (Semantics.dev)
+- 入.io (Driv.ly)
+- 回.io (Driv.ly)
+- 巛.io (Driv.ly)
+- 彡.io (Driv.ly)
+
+</details>
+
+## Excluded Domains (29)
+
+<details>
+<summary>Click to expand full list</summary>
+
+- airtable.vin (Driv.ly)
+- apis.vin (Driv.ly)
+- apr.vin (Driv.ly)
+- auth.vin (Driv.ly)
+- auto.dev (Driv.ly)
+- build.vin (Driv.ly)
+- buy.vin (Driv.ly)
+- cfd.vin (Driv.ly)
+- ctx.vin (Driv.ly)
+- data.vin (Driv.ly)
+- driv.ly (Driv.ly)
+- edm.vin (Driv.ly)
+- insure.vin (Driv.ly)
+- listing.vin (Driv.ly)
+- listings.vin (Driv.ly)
+- nats.vin (Driv.ly)
+- payments.vin (Driv.ly)
+- photos.vin (Driv.ly)
+- price.vin (Driv.ly)
+- pricing.vin (Driv.ly)
+- recalls.vin (Driv.ly)
+- resources.vin (Driv.ly)
+- services.vin (Driv.ly)
+- specs.vin (Driv.ly)
+- src.vin (Driv.ly)
+- taxes.vin (Driv.ly)
+- tco.vin (Driv.ly)
+- transport.vin (Driv.ly)
+- ymm.vin (Driv.ly)
+
+</details>
+
+## Configuration
+
+Exclusion rules are stored in `config/domain-exclusions.json`.
+
+To add more exclusions, edit that file and re-run:
+```bash
+bun scripts/tag-excluded-domains.ts
+```
+
+---
+
+**Related:**
+- [Live Domains Inventory](./2025-10-04-live-domains-inventory.md)
+- [Domain Comparison](./2025-10-04-domain-comparison.md)
+- Issue #2

@@ -1,0 +1,696 @@
+# TheOrg.com Data Extraction Research
+
+**Date:** 2025-10-03
+**Research Focus:** TheOrg platform data extraction, Next.js scraping techniques, API analysis
+**Status:** Research Complete
+
+## Executive Summary
+
+TheOrg.com is a Next.js-based platform providing organizational charts and professional network data. They offer both an **official REST/GraphQL API** (recommended approach) and embedded Next.js data that can be extracted via `__NEXT_DATA__` props (alternative approach). The platform has clear terms of service restricting automated scraping without permission.
+
+**Recommended Approach:** Use TheOrg's official API rather than scraping.
+
+---
+
+## 1. TheOrg Platform Overview
+
+### What Data They Have
+- **Organizational Charts:** Company hierarchies, reporting structures
+- **People Data:** Names, titles, roles, LinkedIn profiles, work emails
+- **Company Information:** Company metadata, locations, industries
+- **Position Data:** Job titles, reporting relationships, managers
+- **Job Postings:** Open positions and hiring information
+
+### Technology Stack
+- **Framework:** Next.js (React-based, server-side rendering)
+- **Data Loading:** Mix of SSR (Server-Side Rendering) and SSG (Static Site Generation)
+- **Rendering:** Uses `__NEXT_DATA__` for React hydration
+- **Styling:** Styled Components (CSS-in-JS)
+- **Monitoring:** AWS RUM (Real User Monitoring)
+- **Analytics:** Google Tag Manager
+- **Engagement:** Intercom widget
+
+### Current Architecture
+- **Front-end:** Next.js with React
+- **Data Format:** GraphQL-like type structures (uses `__typename` pattern)
+- **API:** REST + GraphQL endpoints available
+- **Authentication:** API key-based authentication
+
+---
+
+## 2. Official API (Recommended Approach)
+
+### API Overview
+TheOrg provides a **comprehensive REST API** for legitimate data access:
+
+**Developer Portal:** https://developers.theorg.com/api
+**Documentation:** https://developers.theorg.com/
+
+### Available Endpoints
+
+#### 1. Company API - Find Org Chart
+```
+GET https://api.theorg.com/v1/companies/org-chart
+```
+
+**Parameters:**
+- `linkedInUrl` (optional) - LinkedIn company URL or slug
+- `domain` (optional) - Company website or email domain
+
+**Cost:** 10 credits per successful request
+**Returns:** Flat list of company org chart nodes
+
+#### 2. Position API - Find Manager
+```
+GET https://api.theorg.com/v1/companies/org-chart/managers
+```
+
+**Parameters:**
+- `email` (optional) - Email address of the person
+- `linkedInUrl` (optional) - LinkedIn profile URL
+
+**Cost:** 1 credit per successful find
+**Returns:** Manager details for a specific position
+
+### Authentication
+- Requires unique API key
+- Obtain from "Getting Started" section on developer portal
+- Key-based authentication via HTTP headers
+
+### Rate Limits
+- Not publicly disclosed in documentation
+- Likely enforced via credit system
+- Credit-based pricing model (10 credits/org chart, 1 credit/manager lookup)
+
+---
+
+## 3. Data Models
+
+### Org Chart Node Types
+
+TheOrg uses a polymorphic node structure with 4 types:
+
+#### Position Node (Person in org chart)
+```typescript
+{
+  __typename: "LightPosition",
+  id: string,                    // Unique chart node ID
+  positionId: string,            // Unique position ID
+  fullName: string,              // Person's full name
+  title: string,                 // Job role/title
+  workEmail?: string,            // Professional email (optional)
+  linkedInUrl?: string,          // LinkedIn profile URL (optional)
+  profileImage?: {               // Profile picture
+    endpoint: string,
+    ext: string,
+    uri: string,
+    versions: string[]
+  },
+  slug: string,                  // URL slug
+  role: string,                  // Role description
+  parentPositionId?: number,     // Manager's node ID (null = top-level)
+  isAdviser: boolean,            // Is this an advisory role?
+  lastUpdate: string             // ISO timestamp
+}
+```
+
+#### Job Post Node (Open position)
+```typescript
+{
+  id: string,                    // Unique chart node ID
+  jobId: string,                 // Unique job posting ID
+  jobTitle: string,              // Open position title
+  managerId?: string             // ID of managing chart node (optional)
+}
+```
+
+#### Co-manager Group Node (Multiple managers)
+```typescript
+{
+  id: string,                    // Unique chart node ID
+  name: string,                  // Group display name
+  members: string[],             // List of chart node IDs
+  managerId?: string             // ID of managing chart node (optional)
+}
+```
+
+#### Empty Node (Placeholder)
+```typescript
+{
+  id: string,                    // Unique chart node ID
+  managerId?: string             // ID of managing chart node (optional)
+}
+```
+
+### Key Characteristics
+- Every node has a unique `id`
+- Nodes with `managerId: null` are top-level (CEO, founders, etc.)
+- Hierarchical relationships via `parentPositionId` or `managerId`
+- Co-manager nodes cannot contain other co-manager nodes (single-level only)
+- Supports multiple offices/locations
+
+### Company Metadata
+```typescript
+{
+  name: string,                  // Company name
+  location: string,              // Primary location
+  description: string,           // Company description
+  industries?: string[],         // Industry tags
+  offices?: Office[]             // Multiple office locations
+}
+```
+
+---
+
+## 4. Next.js Data Extraction (Alternative Approach)
+
+### Understanding `__NEXT_DATA__`
+
+Next.js injects a `<script>` tag with `id="__NEXT_DATA__"` containing all data used for React hydration:
+
+```html
+<script id="__NEXT_DATA__" type="application/json">
+{
+  "props": {
+    "pageProps": {
+      // All server-rendered data here
+      "company": {...},
+      "positions": [...],
+      "articles": [...]
+    }
+  },
+  "page": "/org/[slug]",
+  "query": {"slug": "theorg"},
+  "buildId": "...",
+  ...
+}
+</script>
+```
+
+### Extraction Methods
+
+#### Method 1: BeautifulSoup (Python)
+```python
+import requests
+from bs4 import BeautifulSoup
+import json
+
+url = 'https://theorg.com/org/theorg'
+response = requests.get(url)
+soup = BeautifulSoup(response.content, 'html.parser')
+
+# Find the __NEXT_DATA__ script tag
+next_data_script = soup.find('script', id='__NEXT_DATA__')
+
+# Parse JSON
+if next_data_script:
+    next_data = json.loads(next_data_script.string)
+
+    # Extract org chart data
+    page_props = next_data.get('props', {}).get('pageProps', {})
+    company = page_props.get('company', {})
+    positions = page_props.get('positions', [])
+
+    print(f"Company: {company.get('name')}")
+    print(f"Positions: {len(positions)}")
+```
+
+#### Method 2: Puppeteer (Node.js)
+```javascript
+const puppeteer = require('puppeteer');
+
+(async () => {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto('https://theorg.com/org/theorg');
+
+  // Extract __NEXT_DATA__ from page
+  const nextData = await page.evaluate(() => {
+    const scriptTag = document.getElementById('__NEXT_DATA__');
+    return JSON.parse(scriptTag.textContent);
+  });
+
+  console.log(nextData.props.pageProps);
+  await browser.close();
+})();
+```
+
+#### Method 3: Playwright (Recommended for Next.js)
+```typescript
+import { chromium } from 'playwright';
+
+(async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  await page.goto('https://theorg.com/org/theorg');
+
+  // Wait for hydration (if needed)
+  await page.waitForSelector('[data-testid="org-chart"]');
+
+  // Extract data
+  const nextData = await page.evaluate(() => {
+    const script = document.getElementById('__NEXT_DATA__');
+    return JSON.parse(script?.textContent || '{}');
+  });
+
+  const { company, positions } = nextData.props.pageProps;
+  console.log(`Company: ${company.name}`);
+  console.log(`Positions: ${positions.length}`);
+
+  await browser.close();
+})();
+```
+
+#### Method 4: NextScraper Chrome Extension
+- **Tool:** https://github.com/peterrauscher/NextScraper
+- **Approach:** Browser extension for extracting Next.js data
+- **Benefits:**
+  - No headless browser needed
+  - Client-side extraction
+  - Privacy-focused (data stays in browser)
+  - Generates code snippets
+- **Limitations:** Manual interaction required, not suitable for automation
+
+### Playwright vs Puppeteer Comparison
+
+| Feature | Playwright | Puppeteer |
+|---------|-----------|-----------|
+| **Browser Support** | Chrome, Firefox, Safari (WebKit) | Chrome/Chromium only |
+| **Language Support** | JS/TS, Python, C#, Java | JS/TS primarily |
+| **Auto-Wait** | Built-in (reduces race conditions) | Manual waits required |
+| **Context Isolation** | Yes (efficient parallel tasks) | No (manual session management) |
+| **Next.js Hydration** | Better handling of SSR/CSR transitions | Requires careful wait logic |
+| **Performance** | Faster for multi-browser scenarios | Optimized for Chrome |
+| **Setup** | Requires separate browser downloads | Auto-downloads Chromium |
+
+**Recommendation for Next.js scraping:** **Playwright** - Better auto-wait, cross-browser support, handles hydration edge cases.
+
+---
+
+## 5. Legal and Ethical Considerations
+
+### Robots.txt Analysis
+```
+URL: https://theorg.com/robots.txt
+
+User-agent: *
+Disallow: /unsubscribe
+Disallow: /reset-password
+Disallow: /embed
+Disallow: /full-screen
+Disallow: /api/*
+
+Sitemap: https://cdn.theorg.com/sitemap.xml
+```
+
+**Key Restrictions:**
+- `/api/*` endpoints are **disallowed** for crawlers
+- Authentication-related pages blocked
+- Embed/iframe pages blocked
+- Public sitemap available at `cdn.theorg.com/sitemap.xml`
+
+### Terms of Service
+- **Automated scraping is prohibited** without explicit permission
+- Violations may result in legal action under CFAA (Computer Fraud and Abuse Act)
+- API access requires authentication and credit-based usage
+- No crawl delay specified (respect default 1-2 second delays)
+
+### Ethical Considerations
+1. **Use Official API First:** TheOrg provides a legitimate API - use it
+2. **Respect robots.txt:** Don't scrape `/api/*` endpoints
+3. **Rate Limiting:** Even if scraping public pages, implement delays (2-5 seconds)
+4. **Attribution:** If using data, credit TheOrg as source
+5. **Commercial Use:** Requires explicit permission/licensing
+6. **Privacy:** Professional contact details are sensitive - handle responsibly
+
+---
+
+## 6. Recommended Scraping Strategy
+
+### Option A: Official API (Recommended)
+**Pros:**
+- Legal and ethical
+- Structured data with clear schema
+- Reliable and maintained
+- Rate limits clear via credit system
+- Support available
+
+**Cons:**
+- Costs money (credit-based pricing)
+- Requires API key registration
+- May have data access restrictions
+
+**Use Cases:**
+- Commercial applications
+- High-volume data collection
+- Long-term maintenance required
+- Need for official support
+
+### Option B: Next.js Data Extraction (Proceed with Caution)
+**Pros:**
+- Free (no API costs)
+- Access to all front-end data
+- No authentication required
+- Flexible data exploration
+
+**Cons:**
+- Violates ToS (automated scraping prohibited)
+- Legal risk (CFAA violations)
+- Brittle (breaks when Next.js structure changes)
+- No support or guarantees
+- Rate limiting unclear
+
+**Use Cases:**
+- Personal research (non-commercial)
+- One-time data collection
+- Proof of concept
+- Academic study
+
+**If Pursuing Option B:**
+1. **Check ToS:** Ensure compliance or seek permission
+2. **Respect robots.txt:** Don't scrape disallowed paths
+3. **Implement delays:** 2-5 seconds between requests
+4. **Use User-Agent:** Identify your bot clearly
+5. **Monitor for blocks:** Handle 429/403 responses gracefully
+6. **Cache aggressively:** Minimize repeat requests
+7. **Error handling:** Gracefully handle structure changes
+
+---
+
+## 7. Implementation Examples
+
+### Full Playwright Scraper (TypeScript)
+
+```typescript
+import { chromium, Browser, Page } from 'playwright';
+import fs from 'fs/promises';
+
+interface OrgChartData {
+  company: {
+    name: string;
+    location: string;
+    description: string;
+  };
+  positions: Array<{
+    id: number;
+    fullName: string;
+    title: string;
+    workEmail?: string;
+    linkedInUrl?: string;
+    parentPositionId?: number;
+  }>;
+}
+
+class TheOrgScraper {
+  private browser: Browser | null = null;
+
+  async initialize() {
+    this.browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+  }
+
+  async scrapeOrgChart(companySlug: string): Promise<OrgChartData | null> {
+    if (!this.browser) throw new Error('Browser not initialized');
+
+    const page = await this.browser.newPage();
+
+    // Set realistic user agent
+    await page.setUserAgent(
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+    );
+
+    try {
+      // Navigate to org page
+      const url = `https://theorg.com/org/${companySlug}`;
+      console.log(`Fetching: ${url}`);
+      await page.goto(url, { waitUntil: 'networkidle' });
+
+      // Wait for hydration
+      await page.waitForSelector('[data-testid="org-chart"]', { timeout: 10000 });
+
+      // Extract __NEXT_DATA__
+      const data = await page.evaluate(() => {
+        const script = document.getElementById('__NEXT_DATA__');
+        if (!script) return null;
+        return JSON.parse(script.textContent || '{}');
+      });
+
+      if (!data?.props?.pageProps) {
+        console.error('No page props found');
+        return null;
+      }
+
+      const { company, positions } = data.props.pageProps;
+
+      return {
+        company: {
+          name: company.name,
+          location: company.location,
+          description: company.description
+        },
+        positions: positions.map((p: any) => ({
+          id: p.id,
+          fullName: p.fullName,
+          title: p.title,
+          workEmail: p.workEmail,
+          linkedInUrl: p.linkedInUrl,
+          parentPositionId: p.parentPositionId
+        }))
+      };
+
+    } catch (error) {
+      console.error(`Error scraping ${companySlug}:`, error);
+      return null;
+    } finally {
+      await page.close();
+    }
+  }
+
+  async scrapeMultiple(companySlugs: string[], delayMs = 3000) {
+    const results: Record<string, OrgChartData | null> = {};
+
+    for (const slug of companySlugs) {
+      results[slug] = await this.scrapeOrgChart(slug);
+
+      // Respect rate limits
+      if (companySlugs.indexOf(slug) < companySlugs.length - 1) {
+        console.log(`Waiting ${delayMs}ms before next request...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+
+    return results;
+  }
+
+  async close() {
+    if (this.browser) {
+      await this.browser.close();
+    }
+  }
+
+  async saveToFile(data: any, filename: string) {
+    await fs.writeFile(
+      filename,
+      JSON.stringify(data, null, 2),
+      'utf-8'
+    );
+    console.log(`Saved to ${filename}`);
+  }
+}
+
+// Usage
+(async () => {
+  const scraper = new TheOrgScraper();
+  await scraper.initialize();
+
+  const companies = ['theorg', 'stripe', 'anthropic'];
+  const data = await scraper.scrapeMultiple(companies, 5000); // 5 second delay
+
+  await scraper.saveToFile(data, 'theorg-data.json');
+  await scraper.close();
+})();
+```
+
+### Simple API Client (Official API)
+
+```typescript
+import axios from 'axios';
+
+interface TheOrgConfig {
+  apiKey: string;
+  baseUrl?: string;
+}
+
+class TheOrgAPIClient {
+  private apiKey: string;
+  private baseUrl: string;
+
+  constructor(config: TheOrgConfig) {
+    this.apiKey = config.apiKey;
+    this.baseUrl = config.baseUrl || 'https://api.theorg.com/v1';
+  }
+
+  private headers() {
+    return {
+      'Authorization': `Bearer ${this.apiKey}`,
+      'Content-Type': 'application/json'
+    };
+  }
+
+  async getOrgChart(params: {
+    linkedInUrl?: string;
+    domain?: string;
+  }) {
+    const response = await axios.get(`${this.baseUrl}/companies/org-chart`, {
+      headers: this.headers(),
+      params
+    });
+    return response.data;
+  }
+
+  async findManager(params: {
+    email?: string;
+    linkedInUrl?: string;
+  }) {
+    const response = await axios.get(`${this.baseUrl}/companies/org-chart/managers`, {
+      headers: this.headers(),
+      params
+    });
+    return response.data;
+  }
+}
+
+// Usage
+const client = new TheOrgAPIClient({
+  apiKey: process.env.THEORG_API_KEY!
+});
+
+const orgChart = await client.getOrgChart({ domain: 'anthropic.com' });
+console.log(orgChart);
+```
+
+---
+
+## 8. Key Findings Summary
+
+### TheOrg Platform
+- ✅ Next.js-based (confirmed via `__NEXT_DATA__`)
+- ✅ Server-side rendering with client hydration
+- ✅ GraphQL-like data structures
+- ✅ Comprehensive organizational chart data
+- ✅ Official REST/GraphQL API available
+
+### Data Available
+- ✅ Company metadata (name, location, description)
+- ✅ Organizational hierarchy (reporting structures)
+- ✅ Person details (name, title, email, LinkedIn)
+- ✅ Position data (roles, managers, relationships)
+- ✅ Job postings (open positions)
+
+### Extraction Methods
+- ✅ **Official API** (recommended, paid, legal)
+- ✅ **Next.js `__NEXT_DATA__`** (free, brittle, may violate ToS)
+- ✅ **Playwright/Puppeteer** (effective for Next.js)
+- ✅ **NextScraper extension** (manual, small-scale)
+
+### Legal/Ethical
+- ⚠️ **Robots.txt disallows `/api/*`**
+- ⚠️ **ToS prohibits automated scraping**
+- ⚠️ **CFAA risk** for unauthorized access
+- ✅ **Official API available** as legitimate alternative
+
+---
+
+## 9. Recommendations
+
+### For Commercial Use
+1. **Use Official API** - Register for API key at https://developers.theorg.com/
+2. **Budget for credits** - 10 credits/org chart, 1 credit/manager lookup
+3. **Implement caching** - Minimize redundant API calls
+4. **Monitor usage** - Track credit consumption
+5. **Error handling** - Handle rate limits gracefully
+
+### For Personal/Research Use
+1. **Contact TheOrg** - Request permission for research access
+2. **Use API if possible** - May offer academic pricing
+3. **If scraping:**
+   - Respect robots.txt
+   - Implement 3-5 second delays
+   - Cache aggressively
+   - Use clear User-Agent
+   - Handle blocks gracefully
+   - Don't redistribute data
+
+### For Scale
+1. **Official API only** - Scraping won't scale legally
+2. **Batch requests** - Use API efficiently
+3. **Incremental updates** - Only fetch changes
+4. **Database storage** - Cache API responses
+5. **Monitor limits** - Track rate limits and quotas
+
+---
+
+## 10. Additional Resources
+
+### Official Documentation
+- **Developer Portal:** https://developers.theorg.com/
+- **API Overview:** https://developers.theorg.com/api
+- **Company API:** https://developers.theorg.com/api/endpoints/company-api
+- **Org Chart Model:** https://developers.theorg.com/api/data-models/org-chart
+- **Support:** https://support.theorg.com/en/articles/11683056-what-is-the-org-api
+
+### Next.js Scraping Guides
+- **Bright Data Guide:** [Web Scraping With Next.JS in 2025](https://brightdata.com/blog/how-tos/web-scraping-with-next-js)
+- **Expert Beacon:** [Web Scraping Next.js Sites](https://expertbeacon.com/web-scraping-next-js-sites-harnessing-react-hydration-for-easy-data-extraction/)
+- **Playwright vs Puppeteer:** [ScraperAPI Comparison](https://www.scraperapi.com/blog/playwright-vs-puppeteer/)
+
+### Tools
+- **Playwright:** https://playwright.dev/
+- **Puppeteer:** https://pptr.dev/
+- **NextScraper Extension:** https://github.com/peterrauscher/NextScraper
+- **Beautiful Soup:** https://www.crummy.com/software/BeautifulSoup/
+
+### Legal Resources
+- **ToS:** https://theorg.com/terms
+- **Robots.txt:** https://theorg.com/robots.txt
+- **Sitemap:** https://cdn.theorg.com/sitemap.xml
+
+---
+
+## 11. Next Steps
+
+### If Using Official API
+1. Register at https://developers.theorg.com/
+2. Obtain API key
+3. Review pricing/credits
+4. Build API client
+5. Implement error handling
+6. Add caching layer
+7. Monitor usage
+
+### If Scraping (Proceed with Caution)
+1. Review ToS and seek legal counsel
+2. Contact TheOrg for permission
+3. Set up Playwright environment
+4. Implement rate limiting (3-5 sec delays)
+5. Add robust error handling
+6. Cache aggressively
+7. Monitor for blocks/changes
+8. Document data sources
+9. Plan for API migration
+
+### For .do Integration
+- **Storage:** Store org chart data in PostgreSQL/Neon
+- **Enrichment:** Use AI to extract insights from org structures
+- **Syncing:** Scheduled workers to update data
+- **API:** Expose via @api/ gateway
+- **Schema:** Design tables for companies, positions, relationships
+- **Search:** Index with vector embeddings for semantic search
+
+---
+
+**Research Completed:** 2025-10-03
+**Researcher:** Claude Code
+**Status:** Ready for implementation planning

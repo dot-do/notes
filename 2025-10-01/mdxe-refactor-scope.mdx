@@ -1,0 +1,1073 @@
+# MDXE + MDXUI Refactor - Code Mode Architecture
+
+**Date:** 2025-10-01
+**Status:** Scoping Phase
+**Priority:** P0 - Foundational Architecture
+
+---
+
+## 🎯 Executive Summary
+
+**The Big Change:** Cloudflare's Code Mode enables **dynamic worker code execution**, fundamentally changing how MDXE works. Instead of compiling MDX to static bundles, MDXE becomes a **runtime that dynamically executes MDX as code** in Cloudflare Workers.
+
+**Key Technologies:**
+1. **Code Mode** - Dynamic worker code execution (https://blog.cloudflare.com/code-mode/)
+2. **CapnWeb** - JavaScript RPC library (https://blog.cloudflare.com/capnweb-javascript-rpc-library/)
+3. **MDXE** - MDX runtime (refactored for Code Mode)
+4. **MDXUI** - UI component library (refactored with schemas)
+
+---
+
+## 🏗️ Architecture Overview
+
+### Before: Static Compilation
+
+```
+MDX Files → MDX Compiler → JavaScript Bundle → Deploy to Worker
+                ↓
+         (build time)
+```
+
+**Problems:**
+- ❌ Requires build step for every MDX change
+- ❌ No dynamic content execution
+- ❌ Difficult to update running functions
+- ❌ Large bundle sizes
+
+### After: Dynamic Code Mode Execution
+
+```
+MDX in Database → Code Mode Worker → Execute Dynamically → Return Result
+                        ↓
+                 (runtime, no build)
+```
+
+**Benefits:**
+- ✅ Zero build time - MDX executes immediately
+- ✅ Update functions without redeployment
+- ✅ Smaller worker bundles
+- ✅ True function-as-a-service
+- ✅ MDX = executable code, not just content
+
+---
+
+## 🔍 Code Mode Deep Dive
+
+### What is Code Mode?
+
+**From Cloudflare blog:**
+> Code Mode allows you to write and execute JavaScript code dynamically in Workers without requiring a build step or deployment. Code is evaluated at runtime using V8 isolates with full access to Worker APIs.
+
+### Key Capabilities
+
+```typescript
+// Traditional Worker (static deployment)
+export default {
+  async fetch(request: Request, env: Env) {
+    return new Response("Hello World")
+  }
+}
+
+// Code Mode (dynamic execution)
+import { executeCode } from '@cloudflare/code-mode'
+
+export default {
+  async fetch(request: Request, env: Env) {
+    const code = await env.DB.get('function:send-email')
+
+    // Execute code dynamically in isolated context
+    const result = await executeCode({
+      code: code.implementation,
+      env, // Pass bindings
+      request // Pass request
+    })
+
+    return result
+  }
+}
+```
+
+### Security Model
+
+- **V8 Isolates** - Each execution runs in isolated context
+- **Scoped Access** - Control what APIs/bindings are available
+- **Timeouts** - Execution time limits
+- **Resource Limits** - CPU/memory constraints
+- **Sandboxed** - No file system or network access unless explicitly granted
+
+### Performance
+
+- **Cold Start:** ~5ms (same as regular Workers)
+- **Execution:** Native V8 speed
+- **Isolation Overhead:** Minimal (~1ms)
+- **Throughput:** 1000s of requests/second per Worker
+
+---
+
+## 🔧 CapnWeb Integration
+
+### What is CapnWeb?
+
+**From Cloudflare blog:**
+> CapnWeb is a JavaScript implementation of Cap'n Proto RPC, designed for efficient communication between Workers and Durable Objects. It provides type-safe, low-overhead RPC with automatic serialization.
+
+### Why CapnWeb for MDXE?
+
+1. **Type-Safe RPC** - Function signatures defined in schemas
+2. **Efficient Serialization** - Binary protocol, minimal overhead
+3. **Streaming Support** - Stream responses for large datasets
+4. **Durable Object Integration** - Natural fit for stateful functions
+5. **Already in Use** - Foundation of api/ and sdk/ via RPC
+
+### CapnWeb Architecture
+
+```typescript
+// Define RPC interface
+interface FunctionService {
+  execute(input: FunctionInput): Promise<FunctionOutput>
+  stream(input: StreamInput): ReadableStream<StreamChunk>
+}
+
+// Server (Worker)
+export class FunctionWorker implements FunctionService {
+  async execute(input: FunctionInput) {
+    const mdx = await this.env.DB.get(`function:${input.id}`)
+    return await executeCodeMode(mdx.code, input.args)
+  }
+
+  async stream(input: StreamInput) {
+    // Return streaming response
+  }
+}
+
+// Client (API/SDK)
+import { connect } from '@cloudflare/capnweb'
+
+const client = await connect<FunctionService>(
+  'https://functions.do/rpc'
+)
+
+const result = await client.execute({
+  id: 'send-email',
+  args: { to: 'user@example.com', subject: 'Hello' }
+})
+```
+
+### Integration Points
+
+**MDXE uses CapnWeb for:**
+- Function invocation (RPC calls)
+- Streaming responses (large datasets)
+- Inter-worker communication
+- Durable Object coordination
+
+**API uses CapnWeb for:**
+- Exposing functions via RPC
+- Type-safe SDK generation
+- Efficient serialization
+
+---
+
+## 📦 MDXE Refactor Scope
+
+### Current MDXE (Assumed)
+
+```typescript
+// Static compiler approach
+import { compile } from '@mdx-js/mdx'
+
+async function compileMDX(source: string) {
+  const compiled = await compile(source, {
+    outputFormat: 'function-body'
+  })
+
+  return compiled.toString()
+}
+```
+
+### New MDXE (Code Mode)
+
+```typescript
+// Dynamic runtime approach
+import { executeCode } from '@cloudflare/code-mode'
+import { parseCapnProtoSchema } from '@cloudflare/capnweb'
+
+interface MDXERuntime {
+  // Core execution
+  execute(mdx: MDXContent, context: ExecutionContext): Promise<Result>
+
+  // Streaming execution
+  stream(mdx: MDXContent, context: ExecutionContext): ReadableStream
+
+  // RPC integration
+  exposeAsRPC(mdx: MDXContent): CapnWebService
+
+  // Schema validation
+  validateInputs(inputs: unknown, schema: Schema): ValidationResult
+  validateOutputs(outputs: unknown, schema: Schema): ValidationResult
+}
+
+class CodeModeRuntime implements MDXERuntime {
+  async execute(mdx: MDXContent, context: ExecutionContext) {
+    // 1. Parse MDX frontmatter for schema
+    const { schema, code } = this.parseMDX(mdx.source)
+
+    // 2. Validate inputs against schema
+    const validatedInputs = this.validateInputs(context.inputs, schema.inputs)
+
+    // 3. Execute code in isolated context
+    const result = await executeCode({
+      code: code,
+      env: context.env,
+      globals: {
+        input: validatedInputs,
+        fetch: context.env.fetch, // Controlled access
+        // ... other safe globals
+      },
+      timeout: schema.timeout || 30000,
+      memoryLimit: schema.memoryLimit || 128 * 1024 * 1024 // 128MB
+    })
+
+    // 4. Validate outputs against schema
+    return this.validateOutputs(result, schema.outputs)
+  }
+
+  exposeAsRPC(mdx: MDXContent): CapnWebService {
+    // Generate CapnWeb service from MDX schema
+    const schema = parseCapnProtoSchema(mdx.schema)
+
+    return {
+      schema,
+      handler: (input) => this.execute(mdx, { inputs: input })
+    }
+  }
+}
+```
+
+### MDX Format with Schema
+
+```mdx
+---
+title: Send Email
+type: function
+category: communication
+schema:
+  inputs:
+    - name: to
+      type: string
+      required: true
+      validation: email
+    - name: subject
+      type: string
+      required: true
+    - name: body
+      type: string
+      required: true
+    - name: from
+      type: string
+      required: false
+      default: noreply@example.com
+  outputs:
+    - name: messageId
+      type: string
+    - name: status
+      type: enum
+      values: [sent, queued, failed]
+  timeout: 10000
+  memoryLimit: 67108864 # 64MB
+  rateLimit:
+    requests: 100
+    window: 60000 # 1 minute
+---
+
+# Send Email Function
+
+This function sends transactional emails using Resend API.
+
+```js
+// Executed in Code Mode
+export default async function sendEmail({ to, subject, body, from }) {
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from,
+      to,
+      subject,
+      html: body
+    })
+  })
+
+  const data = await response.json()
+
+  return {
+    messageId: data.id,
+    status: response.ok ? 'sent' : 'failed'
+  }
+}
+\`\`\`
+```
+
+### MDXE Repository Structure
+
+```
+mdx/
+├── packages/
+│   ├── runtime/              # Code Mode execution runtime
+│   │   ├── executor.ts       # Core Code Mode executor
+│   │   ├── sandbox.ts        # Isolated execution context
+│   │   ├── validator.ts      # Schema validation
+│   │   └── index.ts
+│   │
+│   ├── rpc/                  # CapnWeb RPC integration
+│   │   ├── server.ts         # RPC server for functions
+│   │   ├── client.ts         # RPC client
+│   │   ├── schema.ts         # Schema generation
+│   │   └── index.ts
+│   │
+│   ├── parser/               # MDX parsing
+│   │   ├── frontmatter.ts    # Parse schema from frontmatter
+│   │   ├── code.ts           # Extract executable code
+│   │   ├── types.ts          # Type definitions
+│   │   └── index.ts
+│   │
+│   ├── worker/               # Cloudflare Worker entrypoint
+│   │   ├── index.ts          # Main worker
+│   │   ├── routes.ts         # HTTP routing
+│   │   └── rpc.ts            # RPC endpoint
+│   │
+│   └── mdxui/                # UI components (refactored)
+│       ├── components/       # Abstract UI components
+│       ├── schemas/          # Component schemas
+│       ├── renderer.ts       # Server-side rendering
+│       └── index.ts
+│
+├── examples/
+│   ├── functions/
+│   ├── workflows/
+│   ├── agents/
+│   └── apps/
+│
+├── tests/
+├── docs/
+├── package.json
+├── wrangler.toml
+└── CLAUDE.md
+```
+
+### Key Components
+
+#### 1. Runtime Executor
+
+```typescript
+// packages/runtime/executor.ts
+import { executeCode } from '@cloudflare/code-mode'
+
+export class CodeModeExecutor {
+  async execute(options: ExecuteOptions): Promise<ExecutionResult> {
+    const { code, env, context, timeout, memoryLimit } = options
+
+    try {
+      const result = await executeCode({
+        code,
+        env: this.createSandboxEnv(env),
+        globals: this.createSafeGlobals(context),
+        timeout,
+        memoryLimit,
+        // V8 isolate configuration
+        isolateOptions: {
+          cpuLimit: 50, // 50ms CPU time
+          wallclockLimit: timeout,
+          memoryLimit
+        }
+      })
+
+      return {
+        success: true,
+        data: result,
+        metrics: {
+          duration: result.__metrics__.duration,
+          memory: result.__metrics__.memory,
+          cpuTime: result.__metrics__.cpuTime
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: this.sanitizeError(error)
+      }
+    }
+  }
+
+  private createSandboxEnv(env: Env): SandboxEnv {
+    // Only expose allowed bindings
+    return {
+      DB: env.DB,
+      KV: env.KV,
+      QUEUE: env.QUEUE,
+      AI: env.AI,
+      // Block direct access to secrets
+      // Provide controlled API wrappers instead
+    }
+  }
+
+  private createSafeGlobals(context: Context): Globals {
+    return {
+      fetch: createControlledFetch(context.allowedDomains),
+      console: createSafeConsole(),
+      crypto: crypto,
+      // No eval, no Function constructor, no dynamic imports
+    }
+  }
+}
+```
+
+#### 2. CapnWeb RPC Server
+
+```typescript
+// packages/rpc/server.ts
+import { createRpcServer } from '@cloudflare/capnweb'
+import { CodeModeExecutor } from '../runtime/executor'
+
+export class FunctionRpcServer {
+  private executor: CodeModeExecutor
+
+  constructor(private env: Env) {
+    this.executor = new CodeModeExecutor()
+  }
+
+  createServer() {
+    return createRpcServer({
+      services: {
+        FunctionService: this.createFunctionService()
+      }
+    })
+  }
+
+  private createFunctionService() {
+    return {
+      // Execute function by ID
+      async execute(request: ExecuteRequest): Promise<ExecuteResponse> {
+        // 1. Fetch MDX from database
+        const mdx = await this.env.DB.get(`function:${request.id}`)
+
+        // 2. Parse schema and code
+        const parsed = parseMDX(mdx.source)
+
+        // 3. Validate inputs
+        validateInputs(request.args, parsed.schema.inputs)
+
+        // 4. Execute in Code Mode
+        const result = await this.executor.execute({
+          code: parsed.code,
+          env: this.env,
+          context: { inputs: request.args },
+          timeout: parsed.schema.timeout,
+          memoryLimit: parsed.schema.memoryLimit
+        })
+
+        // 5. Return result
+        return {
+          success: result.success,
+          data: result.data,
+          metrics: result.metrics
+        }
+      },
+
+      // Stream results
+      async stream(request: StreamRequest): ReadableStream {
+        // Implementation for streaming responses
+      },
+
+      // List available functions
+      async list(request: ListRequest): Promise<ListResponse> {
+        const functions = await this.env.DB.query(`
+          SELECT id, title, description, schema
+          FROM things
+          WHERE type = 'Function' AND visibility = 'public'
+          LIMIT ${request.limit || 100}
+        `)
+
+        return { functions }
+      }
+    }
+  }
+}
+```
+
+#### 3. HTTP Worker Entrypoint
+
+```typescript
+// packages/worker/index.ts
+import { Hono } from 'hono'
+import { FunctionRpcServer } from '../rpc/server'
+import { CodeModeExecutor } from '../runtime/executor'
+
+const app = new Hono<{ Bindings: Env }>()
+
+// HTTP endpoints for function execution
+app.post('/execute/:id', async (c) => {
+  const { id } = c.req.param()
+  const args = await c.req.json()
+
+  const executor = new CodeModeExecutor()
+  const mdx = await c.env.DB.get(`function:${id}`)
+  const parsed = parseMDX(mdx.source)
+
+  const result = await executor.execute({
+    code: parsed.code,
+    env: c.env,
+    context: { inputs: args },
+    timeout: parsed.schema.timeout,
+    memoryLimit: parsed.schema.memoryLimit
+  })
+
+  return c.json(result)
+})
+
+// RPC endpoint
+app.all('/rpc', async (c) => {
+  const rpcServer = new FunctionRpcServer(c.env)
+  return rpcServer.handleRequest(c.req.raw)
+})
+
+// WebSocket for streaming
+app.get('/ws', async (c) => {
+  // WebSocket handler for streaming results
+})
+
+export default app
+```
+
+---
+
+## 🎨 MDXUI Refactor Scope
+
+### Current MDXUI (Assumed)
+
+```typescript
+// Hardcoded components
+export function Button({ label, onClick }) {
+  return <button onClick={onClick}>{label}</button>
+}
+```
+
+### New MDXUI (Schema-Driven)
+
+```typescript
+// Components defined by schemas
+import { z } from 'zod'
+
+export const buttonSchema = z.object({
+  label: z.string(),
+  variant: z.enum(['primary', 'secondary', 'ghost']),
+  size: z.enum(['sm', 'md', 'lg']),
+  onClick: z.function().args(z.object({})).returns(z.promise(z.void())),
+  disabled: z.boolean().optional(),
+  loading: z.boolean().optional()
+})
+
+export const Button = createComponent({
+  name: 'Button',
+  schema: buttonSchema,
+  render: ({ label, variant, size, onClick, disabled, loading }) => {
+    // Render based on schema
+  }
+})
+```
+
+### Schema-Driven UI Architecture
+
+```typescript
+// packages/mdxui/schemas/index.ts
+export const componentSchemas = {
+  // Layout
+  Layout: layoutSchema,
+  Container: containerSchema,
+  Grid: gridSchema,
+  Flex: flexSchema,
+
+  // Typography
+  Heading: headingSchema,
+  Text: textSchema,
+  Code: codeSchema,
+
+  // Forms
+  Form: formSchema,
+  Input: inputSchema,
+  Button: buttonSchema,
+  Select: selectSchema,
+
+  // Data Display
+  Table: tableSchema,
+  Card: cardSchema,
+  List: listSchema,
+
+  // Feedback
+  Alert: alertSchema,
+  Toast: toastSchema,
+  Modal: modalSchema,
+
+  // Navigation
+  Navbar: navbarSchema,
+  Sidebar: sidebarSchema,
+  Breadcrumbs: breadcrumbsSchema
+}
+```
+
+### Component Generation from Schemas
+
+```typescript
+// packages/mdxui/generator.ts
+export function generateComponent(schema: ComponentSchema) {
+  return {
+    // React component
+    Component: createReactComponent(schema),
+
+    // Type definitions
+    types: generateTypes(schema),
+
+    // Validation
+    validate: (props) => schema.parse(props),
+
+    // Documentation
+    docs: generateDocs(schema),
+
+    // Storybook stories
+    stories: generateStories(schema)
+  }
+}
+```
+
+### MDX Integration
+
+```mdx
+---
+title: Landing Page
+type: site
+ui:
+  components:
+    - Navbar
+    - Hero
+    - Features
+    - CTA
+    - Footer
+  theme: default
+  layout: responsive
+---
+
+<Layout>
+  <Navbar
+    logo="/logo.png"
+    links={[
+      { label: "Features", href: "#features" },
+      { label: "Pricing", href: "#pricing" },
+      { label: "Docs", href: "/docs" }
+    ]}
+  />
+
+  <Hero
+    title="Build Business-as-Code"
+    subtitle="AI-native platform for creating autonomous services"
+    cta={{
+      primary: { label: "Get Started", href: "/signup" },
+      secondary: { label: "Learn More", href: "/docs" }
+    }}
+  />
+
+  <Features
+    items={[
+      { icon: "⚡", title: "Fast", description: "Edge-native performance" },
+      { icon: "🔒", title: "Secure", description: "Zero-trust architecture" },
+      { icon: "🤖", title: "AI-Powered", description: "Autonomous agents" }
+    ]}
+  />
+
+  <CTA
+    title="Ready to get started?"
+    action={{ label: "Start Building", href: "/signup" }}
+  />
+
+  <Footer
+    links={footerLinks}
+    social={socialLinks}
+  />
+</Layout>
+```
+
+### Runtime Rendering with Hono/JSX
+
+**Key Insight:** Hono/JSX enables **runtime JSX rendering** directly in Workers, eliminating the need for React or build-time compilation!
+
+```typescript
+// packages/mdxui/renderer.ts
+import { jsx } from 'hono/jsx'
+import { renderToReadableStream } from 'hono/jsx/streaming'
+
+export async function renderMDXUI(mdx: MDXContent, context: RenderContext) {
+  // 1. Parse MDX
+  const parsed = parseMDX(mdx.source)
+
+  // 2. Validate component usage against schemas
+  validateComponents(parsed.components, componentSchemas)
+
+  // 3. Execute data fetching code in Code Mode
+  const data = await executeCodeMode(parsed.dataFetching, context)
+
+  // 4. Execute component code in Code Mode
+  // This executes the MDX JSX at runtime!
+  const Component = await executeCodeMode(parsed.componentCode, {
+    ...context,
+    data,
+    // Inject Hono JSX runtime
+    jsx,
+    // Inject schema-validated components
+    components: honoJsxComponents
+  })
+
+  // 5. Render to streaming HTML
+  const stream = renderToReadableStream(
+    <Component data={data} />
+  )
+
+  // 6. Return streaming response
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Transfer-Encoding': 'chunked'
+    }
+  })
+}
+```
+
+### Hono/JSX Components
+
+```typescript
+// packages/mdxui/components/hono-jsx.ts
+import { jsx, Fragment } from 'hono/jsx'
+
+export const Button = ({ label, variant, onClick, ...props }) => {
+  return (
+    <button
+      class={`btn btn-${variant}`}
+      onClick={onClick}
+      {...props}
+    >
+      {label}
+    </button>
+  )
+}
+
+export const Card = ({ title, children, ...props }) => {
+  return (
+    <div class="card" {...props}>
+      {title && <h3 class="card-title">{title}</h3>}
+      <div class="card-body">{children}</div>
+    </div>
+  )
+}
+
+// All components as pure functions, no React needed!
+```
+
+### MDX Execution in Code Mode
+
+```mdx
+---
+title: Dashboard
+type: app
+---
+
+```js
+// This code executes in Code Mode at runtime!
+export default async function Dashboard({ data }) {
+  // Fetch data dynamically
+  const stats = await fetch('/api/stats').then(r => r.json())
+
+  // Return Hono JSX (rendered at runtime)
+  return (
+    <Layout>
+      <Navbar title="Dashboard" />
+
+      <Container>
+        <Grid cols={3}>
+          {stats.map(stat => (
+            <Card title={stat.label}>
+              <Text size="xl">{stat.value}</Text>
+            </Card>
+          ))}
+        </Grid>
+
+        <Card title="Recent Activity">
+          <Table data={data.activity} />
+        </Card>
+      </Container>
+    </Layout>
+  )
+}
+\`\`\`
+```
+
+### Streaming Rendering
+
+```typescript
+// packages/worker/routes/render.ts
+app.get('/:page', async (c) => {
+  const { page } = c.req.param()
+
+  // Fetch MDX from database
+  const mdx = await c.env.DB.get(`page:${page}`)
+
+  // Execute and render in one step
+  const Component = await executeCodeMode(mdx.code, {
+    env: c.env,
+    jsx, // Hono JSX runtime
+    components: honoJsxComponents
+  })
+
+  // Stream response (great for large pages!)
+  return renderToReadableStream(<Component />)
+})
+```
+
+### Benefits of Hono/JSX + Code Mode
+
+1. **No Build Step** - JSX executes at runtime in V8
+2. **No React** - Lighter bundle, faster execution
+3. **Streaming** - Progressive rendering for large pages
+4. **Type Safety** - TypeScript support built-in
+5. **Server-First** - No hydration complexity
+6. **Fast** - Native V8 performance
+
+### Server-Side Rendering (Legacy)
+
+```typescript
+// For compatibility with React-based MDX
+export async function renderReactMDX(mdx: MDXContent, context: RenderContext) {
+  // 1. Parse MDX
+  const parsed = parseMDX(mdx.source)
+
+  // 2. Validate component usage against schemas
+  validateComponents(parsed.components, componentSchemas)
+
+  // 3. Execute in Code Mode (for dynamic data)
+  const data = await executeCodeMode(parsed.dataFetching, context)
+
+  // 4. Render to HTML
+  const html = await renderToString(parsed.jsx, {
+    components: schemaComponents,
+    data
+  })
+
+  // 5. Return with metadata
+  return {
+    html,
+    css: extractCSS(parsed),
+    meta: parsed.frontmatter,
+    data
+  }
+}
+```
+
+---
+
+## 🔄 Data Flow
+
+### Function Execution Flow
+
+```
+1. Request → API/SDK (CapnWeb RPC)
+2. → MDXE Worker (Code Mode)
+3. → Fetch MDX from Database
+4. → Parse Schema + Code
+5. → Validate Inputs
+6. → Execute Code in Isolated Context
+7. → Validate Outputs
+8. → Return via RPC
+9. → Client receives typed result
+```
+
+### UI Rendering Flow
+
+```
+1. Request → Site/App Worker
+2. → Fetch MDX from Database
+3. → Parse UI Schema
+4. → Validate Components
+5. → Execute Data Fetching (Code Mode)
+6. → Render to HTML (SSR)
+7. → Return Response
+```
+
+### Update Flow (GitHub Integration)
+
+```
+1. Edit MDX in ctx repo
+2. → Commit triggers webhook
+3. → API validates schema
+4. → Updates database
+5. → MDXE picks up changes (no redeploy!)
+6. → Function immediately available
+```
+
+---
+
+## 📋 Implementation Checklist
+
+### Phase 1: MDXE Core (Week 1-2)
+
+**Code Mode Integration**
+- [ ] Set up Code Mode Worker project
+- [ ] Implement CodeModeExecutor class
+- [ ] Create sandbox environment (safe globals)
+- [ ] Add execution metrics tracking
+- [ ] Implement timeout and memory limits
+- [ ] Error handling and sanitization
+
+**MDX Parser**
+- [ ] Parse frontmatter schemas
+- [ ] Extract executable code blocks
+- [ ] Validate schema definitions
+- [ ] Generate type definitions
+- [ ] Support multiple code blocks (setup, execution, teardown)
+
+**Security**
+- [ ] V8 isolate configuration
+- [ ] Controlled access to bindings
+- [ ] Domain whitelisting for fetch
+- [ ] Resource limits enforcement
+- [ ] Audit logging
+
+### Phase 2: CapnWeb RPC (Week 2-3)
+
+**RPC Server**
+- [ ] Implement FunctionService interface
+- [ ] Execute method with validation
+- [ ] Stream method for large responses
+- [ ] List method for function discovery
+- [ ] Schema introspection
+
+**RPC Client (SDK)**
+- [ ] Type-safe client generation
+- [ ] Automatic serialization
+- [ ] Streaming support
+- [ ] Error handling
+- [ ] Retry logic
+
+**Integration**
+- [ ] Connect to api/ RPC infrastructure
+- [ ] Share CapnWeb types with sdk/
+- [ ] WebSocket transport
+- [ ] HTTP fallback
+
+### Phase 3: MDXUI Schema System (Week 3-4)
+
+**Schema Definitions**
+- [ ] Define Zod schemas for all components
+- [ ] Layout components (Grid, Flex, Container)
+- [ ] Form components (Input, Button, Select)
+- [ ] Data display (Table, Card, List)
+- [ ] Navigation (Navbar, Sidebar)
+- [ ] Feedback (Alert, Toast, Modal)
+
+**Component Generator**
+- [ ] Generate React components from schemas
+- [ ] Generate TypeScript types
+- [ ] Generate validation functions
+- [ ] Generate documentation
+- [ ] Generate Storybook stories
+
+**Renderer**
+- [ ] Server-side rendering (SSR)
+- [ ] Hydration support
+- [ ] Stream rendering for large pages
+- [ ] CSS extraction
+- [ ] Meta tag generation
+
+### Phase 4: Integration & Testing (Week 4-5)
+
+**Database Integration**
+- [ ] Store MDX in database (via ctx sync)
+- [ ] Query functions by type/category
+- [ ] Version control for MDX
+- [ ] Rollback support
+
+**Testing**
+- [ ] Unit tests for executor
+- [ ] Integration tests for RPC
+- [ ] E2E tests for full flow
+- [ ] Performance benchmarks
+- [ ] Security audit
+
+**Documentation**
+- [ ] API reference
+- [ ] Schema documentation
+- [ ] Example functions
+- [ ] Example UIs
+- [ ] Migration guide
+
+---
+
+## 🎯 Success Metrics
+
+**Performance:**
+- [ ] Function cold start < 10ms
+- [ ] Function execution overhead < 1ms
+- [ ] RPC roundtrip < 5ms
+- [ ] UI rendering < 50ms
+
+**Developer Experience:**
+- [ ] Zero build time for MDX changes
+- [ ] Type-safe RPC calls
+- [ ] Automatic schema validation
+- [ ] Comprehensive error messages
+
+**Scalability:**
+- [ ] 1000+ functions supported
+- [ ] 10,000+ requests/second
+- [ ] Sub-1ms isolation overhead
+- [ ] Efficient memory usage
+
+---
+
+## 🚨 Risks & Mitigations
+
+**Risk: Code Mode Security**
+- Mitigation: Strict sandbox, controlled globals, audit logging
+
+**Risk: Performance Overhead**
+- Mitigation: Benchmark early, optimize hot paths, use caching
+
+**Risk: Schema Complexity**
+- Mitigation: Start simple, iterate based on usage, provide templates
+
+**Risk: Breaking Changes**
+- Mitigation: Version schemas, support migration, deprecation warnings
+
+---
+
+## 📚 Related Documentation
+
+- [Cloudflare Code Mode Blog](https://blog.cloudflare.com/code-mode/)
+- [CapnWeb Blog](https://blog.cloudflare.com/capnweb-javascript-rpc-library/)
+- [Root TODO.md](./TODO.md)
+- [api/CLAUDE.md](./api/CLAUDE.md) - RPC infrastructure
+- [sdk/CLAUDE.md](./sdk/CLAUDE.md) - SDK generation
+
+---
+
+**Next Steps:**
+1. Create mdx repository with Code Mode architecture
+2. Implement CodeModeExecutor proof of concept
+3. Set up CapnWeb RPC server
+4. Define initial MDXUI schemas
+5. Build end-to-end example (function + UI)
+
+---
+
+**Last Updated:** 2025-10-01
+**Status:** Scoping complete, ready for implementation
+**Owner:** Claude Code (AI Project Manager)

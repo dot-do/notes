@@ -1,0 +1,1363 @@
+# AI-Native Software Reimagination - Technical Architecture
+
+**Created:** 2025-10-03
+**Status:** Phase 1 - Infrastructure Setup
+**Timeline:** 24 weeks (6 months)
+**Budget:** ~$1,300/month
+
+---
+
+## Executive Summary
+
+Systematically transform **50,000+ software products** across **2,000+ categories** into AI-native, MCP-first, agent-centric, seat-less alternatives using massively parallel orchestration.
+
+**Key Innovation:**
+- From per-seat SaaS → usage-based AI services
+- From manual workflows → autonomous agent execution
+- From feature tiers → outcome-based pricing
+- From UI/UX → MCP tools/resources/prompts
+
+---
+
+## System Architecture
+
+### High-Level Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   Master Orchestrator                           │
+│              (LangGraph State Machine)                          │
+│                                                                 │
+│  Phases:                                                        │
+│  1. Scraping (58 workers)    → R2 Storage                      │
+│  2. Analysis (100 agents)    → PostgreSQL/D1                   │
+│  3. O*NET Integration (20)   → services.studio                 │
+│  4. Content Gen (200 agents) → MDX Repos                       │
+│  5. Deployment (30 agents)   → Cloudflare Pages/Workers        │
+└─────────────────────────────────────────────────────────────────┘
+         │
+         │ Workers Queue + RPC
+         │
+         ├─────────────────┬─────────────────┬─────────────────┐
+         ▼                 ▼                 ▼                 ▼
+    ┌─────────┐      ┌─────────┐      ┌─────────┐      ┌─────────┐
+    │ Phase 1 │      │ Phase 2 │      │ Phase 3 │      │ Phase 4 │
+    │Scrapers │      │Analysis │      │ O*NET   │      │Content  │
+    │ (58)    │      │ (100)   │      │ (20)    │      │ (200)   │
+    └────┬────┘      └────┬────┘      └────┬────┘      └────┬────┘
+         │                │                 │                 │
+         ▼                ▼                 ▼                 ▼
+    ┌─────────────────────────────────────────────────────────────┐
+    │              Cloudflare Infrastructure                      │
+    │                                                             │
+    │  R2 Storage ◄── Workers ──► PostgreSQL/D1 ──► Pages/CDN   │
+    └─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Phase 1: Data Ingestion (Weeks 1-4)
+
+### Objective
+Scrape **50,000+ products** from **10+ sources** in parallel
+
+### Architecture
+
+#### Scraper Workers (58 total)
+
+**G2 Scraper** (20 workers)
+```
+g2-scraper/
+├── src/
+│   ├── index.ts           # Main scraper logic
+│   ├── categories.ts      # Category definitions (100 categories/worker)
+│   ├── parser.ts          # HTML/API response parsing
+│   ├── queue.ts           # Queue message publishing
+│   └── types.ts           # TypeScript types
+├── wrangler.jsonc         # Worker config
+└── package.json
+```
+
+**Categories Distribution:**
+- Worker 1: CRM, Sales, Marketing (categories 1-100)
+- Worker 2: Finance, Accounting, HR (categories 101-200)
+- Worker 3: Project Management, Collaboration (categories 201-300)
+- ... (20 workers × 100 categories = 2,000 categories)
+
+**Capterra Scraper** (15 workers)
+```
+capterra-scraper/
+├── src/
+│   ├── index.ts           # Main scraper
+│   ├── categories.ts      # 60 categories/worker
+│   ├── parser.ts          # Capterra-specific parsing
+│   └── ...
+```
+
+**Product Hunt Scraper** (5 workers)
+```
+producthunt-scraper/
+├── src/
+│   ├── index.ts           # GraphQL API client
+│   ├── trending.ts        # Daily/weekly/monthly trending
+│   ├── topics.ts          # AI, DevTools, SaaS, etc.
+│   └── ...
+```
+
+**Hacker News Scraper** (3 workers)
+```
+hackernews-scraper/
+├── src/
+│   ├── index.ts           # Algolia API client
+│   ├── show-hn.ts         # Show HN posts
+│   ├── hiring.ts          # Who is Hiring mentions
+│   └── frontpage.ts       # Front page software discussions
+```
+
+**GitHub Trending Scraper** (5 workers)
+```
+github-trending-scraper/
+├── src/
+│   ├── index.ts           # GitHub API client
+│   ├── languages.ts       # JavaScript, Python, Go, Rust, TypeScript
+│   └── ...
+```
+
+**Alternative Sources Scrapers** (10 workers)
+- TrustRadius (2 workers)
+- Software Advice (2 workers)
+- GetApp (2 workers)
+- AlternativeTo (2 workers)
+- SaaSHub (1 worker)
+- Indie Hackers (1 worker)
+
+#### Data Pipeline
+
+```
+Scraper Worker
+    ↓
+Queue Message (batched)
+    ↓
+Queue Processor
+    ↓
+R2 Storage (NDJSON)
+    ↓
+Cloudflare Pipelines
+    ↓
+Parquet Conversion
+    ↓
+R2 Data Catalog
+    ↓
+SQL Query Interface
+```
+
+#### R2 Schema
+
+```
+r2://software-products/
+├── g2/
+│   └── year=2025/month=10/day=03/
+│       ├── category=crm/
+│       │   ├── batch_1728000000_abc123.ndjson
+│       │   └── batch_1728000000_abc123.parquet
+│       └── category=marketing/
+│           └── ...
+├── capterra/
+│   └── year=2025/month=10/day=03/
+│       └── ...
+├── producthunt/
+│   ├── trending/year=2025/month=10/day=03/
+│   └── topics/year=2025/month=10/
+└── hackernews/
+    └── year=2025/month=10/day=03/
+```
+
+#### Product Schema (NDJSON/Parquet)
+
+```typescript
+interface Product {
+  // Identity
+  id: string
+  source: 'g2' | 'capterra' | 'producthunt' | 'hackernews' | 'github' | 'other'
+  sourceId: string
+  name: string
+  slug: string
+  url: string
+
+  // Classification
+  category: string
+  subcategories: string[]
+  tags: string[]
+
+  // Description
+  tagline: string
+  description: string
+  longDescription?: string
+
+  // Pricing (current model)
+  pricing: {
+    model: 'freemium' | 'subscription' | 'one-time' | 'usage-based' | 'enterprise'
+    startingPrice?: number
+    currency?: string
+    tiers?: {
+      name: string
+      price: number
+      features: string[]
+      seats?: number
+    }[]
+  }
+
+  // Features
+  features: string[]
+  integrations: string[]
+  platforms: string[]
+
+  // Social Proof
+  reviews?: {
+    count: number
+    rating: number
+    source: string
+  }[]
+  users?: number
+  customers?: string[]
+
+  // Metadata
+  founded?: string
+  headquarters?: string
+  companySize?: string
+  website?: string
+  logo?: string
+  screenshots?: string[]
+
+  // Scraping Metadata
+  scrapedAt: string
+  scrapedBy: string
+}
+```
+
+#### Queue Structure
+
+**Queue Name:** `software-ingestion-queue`
+
+**Message Format:**
+```typescript
+interface QueueMessage {
+  source: string
+  category: string
+  product: Product
+  priority: number
+  retryCount: number
+}
+```
+
+**Processing:**
+- Batch size: 10 messages
+- Timeout: 30 seconds
+- Retries: 3x exponential backoff
+- Dead letter queue: `software-ingestion-dlq`
+
+#### Performance Targets
+
+- **Scraping rate:** 1,000 products/day/worker
+- **Total throughput:** 58,000 products/day
+- **Target:** 50,000 products in 1-2 days
+- **Buffer:** 4 weeks for quality checks, deduplication, enrichment
+
+---
+
+## Phase 2: AI Analysis & Transformation (Weeks 5-12)
+
+### Objective
+Reimagine **50,000+ products** as AI-native services using **100 parallel agents**
+
+### Architecture
+
+#### Analysis Agent Teams (20 teams × 5 agents = 100 total)
+
+**Team Structure:**
+```
+analysis-team/
+├── orchestrator.ts        # Team coordination (CrewAI)
+├── agents/
+│   ├── job-analyzer.ts    # Extract core job-to-be-done
+│   ├── mcp-designer.ts    # Design MCP tools/resources/prompts
+│   ├── pricing-designer.ts # Create usage-based pricing model
+│   ├── arch-designer.ts   # Design Cloudflare Workers architecture
+│   └── doc-generator.ts   # Generate initial documentation
+└── schemas/
+    └── ai-native-service.ts # Output schema
+```
+
+**Domain Teams:**
+
+1. **CRM & Sales Team** (5 agents)
+   - Input: Salesforce, HubSpot, Pipedrive, Zoho CRM, etc.
+   - Output: AI-native pipeline automation services
+
+2. **Marketing & Analytics Team** (5 agents)
+   - Input: Google Analytics, Hootsuite, Mailchimp, etc.
+   - Output: Agent-driven marketing workflow services
+
+3. **Finance & Accounting Team** (4 agents)
+   - Input: QuickBooks, Bill.com, Stripe, Xero, etc.
+   - Output: Autonomous financial processing services
+
+4. **HR & Recruiting Team** (4 agents)
+   - Input: Workday, Greenhouse, BambooHR, etc.
+   - Output: AI-native HRIS and recruiting services
+
+... (20 teams total covering all software categories)
+
+#### Analysis Workflow (Per Product)
+
+```
+1. Job Analyzer Agent (5 min)
+   ↓
+   Extract core job-to-be-done
+   Decompose workflows
+   Identify measurable outcomes
+   ↓
+2. MCP Designer Agent (10 min)
+   ↓
+   Design 20-50 MCP tools (actions)
+   Design 10-30 MCP resources (data)
+   Design 5-15 MCP prompts (templates)
+   ↓
+3. Pricing Designer Agent (5 min)
+   ↓
+   Identify usage metrics
+   Design outcome-based tiers
+   Calculate cost structure
+   ↓
+4. Architecture Designer Agent (10 min)
+   ↓
+   Design Cloudflare Workers architecture
+   Specify data storage (R2, D1, KV)
+   Define integration points
+   ↓
+5. Documentation Generator Agent (10 min)
+   ↓
+   Generate API documentation
+   Create usage examples
+   Write migration guide
+   ↓
+   AI-Native Service Definition (JSON)
+```
+
+#### AI-Native Service Schema
+
+```typescript
+interface AINativeService {
+  // Identity
+  id: string
+  originalProduct: string
+  name: string
+  slug: string
+  tagline: string
+  description: string
+
+  // Core Job-to-be-Done
+  jobToBeDone: {
+    problem: string
+    workflows: string[]
+    outcomes: string[]
+  }
+
+  // MCP Specification
+  mcp: {
+    version: '2025-03-26'
+    tools: MCPTool[]
+    resources: MCPResource[]
+    prompts: MCPPrompt[]
+  }
+
+  // Usage-Based Pricing
+  pricing: {
+    model: 'pay-per-action' | 'pay-per-outcome' | 'pay-per-compute'
+    metrics: {
+      name: string
+      unit: string
+      price: number
+      currency: string
+    }[]
+    tiers?: {
+      name: string
+      includedUnits: number
+      overagePrice: number
+      features: string[]
+    }[]
+  }
+
+  // Architecture
+  architecture: {
+    runtime: 'cloudflare-workers'
+    storage: {
+      r2?: string[]
+      d1?: string[]
+      kv?: string[]
+    }
+    integrations: {
+      name: string
+      type: 'api' | 'webhook' | 'mcp' | 'oauth'
+      required: boolean
+    }[]
+  }
+
+  // Capabilities
+  capabilities: {
+    autonomous: boolean
+    multiStep: boolean
+    realTime: boolean
+    scheduled: boolean
+  }
+
+  // Metadata
+  category: string
+  tags: string[]
+  targetOccupations?: string[]
+  automationPotential?: number
+
+  // Migration
+  migration: {
+    fromProduct: string
+    difficulty: 'easy' | 'medium' | 'hard'
+    steps: string[]
+    dataExport: boolean
+  }
+}
+
+interface MCPTool {
+  name: string
+  description: string
+  inputSchema: object // JSON Schema
+  outputSchema: object // JSON Schema
+  examples: {
+    input: object
+    output: object
+  }[]
+}
+
+interface MCPResource {
+  uri: string
+  name: string
+  description: string
+  mimeType: string
+  schema?: object
+}
+
+interface MCPPrompt {
+  name: string
+  description: string
+  template: string
+  arguments: {
+    name: string
+    description: string
+    required: boolean
+  }[]
+}
+```
+
+#### Orchestration (CrewAI)
+
+```typescript
+// analysis-orchestrator.ts
+import { Crew, Agent, Task } from '@crewai/crewai'
+
+const crm_team = new Crew({
+  name: 'CRM Analysis Team',
+  agents: [
+    new Agent({
+      role: 'Job Analyzer',
+      goal: 'Extract core job-to-be-done from product',
+      backstory: 'Expert in first principles thinking and workflow decomposition',
+      tools: [read_product_data, analyze_reviews, extract_use_cases]
+    }),
+    new Agent({
+      role: 'MCP Designer',
+      goal: 'Design MCP tools, resources, and prompts',
+      backstory: 'MCP protocol expert with deep understanding of AI agent architectures',
+      tools: [generate_mcp_schema, validate_tools, design_prompts]
+    }),
+    // ... 3 more agents
+  ],
+  tasks: [
+    new Task({
+      description: 'Analyze {product} and extract core job-to-be-done',
+      agent: 'Job Analyzer',
+      output: 'JobAnalysis'
+    }),
+    new Task({
+      description: 'Design MCP specification for {product}',
+      agent: 'MCP Designer',
+      input: 'JobAnalysis',
+      output: 'MCPSpecification'
+    }),
+    // ... 3 more tasks
+  ],
+  process: 'sequential' // Within team
+})
+
+// Run 20 teams in parallel
+await Promise.all([
+  crm_team.kickoff({ products: crm_products }),
+  marketing_team.kickoff({ products: marketing_products }),
+  // ... 18 more teams
+])
+```
+
+#### Performance Targets
+
+- **Analysis rate:** 150 products/hour (100 agents)
+- **Total throughput:** 3,600 products/day
+- **Target:** 50,000 products in 14 days
+- **Timeline:** 8 weeks (buffer for quality review)
+
+---
+
+## Phase 3: O*NET Integration (Weeks 8-12, parallel)
+
+### Objective
+Map **50,000 products** to **1,000+ occupations** and identify automation opportunities
+
+### Architecture
+
+#### O*NET Integration Agents (20 total)
+
+**Skills Mapper Agents** (5 agents)
+```typescript
+// skills-mapper-agent.ts
+interface SkillsMapping {
+  productId: string
+  requiredSkills: {
+    onetSkillId: string
+    skillName: string
+    importanceLevel: number // 1-5
+    aiCanReplace: boolean
+    confidence: number
+  }[]
+  skillGaps: {
+    skillName: string
+    gapDescription: string
+    mcpToolToFill: string
+  }[]
+}
+```
+
+**Occupation Analyzer Agents** (5 agents)
+```typescript
+// occupation-analyzer-agent.ts
+interface OccupationMapping {
+  productId: string
+  relevantOccupations: {
+    onetCode: string
+    occupationTitle: string
+    relevanceScore: number // 0-100
+    useCases: string[]
+    automationPotential: number // 0-100 (% of tasks)
+  }[]
+  newOccupationOpportunities: {
+    title: string
+    description: string
+    skills: string[]
+    aiEnhanced: boolean
+  }[]
+}
+```
+
+**Work Activity Mapper Agents** (5 agents)
+```typescript
+// work-activity-mapper-agent.ts
+interface ActivityMapping {
+  productId: string
+  workActivities: {
+    onetActivityId: string
+    activityName: string
+    mcpTools: string[] // Which tools support this activity
+    automatable: boolean
+    outcomeMetric: string // For pricing
+  }[]
+  activityWorkflows: {
+    name: string
+    steps: string[]
+    mcpPrompt: string
+  }[]
+}
+```
+
+**Tool-to-Task Mapper Agents** (5 agents)
+```typescript
+// tool-to-task-mapper-agent.ts
+interface TaskMapping {
+  productId: string
+  tasks: {
+    onetTaskId: string
+    taskDescription: string
+    mcpTools: string[]
+    mcpPrompts: string[]
+    estimatedTime: number // minutes
+    automationLevel: 'full' | 'partial' | 'assisted'
+  }[]
+  roleBasedBundles: {
+    occupationCode: string
+    bundleName: string
+    includedServices: string[]
+    pricingModel: 'subscription' | 'usage' | 'outcome'
+  }[]
+}
+```
+
+#### O*NET Data Source
+
+**Already Available:** services.studio MongoDB
+
+**Collections:**
+- Occupations (1,000+)
+- Skills
+- Abilities
+- Knowledge
+- WorkActivities
+- OccupationSkills (join table)
+- OccupationAbilities (join table)
+- OccupationKnowledge (join table)
+- OccupationWorkActivities (join table)
+
+#### Integration Workflow
+
+```
+1. Load Product from Analysis Phase
+   ↓
+2. Query O*NET Database
+   ↓
+3. Skills Mapper Agent
+   ↓ (parallel)
+4. Occupation Analyzer Agent
+   ↓ (parallel)
+5. Work Activity Mapper Agent
+   ↓ (parallel)
+6. Tool-to-Task Mapper Agent
+   ↓
+7. Merge Results
+   ↓
+8. Store in PostgreSQL
+   ↓
+9. Update services.studio Collections
+```
+
+#### Output Schema
+
+```typescript
+interface EnrichedService extends AINativeService {
+  onet: {
+    skills: SkillsMapping
+    occupations: OccupationMapping
+    activities: ActivityMapping
+    tasks: TaskMapping
+  }
+  automationScore: number // 0-100
+  targetRoles: {
+    occupationCode: string
+    occupationTitle: string
+    relevance: number
+  }[]
+  roleBundles: {
+    bundleId: string
+    bundleName: string
+    targetOccupation: string
+    services: string[]
+    pricing: object
+  }[]
+}
+```
+
+#### Performance Targets
+
+- **Mapping rate:** 2,500 products/day (20 agents)
+- **Target:** 50,000 products in 20 days
+- **Timeline:** 4 weeks (weeks 8-12, parallel with Phase 2 tail)
+
+---
+
+## Phase 4: Content Generation (Weeks 13-20)
+
+### Objective
+Generate **complete documentation** for all 50,000 services
+
+### Architecture
+
+#### Content Agent Teams (200 total)
+
+**Service Definition Writers** (50 agents)
+- Name, tagline, description
+- Value proposition
+- Target audience
+- Use cases
+
+**MCP Schema Publishers** (30 agents)
+- tools.json, resources.json, prompts.json
+- TypeScript types
+- Zod validation schemas
+- JSON Schema validation
+
+**API Documentation Writers** (30 agents)
+- REST/GraphQL endpoint docs
+- Authentication flows
+- Rate limits
+- Code examples (TypeScript, Python, Go, Rust)
+
+**Pricing Page Generators** (20 agents)
+- Usage-based tier tables
+- Interactive calculator
+- ROI comparison vs traditional SaaS
+- Cost estimator
+
+**Migration Guide Writers** (20 agents)
+- Step-by-step migration from legacy product
+- Data export/import tools
+- Feature parity checklist
+- Troubleshooting
+
+**Marketing Content Generators** (30 agents)
+- Landing pages (Next.js + Tailwind)
+- Blog posts (comparison, how-tos, case studies)
+- Social media copy (Twitter, LinkedIn)
+- Email sequences
+
+**Code Generators** (20 agents)
+- Cloudflare Workers templates
+- MCP server implementations
+- Client SDK examples
+- Integration examples
+
+#### Content Templates
+
+**Landing Page Structure:**
+```typescript
+interface LandingPage {
+  hero: {
+    headline: string
+    subheadline: string
+    cta: string
+    image?: string
+  }
+  problem: {
+    headline: string
+    pain_points: string[]
+  }
+  solution: {
+    headline: string
+    features: {
+      title: string
+      description: string
+      icon: string
+    }[]
+  }
+  how_it_works: {
+    steps: {
+      title: string
+      description: string
+    }[]
+  }
+  pricing: {
+    tiers: object[]
+  }
+  comparison: {
+    vs_product: string
+    table: object
+  }
+  testimonials?: object[]
+  faq: object[]
+}
+```
+
+#### Output Repositories
+
+**MDX Content Repos** (via repo.do webhooks):
+- `services/` - Service definitions (50K files)
+- `apps/` - Application metadata
+- `tools/` - Tool integrations
+- `integrations/` - Integration guides
+
+**Code Repos:**
+- `workers/` - Worker templates (50K services)
+- `sdk/` - Client SDKs
+- `examples/` - Integration examples
+
+**Website:**
+- `site/` - Marketing pages (Next.js)
+
+#### Generation Workflow
+
+```
+1. Load Enriched Service (from Phase 2-3)
+   ↓
+2. Parallel Content Generation (7 agent types)
+   ├─ Service Definition Writer
+   ├─ MCP Schema Publisher
+   ├─ API Documentation Writer
+   ├─ Pricing Page Generator
+   ├─ Migration Guide Writer
+   ├─ Marketing Content Generator
+   └─ Code Generator
+   ↓
+3. Content Validation
+   ↓
+4. Publish to MDX Repos
+   ↓
+5. Sync to Database (via repo.do)
+   ↓
+6. Deploy Website Pages
+```
+
+#### Performance Targets
+
+- **Generation rate:** 5,000 services/day (200 agents)
+- **Target:** 50,000 services in 10 days
+- **Timeline:** 8 weeks (buffer for quality review)
+
+---
+
+## Phase 5: Deployment & Publishing (Weeks 21-24)
+
+### Objective
+**Automated deployment** of all 50,000 services
+
+### Architecture
+
+#### Deployment Agents (30 total)
+
+**MDX Publishers** (10 agents)
+- Write MDX files to services/ repo
+- Generate frontmatter (slug, SEO, metadata)
+- Commit and push to GitHub
+- Trigger repo.do webhook → database sync
+
+**Website Generators** (10 agents)
+- Create Next.js page in site/
+- Configure routes in app/ directory
+- Generate static pages (SSG)
+- Deploy to Cloudflare Pages
+
+**MCP Server Deployers** (5 agents)
+- Create Worker in workers/
+- Configure wrangler.jsonc
+- Set up bindings (D1, R2, KV)
+- Deploy with `wrangler deploy`
+- Register in MCP registry
+
+**API Gateway Configurators** (5 agents)
+- Register routes in @api/ gateway
+- Configure authentication
+- Set rate limits
+- Enable usage tracking
+- Deploy to production
+
+#### Deployment Workflow
+
+```
+1. Load Complete Service Definition
+   ↓
+2. Parallel Deployment (4 agent types)
+   ├─ MDX Publisher
+   │  └─ services/{slug}.mdx
+   │     └─ repo.do webhook
+   │        └─ PostgreSQL insert
+   ├─ Website Generator
+   │  └─ site/app/{slug}/page.tsx
+   │     └─ `pnpm build`
+   │        └─ Cloudflare Pages deploy
+   ├─ MCP Server Deployer
+   │  └─ workers/{slug}/src/index.ts
+   │     └─ `wrangler deploy`
+   │        └─ Production URL
+   └─ API Gateway Configurator
+      └─ api/routes/{category}/{slug}.ts
+         └─ `wrangler deploy`
+            └─ api.do/{slug}
+   ↓
+3. Integration Testing
+   ↓
+4. Production Verification
+   ↓
+5. Mark Service as Live
+```
+
+#### Deployment Targets
+
+- **MDX Repo:** services/ (50K files)
+- **Website:** site.do/services/{slug} (50K pages)
+- **MCP Servers:** workers/{slug} (50K workers)
+- **API Gateway:** api.do/{slug} (50K routes)
+
+#### Performance Targets
+
+- **Deployment rate:** Automated (no manual work)
+- **Timeline:** 4 weeks (automated batching)
+- **Quality checks:** Integration tests, smoke tests
+
+---
+
+## Orchestration Framework
+
+### Technology Stack
+
+**Primary:** LangGraph + CrewAI Hybrid
+
+**LangGraph** for master orchestration:
+```typescript
+// master-orchestrator.ts
+import { StateGraph, END } from '@langchain/langgraph'
+
+interface MasterState {
+  phase: 1 | 2 | 3 | 4 | 5
+  products: Product[]
+  analyzed: AINativeService[]
+  enriched: EnrichedService[]
+  content: ContentBundle[]
+  deployed: DeploymentResult[]
+  errors: Error[]
+  progress: {
+    scraped: number
+    analyzed: number
+    enriched: number
+    generated: number
+    deployed: number
+  }
+}
+
+const workflow = new StateGraph<MasterState>({
+  channels: {
+    phase: { value: 1 },
+    products: { value: [] },
+    // ...
+  }
+})
+
+workflow.addNode('scrape', scrape_phase)
+workflow.addNode('analyze', analyze_phase)
+workflow.addNode('enrich', enrich_phase)
+workflow.addNode('generate', generate_phase)
+workflow.addNode('deploy', deploy_phase)
+
+workflow.addEdge('scrape', 'analyze')
+workflow.addEdge('analyze', 'enrich')
+workflow.addEdge('enrich', 'generate')
+workflow.addEdge('generate', 'deploy')
+workflow.addEdge('deploy', END)
+
+const app = workflow.compile({
+  checkpointer: new PostgresSaver(pool), // Checkpoint to DB
+})
+
+// Execute
+await app.invoke({
+  phase: 1,
+  products: [],
+  // ...
+})
+```
+
+**CrewAI** for parallel agent teams:
+```typescript
+// phase-executor.ts
+import { Crew, Agent, Task, Process } from '@crewai/crewai'
+
+async function execute_phase_2(products: Product[]) {
+  // Create 20 domain teams
+  const teams = DOMAINS.map(domain => {
+    return new Crew({
+      name: `${domain} Analysis Team`,
+      agents: [
+        job_analyzer_agent,
+        mcp_designer_agent,
+        pricing_designer_agent,
+        arch_designer_agent,
+        doc_generator_agent,
+      ],
+      tasks: [
+        analyze_job_task,
+        design_mcp_task,
+        design_pricing_task,
+        design_architecture_task,
+        generate_docs_task,
+      ],
+      process: Process.sequential, // Within team
+    })
+  })
+
+  // Run all teams in parallel
+  const results = await Promise.all(
+    teams.map(team => team.kickoff({ products: filter_by_domain(products, team.name) }))
+  )
+
+  return results.flat()
+}
+```
+
+### Execution Environment
+
+**Runtime:** Cloudflare Workers
+- Unlimited concurrency
+- Global edge network
+- 0ms cold start
+- Pay-per-use pricing
+
+**Task Distribution:** Workers Queue
+- Batch processing (10 messages)
+- Automatic retries (3x)
+- Dead letter queue
+- Guaranteed delivery
+
+**State Management:** PostgreSQL + D1
+- Master state in PostgreSQL (services.studio)
+- Operational metadata in D1
+- Checkpointing for resume
+
+**Progress Tracking:** services.studio Jobs Panel
+- Real-time progress bars
+- Phase completion status
+- Error logs
+- Estimated completion time
+
+---
+
+## Monitoring & Observability
+
+### Dashboards
+
+**Master Dashboard:**
+```
+┌──────────────────────────────────────────────────────────┐
+│  AI-Native Software Reimagination - Progress             │
+├──────────────────────────────────────────────────────────┤
+│                                                           │
+│  Phase 1: Scraping          [████████████████████] 100%  │
+│    Products scraped: 52,347 / 50,000                     │
+│    Time elapsed: 2 days                                  │
+│                                                           │
+│  Phase 2: Analysis          [████████────────────]  60%  │
+│    Products analyzed: 30,000 / 50,000                    │
+│    Time elapsed: 5 days | ETA: 3 days                    │
+│                                                           │
+│  Phase 3: O*NET Integration [██████──────────────]  40%  │
+│    Mappings created: 20,000 / 50,000                     │
+│    Time elapsed: 8 days | ETA: 12 days                   │
+│                                                           │
+│  Phase 4: Content Gen       [────────────────────]   0%  │
+│    Not started                                           │
+│                                                           │
+│  Phase 5: Deployment        [────────────────────]   0%  │
+│    Not started                                           │
+│                                                           │
+│  Overall Progress: 40% complete (20,000 / 50,000)        │
+│  Estimated completion: 18 weeks remaining                │
+│                                                           │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Metrics Tracked:**
+- Products per phase
+- Success/error rates
+- Average processing time
+- Cost per product
+- API usage (OpenAI tokens)
+- Storage usage (R2, D1)
+- Worker invocations
+
+### Alerts
+
+**Error Thresholds:**
+- Error rate > 5% → Slack alert
+- Queue depth > 10,000 → Pause scraping
+- API rate limit hit → Backoff + retry
+- Worker timeout > 10% → Investigate
+
+**Progress Milestones:**
+- Phase completion → Slack notification
+- 10K products milestone → Summary report
+- Weekly status report → Email digest
+
+---
+
+## Cost Breakdown
+
+### Infrastructure (Monthly)
+
+**Cloudflare:**
+- Workers (unlimited): Free tier (under 10M req/day)
+- R2 Storage (10GB): $0.15
+- D1 Database: Free tier
+- Pages Deployments: Free tier
+- Queue: Free tier
+- **Subtotal: $0.15/month**
+
+**AI APIs:**
+- OpenAI GPT-4o (analysis): $500/month
+- OpenAI GPT-4o (content gen): $800/month
+- **Subtotal: $1,300/month**
+
+**External Services:**
+- Proxy rotation (optional): $50/month
+- **Subtotal: $50/month**
+
+**Total: ~$1,350/month**
+
+### One-Time Costs
+
+**Development:**
+- Orchestration framework: 2 weeks
+- Scraper templates: 2 weeks
+- Agent templates: 2 weeks
+- Deployment pipeline: 1 week
+- **Total: 7 weeks dev time**
+
+---
+
+## Risk Mitigation
+
+### Technical Risks
+
+**Rate Limiting:**
+- Use residential proxies (Bright Data)
+- Stagger requests (100ms delay)
+- Respect robots.txt
+- Monitor 429 responses
+
+**Data Quality:**
+- Multi-source validation
+- Human review sampling (1% random)
+- Automated quality checks
+- Deduplication algorithms
+
+**AI Hallucinations:**
+- Schema validation (Zod)
+- Deterministic checks (pricing ranges)
+- Human review for critical fields
+- Confidence scoring
+
+**Scaling Issues:**
+- Gradual rollout (100 → 1K → 10K → 50K)
+- Load testing before production
+- Auto-scaling based on queue depth
+- Circuit breakers for failures
+
+### Legal Risks
+
+**Web Scraping:**
+- Scrape only public data
+- Comply with ToS (where applicable)
+- No authentication bypass
+- Rate limit compliance
+
+**IP Concerns:**
+- Transformative use (AI-native reimagining)
+- No trademark infringement
+- Clear attribution to original products
+- Fair use doctrine
+
+**Data Privacy:**
+- No PII collection
+- GDPR compliance
+- Data retention policies
+- User consent for analytics
+
+### Business Risks
+
+**Market Validation:**
+- MVP for top 100 products first
+- User testing and feedback
+- Pricing experiments
+- Competitor analysis
+
+**Competitive Response:**
+- Patent search (prior art)
+- Open source strategy
+- Community building
+- First-mover advantage
+
+---
+
+## Success Metrics
+
+### Quantitative KPIs
+
+**Phase 1 (Scraping):**
+- ✅ 50,000+ products scraped
+- ✅ 2,000+ categories covered
+- ✅ < 2% error rate
+- ✅ < 4 weeks completion
+
+**Phase 2 (Analysis):**
+- ✅ 50,000+ AI-native services designed
+- ✅ 1M+ MCP tools generated
+- ✅ 100% schema validation pass
+- ✅ < 8 weeks completion
+
+**Phase 3 (O*NET):**
+- ✅ 50M+ product-occupation mappings
+- ✅ 1,000+ occupations covered
+- ✅ Automation scores for all products
+- ✅ < 4 weeks completion
+
+**Phase 4 (Content):**
+- ✅ 50,000+ complete service definitions
+- ✅ API docs, pricing pages, migration guides
+- ✅ 50,000+ landing pages
+- ✅ < 8 weeks completion
+
+**Phase 5 (Deployment):**
+- ✅ 50,000+ services live
+- ✅ 100% deployment success rate
+- ✅ < 4 weeks completion
+
+### Qualitative KPIs
+
+- First principles thinking applied
+- AI-first architecture designs
+- Usage-based pricing models
+- MCP-native implementations
+- Occupation-aligned services
+- Migration-ready documentation
+
+---
+
+## Next Steps
+
+### Week 1: Infrastructure Setup
+
+**Monday:**
+- ✅ Create project structure
+- ✅ Set up R2 buckets and schemas
+- ✅ Configure Workers Queue
+- ✅ Deploy master orchestrator
+
+**Tuesday:**
+- Create scraper templates (G2, Capterra)
+- Set up proxy rotation
+- Test scraping on 10 products
+- Deploy to production
+
+**Wednesday:**
+- Create remaining scraper templates
+- Configure cron schedules
+- Set up monitoring dashboard
+- Deploy all 58 scrapers
+
+**Thursday:**
+- Test parallel scraping (100 products)
+- Validate data quality
+- Tune performance
+- Monitor for errors
+
+**Friday:**
+- Launch full scraping (50K products)
+- Monitor progress
+- Fix any issues
+- Quality checks
+
+### Week 2: Data Quality & Enrichment
+
+**Monday-Wednesday:**
+- Deduplicate products across sources
+- Enrich with additional metadata
+- Categorize using AI (GPT-4o)
+- Validate schemas
+
+**Thursday-Friday:**
+- Export to Parquet
+- Set up SQL query interface
+- Create sample queries
+- Prepare for Phase 2
+
+### Week 3-4: Analysis Preparation
+
+**Week 3:**
+- Deploy analysis agent teams
+- Test on 100 products
+- Refine prompts and schemas
+- Deploy to production
+
+**Week 4:**
+- Launch Phase 2 (analysis)
+- Monitor progress
+- Quality checks
+- Iterate on feedback
+
+### Weeks 5+: Execution
+
+Follow the 24-week timeline as outlined in the master plan.
+
+---
+
+## Appendix
+
+### Scraper Source Code Locations
+
+```
+data-ingestion/
+├── scrapers/
+│   ├── g2/
+│   │   └── worker-{01-20}/
+│   ├── capterra/
+│   │   └── worker-{01-15}/
+│   ├── producthunt/
+│   │   └── worker-{01-05}/
+│   ├── hackernews/
+│   │   └── worker-{01-03}/
+│   ├── github/
+│   │   └── worker-{01-05}/
+│   └── alternatives/
+│       └── worker-{01-10}/
+├── orchestrator/
+│   └── master-orchestrator.ts
+└── shared/
+    ├── types/
+    ├── schemas/
+    └── utils/
+```
+
+### Agent Source Code Locations
+
+```
+agents/
+├── analysis/
+│   ├── teams/
+│   │   ├── crm-team/
+│   │   ├── marketing-team/
+│   │   └── ... (18 more teams)
+│   └── orchestrator.ts
+├── onet/
+│   ├── skills-mapper/
+│   ├── occupation-analyzer/
+│   ├── activity-mapper/
+│   └── task-mapper/
+├── content/
+│   ├── service-writer/
+│   ├── mcp-publisher/
+│   ├── api-doc-writer/
+│   ├── pricing-generator/
+│   ├── migration-writer/
+│   ├── marketing-generator/
+│   └── code-generator/
+└── deployment/
+    ├── mdx-publisher/
+    ├── website-generator/
+    ├── mcp-deployer/
+    └── api-configurator/
+```
+
+### Documentation Locations
+
+```
+notes/
+├── 2025-10-03-ai-native-software-reimagination-architecture.md (this file)
+├── 2025-10-03-scraping-progress-report.md (daily updates)
+├── 2025-10-03-analysis-quality-review.md (weekly)
+└── 2025-10-03-deployment-checklist.md (pre-launch)
+```
+
+---
+
+**Last Updated:** 2025-10-03
+**Status:** Phase 1 - Week 1 - Infrastructure Setup
+**Next Milestone:** Deploy 58 scrapers by EOW
+

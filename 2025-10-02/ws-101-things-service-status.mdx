@@ -1,0 +1,567 @@
+# WS-101 Things Service Extraction - Status Report
+
+**Date:** 2025-10-02
+**Engineer:** Backend Engineer D
+**Task:** Extract things service from api.services monolith
+**Status:** ⚠️ **BLOCKED - Dependencies Not Ready**
+
+---
+
+## Executive Summary
+
+The things service extraction (WS-101) **CANNOT proceed** at this time due to incomplete prerequisite services. The current workers/ infrastructure exists but lacks the required RPC-based microservices architecture defined in WS-001 through WS-003.
+
+**Critical Blockers:**
+1. ❌ WS-001 (@db/) - Database RPC service NOT implemented
+2. ❌ WS-002 (@auth/) - Auth RPC service NOT implemented
+3. ❌ WS-003 (@api/) - Gateway routing NOT configured for RPC
+
+---
+
+## Current Infrastructure Analysis
+
+### Workers Directory Structure
+
+Found existing workers/ monorepo at `/Users/nathanclevenger/Projects/.do/workers/`:
+- 60+ subdirectories including db/, auth/, gateway/, api/, ai/, etc.
+- Appears to be a different architecture than the WS-xxx specifications
+- Contains legacy/experimental implementations
+
+### Database Service (`/workers/db/`)
+
+**Status:** 🟡 Partial Implementation
+
+**Current State:**
+- Has `worker.ts` with WorkerEntrypoint class
+- Implements: `get()`, `list()`, `upsert()`, `put()`, `set()`, `events()`
+- Uses ClickHouse via `sql` template literals
+- Has queue integration via `this.env.pipeline.send()`
+
+**Issues:**
+- ❌ NOT using RPC (WorkerEntrypoint pattern exists but not structured for WS-001 spec)
+- ❌ Does NOT expose `getThing()`, `createThing()`, `updateThing()`, `deleteThing()` as specified
+- ❌ Works with raw SQL, not the Drizzle ORM-based approach from `/db/queries/things.ts`
+- ❌ No type safety - generic `any` types throughout
+
+**Gap:** Needs complete rewrite to match WS-001 RPC specification.
+
+### Auth Service (`/workers/auth/`)
+
+**Status:** 🔴 Minimal Stub
+
+**Current State:**
+- Contains `authkit.ts` (WorkOS/AuthKit integration)
+- Has `worker.d.ts` type stub
+- Missing actual RPC implementation
+
+**Gap:** Needs full implementation per WS-002 specification.
+
+### Gateway Service (`/workers/gateway/`)
+
+**Status:** 🔴 Demo/Test Code Only
+
+**Current State:**
+```typescript
+export default {
+  fetch: async () => {
+    const result = await yaml.testing('123')
+    return new Response(await yaml.stringify({ hello: 'world', ... }))
+  }
+}
+```
+
+**Issues:**
+- ❌ NOT a router - just a YAML test endpoint
+- ❌ NO service bindings configured
+- ❌ NO routing logic for /things/* → things-service
+
+**Gap:** Needs complete implementation per WS-003 specification.
+
+---
+
+## Source Code Analysis
+
+### things.ts Implementation
+
+**Location:** `/Users/nathanclevenger/Projects/.do/api.services/api/routes/things.ts`
+**Size:** 21.7KB (~660 lines)
+**Complexity:** HIGH - Complex query logic, relationship handling, multiple response formats
+
+**Key Features:**
+1. **CRUD Operations:**
+   - GET / - List namespaces, types, aggregations with HATEOAS
+   - GET /:id - Get by ID, type, or relationship query
+   - Relationship queries: /Software_Developers.isA
+   - Type queries: /Occupation (lists all occupations)
+
+2. **Response Formats:**
+   - JSON (default)
+   - MDX (via `?format=mdx` query param)
+   - JSON-LD style with $id, $context, $type
+   - Paginated results with limit/offset
+   - Full vs. simplified responses
+
+3. **Advanced Features:**
+   - AI enrichments merged into responses (from generations table)
+   - Relationship aggregation (grouped by type)
+   - Domain-specific URL mapping (e.g., schema.org.ai for schema namespace)
+   - Full-text search fallback when entity not found
+   - Monaco editor integration (`?edit` query param)
+
+4. **Database Dependencies:**
+   - Direct Drizzle ORM queries on `things`, `relationships`, `generations` tables
+   - Complex JOINs for relationship expansion
+   - Full-text search with PostgreSQL tsvector
+   - Sorting and pagination
+
+**Challenges for Extraction:**
+- ❌ Tightly coupled to Drizzle ORM (would need RPC wrapper)
+- ❌ Complex relationship resolution logic
+- ❌ Requires generations table access (AI enrichments)
+- ❌ Search integration (full-text + vector)
+- ❌ 400+ lines of business logic to preserve
+
+---
+
+## Database Query Helpers
+
+**Location:** `/Users/nathanclevenger/Projects/.do/db/queries/things.ts`
+**Status:** ✅ Well-Structured Query Helpers Exist
+
+**Available Functions:**
+```typescript
+getThing(ns, id) → Thing | undefined
+getThings(items: {ns, id}[]) → Thing[]
+listThings(ns, type?, limit, offset) → Thing[]
+countThings(ns, type?) → number
+createThing(thing: NewThing) → Thing
+createThings(items: NewThing[]) → Thing[]
+updateThing(ns, id, updates) → Thing | undefined
+deleteThing(ns, id) → boolean
+searchThings(query, ns?, limit) → Thing[]
+getThingsWithEmbeddings(ns?, limit, offset) → Thing[]
+```
+
+**Architecture:**
+- ✅ Type-safe with Drizzle ORM
+- ✅ Handles composite primary keys (ns, id)
+- ✅ Batch operations supported
+- ✅ Full-text search integrated
+- ✅ Ready for RPC wrapping
+
+**Gap:** These exist in `/db/` but NOT exposed via RPC from `/workers/db/`.
+
+---
+
+## Dependency Specifications vs. Reality
+
+### WS-001 (@db/ RPC Service) - Specified
+
+**Required RPC Methods:**
+```typescript
+class DatabaseService extends WorkerEntrypoint<Env> {
+  async getThing(ns: string, id: string): Promise<Thing | null>
+  async createThing(data: CreateThingInput): Promise<Thing>
+  async updateThing(ns: string, id: string, data: UpdateThingInput): Promise<Thing>
+  async deleteThing(ns: string, id: string): Promise<void>
+  async listThings(ns: string, options?: ListOptions): Promise<Thing[]>
+  async getRelationships(ns: string, id: string): Promise<Relationship[]>
+  async createRelationship(data: CreateRelationshipInput): Promise<Relationship>
+  async searchThings(query: string, options?: SearchOptions): Promise<Thing[]>
+}
+```
+
+**Current Reality:**
+```typescript
+class DbWorker extends WorkerEntrypoint<Env> {
+  async get(id: string)                    // Generic get by ID
+  async list(ns: string, opts?: any)       // Generic list
+  async put($id: string, data: any, opts: any)
+  async set($id: string, data: any, opts: any)
+  async upsert(events: any[], opts: any)
+}
+```
+
+**Gap Analysis:**
+- ❌ NO type safety (everything is `any`)
+- ❌ Different method signatures
+- ❌ NO relationship operations
+- ❌ NO search operations
+- ❌ Uses ClickHouse, not PostgreSQL/Drizzle
+
+### WS-002 (@auth/ RPC Service) - Specified
+
+**Required RPC Methods:**
+```typescript
+class AuthService extends WorkerEntrypoint<Env> {
+  async verifyToken(token: string): Promise<User | null>
+  async getUserPermissions(userId: string): Promise<Permission[]>
+  async checkPermission(userId: string, resource: string, action: string): Promise<boolean>
+}
+```
+
+**Current Reality:**
+- ❌ Only has `authkit.ts` helper file
+- ❌ NO RPC implementation
+- ❌ NO WorkerEntrypoint class
+
+### WS-003 (@api/ Gateway) - Specified
+
+**Required Configuration:**
+```typescript
+wrangler.toml:
+  [[services]]
+  binding = "THINGS"
+  service = "things-service"
+  environment = "production"
+
+worker.ts:
+  app.all('/things/*', async (c) => {
+    const url = new URL(c.req.url)
+    url.pathname = url.pathname.replace('/things', '')
+    return c.env.THINGS.fetch(url)
+  })
+```
+
+**Current Reality:**
+```typescript
+export default {
+  fetch: async () => {
+    return new Response(await yaml.stringify({ hello: 'world' }))
+  }
+}
+```
+
+**Gap Analysis:**
+- ❌ NO routing whatsoever
+- ❌ NO service bindings
+- ❌ Just a test endpoint
+
+---
+
+## Recommendations
+
+### Option 1: Build Prerequisites First (RECOMMENDED)
+
+**Timeline:** 3-4 weeks before WS-101 can start
+
+**Sequence:**
+1. **Week 1-2:** Implement WS-001 Database RPC Service
+   - Wrap `/db/queries/things.ts` helpers in RPC interface
+   - Add relationship operations
+   - Add search operations
+   - Deploy as `database-service`
+   - Write comprehensive tests
+
+2. **Week 2-3:** Implement WS-002 Auth RPC Service
+   - Build RPC wrapper around better-auth
+   - Add permission checking
+   - Deploy as `auth-service`
+   - Write tests
+
+3. **Week 3-4:** Implement WS-003 Gateway
+   - Build Hono router with service bindings
+   - Configure wrangler.toml service bindings
+   - Add routing rules for /things/*
+   - Deploy gateway
+   - Test end-to-end routing
+
+4. **Week 4:** Begin WS-101 Things Service
+   - All dependencies ready
+   - Can extract cleanly with RPC calls
+
+**Pros:**
+- ✅ Proper architecture - services truly independent
+- ✅ Full RPC testing before things service
+- ✅ Clear dependency graph
+- ✅ Follows microservices best practices
+
+**Cons:**
+- ⏳ 3-4 week delay for WS-101
+- 🔨 Significant infrastructure work upfront
+
+### Option 2: Hybrid Approach (FASTER BUT RISKY)
+
+**Timeline:** 1-2 weeks
+
+**Approach:**
+1. Extract things service as **monolithic microservice**
+2. Bundle all dependencies (db queries, auth checks) INSIDE things-service
+3. Use direct database connections (like current `/workers/db/`)
+4. NO RPC dependencies initially
+
+**Later Refactor:**
+- When WS-001/002/003 ready, refactor to use RPC
+- Replace bundled code with service calls
+
+**Pros:**
+- ✅ Things service extracted faster
+- ✅ Can show progress immediately
+- ✅ Service still isolated (separate deployment)
+
+**Cons:**
+- ❌ Not true microservices (still coupled to DB)
+- ❌ Refactoring work later
+- ❌ Duplicates code across services
+- ❌ Harder testing (can't mock RPC)
+
+### Option 3: Use Existing /workers/ Infrastructure
+
+**Timeline:** Immediate start possible
+
+**Approach:**
+1. Work within existing `/workers/` monorepo structure
+2. Create `/workers/things/` directory
+3. Use existing db/, auth/ workers directly (not via RPC)
+4. Use existing gateway/ pattern
+
+**Pros:**
+- ✅ Can start immediately
+- ✅ Leverages existing code
+- ✅ No wait for dependencies
+
+**Cons:**
+- ❌ NOT the architecture specified in WS-xxx tasks
+- ❌ Tightly coupled workers
+- ❌ Won't match specifications
+- ❌ May need complete rewrite later
+
+---
+
+## Technical Debt Analysis
+
+### Current /workers/ Directory Issues
+
+1. **No Clear Service Boundaries**
+   - 60+ directories - unclear which are services vs. utilities
+   - No consistent pattern (some have worker.ts, some don't)
+   - Mixing services, packages, templates, tests
+
+2. **Inconsistent Architectures**
+   - Some use WorkerEntrypoint (db/)
+   - Some use plain fetch handlers (gateway/)
+   - No unified RPC approach
+
+3. **Missing Critical Infrastructure**
+   - No service registry
+   - No health checks
+   - No monitoring
+   - No centralized error handling
+
+4. **Type Safety Gaps**
+   - Many `any` types
+   - No shared type packages
+   - worker.d.ts files not synchronized
+
+---
+
+## Proposed Action Plan
+
+### Immediate (This Week)
+
+1. **⚠️ STOP WS-101 Work**
+   - Acknowledge blockers formally
+   - Document gaps in this report
+   - Get stakeholder buy-in on approach
+
+2. **📋 Create WS-001 Implementation Plan**
+   - Detailed spec for Database RPC service
+   - Migration from `/db/queries/` → `/workers/db/` RPC
+   - Testing strategy
+   - Deployment plan
+
+3. **📋 Create WS-002 Implementation Plan**
+   - Auth RPC service specification
+   - better-auth integration
+   - Permission model
+   - Testing strategy
+
+4. **📋 Create WS-003 Implementation Plan**
+   - Gateway routing architecture
+   - Service binding configuration
+   - Load balancing strategy
+   - Monitoring and health checks
+
+### Phase 1: Database RPC Service (2 weeks)
+
+**Week 1:**
+- [ ] Design RPC interface (match specification exactly)
+- [ ] Wrap `/db/queries/things.ts` in WorkerEntrypoint
+- [ ] Add relationship operations
+- [ ] Add search operations (full-text + vector)
+- [ ] Implement error handling
+- [ ] Add request logging
+
+**Week 2:**
+- [ ] Write comprehensive unit tests (80%+ coverage)
+- [ ] Write integration tests against real PostgreSQL
+- [ ] Performance testing (target <50ms p95 latency)
+- [ ] Deploy to staging
+- [ ] Deploy to production
+- [ ] Monitor for 3 days
+
+### Phase 2: Auth RPC Service (1 week)
+
+- [ ] Implement RPC wrapper around better-auth
+- [ ] Add permission checking methods
+- [ ] Test with mock database
+- [ ] Deploy to staging/production
+
+### Phase 3: Gateway Implementation (1 week)
+
+- [ ] Build Hono router
+- [ ] Configure service bindings in wrangler.toml
+- [ ] Add routing rules
+- [ ] Test service-to-service calls
+- [ ] Deploy
+
+### Phase 4: Things Service Extraction (1 week)
+
+**NOW dependencies are ready:**
+- [ ] Extract things.ts → /workers/things/
+- [ ] Replace Drizzle queries with `this.env.DB` RPC calls
+- [ ] Implement HTTP interface (Hono routes)
+- [ ] Implement MCP tools
+- [ ] Implement queue handler
+- [ ] Write tests (use mocked RPC services)
+- [ ] Deploy to staging
+- [ ] Test via gateway
+- [ ] Deploy to production
+
+---
+
+## Risk Assessment
+
+### High Risk Items
+
+1. **Database RPC Latency**
+   - **Risk:** Network calls add latency vs. direct DB
+   - **Mitigation:** Connection pooling, caching, batch operations
+   - **Target:** <50ms added latency
+
+2. **Service Discovery**
+   - **Risk:** How do services find each other?
+   - **Mitigation:** Cloudflare service bindings (already configured)
+   - **Alternative:** Environment variables with service URLs
+
+3. **Error Propagation**
+   - **Risk:** Errors across RPC boundaries
+   - **Mitigation:** Structured error responses, proper status codes
+   - **Monitoring:** Centralized error logging
+
+4. **Transaction Boundaries**
+   - **Risk:** Cross-service transactions not possible
+   - **Mitigation:** Saga pattern, eventual consistency
+   - **Alternative:** Batch operations in database service
+
+### Medium Risk Items
+
+1. **Testing Complexity**
+   - Need to mock RPC services
+   - Integration tests require all services running
+   - **Mitigation:** In-memory test doubles, Docker Compose for integration tests
+
+2. **Deployment Coordination**
+   - Must deploy services in order (db → auth → things → gateway)
+   - **Mitigation:** Blue-green deployment, feature flags
+
+3. **Type Synchronization**
+   - Types must match across services
+   - **Mitigation:** Shared type packages (`@workers/types`)
+
+---
+
+## Cost-Benefit Analysis
+
+### Option 1: Build Prerequisites First
+
+**Costs:**
+- 3-4 weeks development time
+- 3 engineers (Database, Auth, Gateway specialists)
+- Infrastructure setup and testing
+
+**Benefits:**
+- ✅ Proper microservices architecture
+- ✅ All future services can use same pattern
+- ✅ Easy to test, maintain, scale
+- ✅ Clear separation of concerns
+- ✅ Reusable across all WS-xxx tasks
+
+**ROI:** HIGH - One-time cost, long-term benefit for 20+ services
+
+### Option 2: Hybrid Approach
+
+**Costs:**
+- 1-2 weeks initial development
+- 1-2 weeks refactoring later
+- Tech debt accumulation
+
+**Benefits:**
+- ✅ Faster initial delivery
+- ✅ Shows progress immediately
+- ⚠️ Service still isolated (separate deployment)
+
+**ROI:** MEDIUM - Faster now, more work later
+
+### Option 3: Use Existing Infrastructure
+
+**Costs:**
+- Minimal initial cost
+- Large refactoring cost later if architecture changes
+- Potential for complete rewrite
+
+**Benefits:**
+- ✅ Immediate start
+- ⚠️ May not meet specifications
+
+**ROI:** LOW - Quick start, but doesn't meet requirements
+
+---
+
+## Decision Required
+
+**Question for Stakeholders:**
+
+Should we:
+
+1. **Build proper RPC infrastructure first** (Option 1)
+   - Timeline: 3-4 weeks
+   - Result: Proper microservices, all WS-xxx tasks can proceed
+   - Recommendation: ✅ **STRONGLY RECOMMENDED**
+
+2. **Extract things as monolithic microservice** (Option 2)
+   - Timeline: 1-2 weeks + refactoring later
+   - Result: Fast delivery, tech debt
+   - Recommendation: ⚠️ Only if urgent deadline
+
+3. **Work within existing /workers/** (Option 3)
+   - Timeline: Immediate
+   - Result: May not meet specifications
+   - Recommendation: ❌ NOT RECOMMENDED
+
+---
+
+## Conclusion
+
+The things service extraction (WS-101) is **blocked due to missing RPC infrastructure**. The current `/workers/` directory contains partial implementations that don't match the WS-xxx specifications.
+
+**Recommended Path Forward:**
+1. Pause WS-101
+2. Implement WS-001 Database RPC service (2 weeks)
+3. Implement WS-002 Auth RPC service (1 week)
+4. Implement WS-003 Gateway (1 week)
+5. Resume WS-101 with proper dependencies (1 week)
+
+**Total Timeline:** 5 weeks for full microservices architecture
+
+**Alternative Fast Path (Not Recommended):**
+- Extract things as monolithic service with bundled dependencies
+- Refactor to RPC later when infrastructure ready
+- Timeline: 2 weeks + refactoring debt
+
+---
+
+**Report Prepared By:** Backend Engineer D
+**Date:** 2025-10-02
+**Status:** Awaiting stakeholder decision on approach
+**Next Steps:** Schedule architecture review meeting

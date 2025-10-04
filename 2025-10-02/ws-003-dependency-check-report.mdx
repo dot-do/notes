@@ -1,0 +1,380 @@
+# WS-003 Dependency Check Report
+
+**Date:** 2025-10-02
+**Agent:** Backend Engineer C
+**Task:** WS-003 @api/ Gateway Implementation
+**Status:** BLOCKED - Dependencies not ready
+
+---
+
+## Executive Summary
+
+**WS-003 cannot proceed** because both required dependencies (WS-001 and WS-002) are incomplete:
+
+- **WS-001 (@db/)**: Partially scaffolded, RPC service NOT implemented
+- **WS-002 (@auth/)**: NOT started, no standalone service exists
+
+**Recommendation:** Assign Backend Engineers A and B to complete WS-001 and WS-002 immediately before WS-003 can begin.
+
+---
+
+## Detailed Dependency Analysis
+
+### WS-001: @db/ RPC Service - ⚠️ PARTIALLY COMPLETE
+
+**What Exists:**
+```
+✅ /Users/nathanclevenger/Projects/.do/db/package.json
+✅ /Users/nathanclevenger/Projects/.do/db/wrangler.jsonc
+✅ Database schema definitions
+✅ Migration files
+✅ Scripts for data import
+```
+
+**What's Missing:**
+```
+❌ /Users/nathanclevenger/Projects/.do/db/src/index.ts (WorkerEntrypoint)
+❌ RPC service implementation
+❌ Query modules in src/queries/
+❌ Transaction helpers
+❌ Unit tests
+❌ Deployment to staging
+```
+
+**Required Implementation:**
+```typescript
+// @db/src/index.ts - DOES NOT EXIST
+export class DatabaseService extends WorkerEntrypoint<Env> {
+  async getThing(ns: string, id: string): Promise<Thing | null>
+  async createThing(data: NewThing): Promise<Thing>
+  async updateThing(ns: string, id: string, updates: Partial<NewThing>): Promise<Thing>
+  async deleteThing(ns: string, id: string): Promise<void>
+  async getRelationships(fromNs: string, fromId: string): Promise<Relationship[]>
+  async fullTextSearch(query: string, options?: SearchOptions): Promise<Thing[]>
+  async vectorSearch(embedding: number[], options?: SearchOptions): Promise<Thing[]>
+  async hybridSearch(query: string, embedding: number[], options?: HybridSearchOptions): Promise<Thing[]>
+}
+```
+
+**Deployment Status:**
+```bash
+$ wrangler deployments list --name db-service
+# Expected: Service deployed with version info
+# Actual: Service likely NOT deployed
+```
+
+**Service Binding Test:**
+```typescript
+// Test from another worker
+const db = env.DB_SERVICE as DatabaseService
+const thing = await db.getThing('onet', 'software-developers')
+// Expected: Returns Thing object or null
+// Actual: WOULD FAIL - service binding not available
+```
+
+---
+
+### WS-002: @auth/ RPC Service - ❌ NOT STARTED
+
+**What Exists:**
+```
+⚠️ Auth logic exists in /Users/nathanclevenger/Projects/.do/api.services/auth/
+⚠️ better-auth implementation in monolith
+⚠️ Some auth code in /Users/nathanclevenger/Projects/.do/api/auth/
+```
+
+**What's Missing:**
+```
+❌ Standalone @auth/ service repository
+❌ /Users/nathanclevenger/Projects/.do/auth/ directory (does NOT exist as separate service)
+❌ WorkerEntrypoint RPC service
+❌ Service bindings configuration
+❌ Deployment to staging
+```
+
+**Required Implementation:**
+```typescript
+// @auth/src/index.ts - DOES NOT EXIST
+export class AuthService extends WorkerEntrypoint<Env> {
+  async validateToken(token: string): Promise<User | null>
+  async validateApiKey(key: string): Promise<User | null>
+  async getUserById(id: string): Promise<User | null>
+  async createSession(userId: string): Promise<Session>
+  async getSession(sessionId: string): Promise<Session | null>
+  async deleteSession(sessionId: string): Promise<void>
+}
+```
+
+**Note:** Auth code needs to be extracted from:
+- `/Users/nathanclevenger/Projects/.do/api.services/auth/` (monolith)
+- `/Users/nathanclevenger/Projects/.do/api/auth/` (partially scaffolded in gateway)
+
+And consolidated into a standalone RPC service.
+
+---
+
+### WS-003: @api/ Gateway - 🟡 SCAFFOLDED BUT NOT READY
+
+**Current State:**
+```
+✅ /Users/nathanclevenger/Projects/.do/api/index.ts exists
+✅ Hono app with route modules
+✅ Middleware (auth, cors, logger)
+✅ Package.json with dependencies
+```
+
+**Problems:**
+```
+❌ Current implementation is NOT a pure gateway
+❌ Contains business logic (route handlers)
+❌ No service bindings configured
+❌ No domain routing implemented
+❌ No path routing implemented
+❌ Cannot route to @db/ (service doesn't exist)
+❌ Cannot route to @auth/ (service doesn't exist)
+```
+
+**Current Implementation (WRONG for Gateway):**
+```typescript
+// @api/index.ts - Current
+import coreRoutes from './routes/core'
+import aiRoutes from './routes/ai'
+// ... more route imports
+
+app.route('/api/v1/core', coreRoutes)  // ❌ Business logic
+app.route('/api/v1/ai', aiRoutes)      // ❌ Business logic
+```
+
+**Required Implementation (PURE GATEWAY):**
+```typescript
+// @api/src/index.ts - Required
+import { DOMAIN_ROUTES } from './routes/domain-routing'
+import { PATH_ROUTES } from './routes/path-routing'
+
+app.all('*', async (c) => {
+  const url = new URL(c.req.url)
+
+  // Pure routing - NO business logic
+  const service = getDomainService(url.hostname) || getPathService(url.pathname)
+  return await c.env[service].fetch(c.req.raw)
+})
+```
+
+---
+
+## Testing Dependencies
+
+### Test Case 1: Can we call @db/ service?
+```typescript
+// @api/tests/integration.test.ts
+const db = env.DB_SERVICE as DatabaseService
+const thing = await db.getThing('onet', 'software-developers')
+```
+
+**Current Status:** ❌ WOULD FAIL
+- Service binding not configured
+- @db/ service not deployed
+- DatabaseService class doesn't exist
+
+---
+
+### Test Case 2: Can we validate tokens via @auth/?
+```typescript
+// @api/src/middleware/auth.ts
+const auth = c.env.AUTH_SERVICE as AuthService
+const user = await auth.validateToken(token)
+```
+
+**Current Status:** ❌ WOULD FAIL
+- Service binding not configured
+- @auth/ service doesn't exist
+- AuthService class doesn't exist
+
+---
+
+### Test Case 3: Can we route requests?
+```typescript
+// Test: https://agents.do/list
+const req = new Request('https://agents.do/list')
+const res = await app.fetch(req, env)
+```
+
+**Current Status:** ❌ WOULD FAIL
+- Domain routing not implemented
+- Service bindings not configured
+- Target services don't exist yet
+
+---
+
+## Impact Analysis
+
+### What CAN'T be done without WS-001 and WS-002:
+
+1. **Gateway Routing:**
+   - Cannot route database queries to @db/
+   - Cannot validate authentication via @auth/
+   - Cannot test service bindings
+
+2. **Microservices Pattern:**
+   - Other services (WS-101 to WS-315) also depend on @db/ and @auth/
+   - Cannot start any downstream workstreams
+   - Entire parallel execution strategy is blocked
+
+3. **Testing:**
+   - Cannot write integration tests
+   - Cannot verify routing performance
+   - Cannot test middleware
+
+4. **Deployment:**
+   - Cannot deploy gateway without service dependencies
+   - Cannot configure custom domains
+   - Cannot test in staging environment
+
+---
+
+## Recommended Action Plan
+
+### Immediate (Today):
+1. ✅ **Document WS-003 implementation plan** (DONE)
+2. ✅ **Report dependency status** (THIS DOCUMENT)
+3. ⏳ **Assign Backend Engineer A to WS-001 (@db/)**
+4. ⏳ **Assign Backend Engineer B to WS-002 (@auth/)**
+
+### WS-001 Tasks (Backend Engineer A):
+```
+Priority: P0 - Critical Path
+Duration: 3-5 days
+```
+1. Create `@db/src/index.ts` with WorkerEntrypoint class
+2. Implement RPC methods for all database operations
+3. Create query modules in `@db/src/queries/`
+4. Write unit tests (80%+ coverage)
+5. Deploy to staging as `db-service`
+6. Verify RPC calls work from test client
+7. Document API in `@db/README.md`
+
+### WS-002 Tasks (Backend Engineer B):
+```
+Priority: P0 - Critical Path
+Duration: 3-5 days
+```
+1. Create standalone `@auth/` service (extract from monolith)
+2. Create `@auth/src/index.ts` with WorkerEntrypoint class
+3. Implement RPC methods for authentication
+4. Integrate better-auth library
+5. Write unit tests (80%+ coverage)
+6. Deploy to staging as `auth-service`
+7. Verify token validation works from test client
+8. Document API in `@auth/README.md`
+
+### WS-003 Tasks (Backend Engineer C - ME):
+```
+Priority: P0 - Critical Path
+Duration: 4-5 days
+Blocked Until: WS-001 and WS-002 complete
+```
+1. ⏸️ **WAIT** for WS-001 deployment
+2. ⏸️ **WAIT** for WS-002 deployment
+3. Test service bindings from gateway
+4. Implement domain routing configuration
+5. Implement path routing configuration
+6. Create authentication middleware (calls @auth/)
+7. Create rate limiting middleware
+8. Write integration tests
+9. Deploy gateway to staging
+10. Performance testing
+
+---
+
+## Timeline Impact
+
+**Original Plan:**
+```
+Week 1-2: Foundation Phase (WS-001, WS-002, WS-003 in sequence)
+Week 3-4: Core Services (WS-101 to WS-110 in parallel)
+```
+
+**Current Status:**
+```
+Day 1: WS-001 and WS-002 NOT started ❌
+Day 2: WS-003 BLOCKED ⏸️
+Day 3-5: WS-001 and WS-002 implementation
+Day 6-10: WS-003 implementation
+Week 3+: Core Services can start (IF foundation complete)
+```
+
+**Risk:** 1-2 week delay if WS-001 and WS-002 are not prioritized immediately.
+
+---
+
+## Service Bindings Configuration (Reference)
+
+Once WS-001 and WS-002 are deployed, the gateway will need these bindings:
+
+```jsonc
+// @api/wrangler.jsonc
+{
+  "services": [
+    {
+      "binding": "DB_SERVICE",
+      "service": "db-service",
+      "entrypoint": "DatabaseService"
+    },
+    {
+      "binding": "AUTH_SERVICE",
+      "service": "auth-service",
+      "entrypoint": "AuthService"
+    },
+    // ... 30+ more service bindings
+  ]
+}
+```
+
+---
+
+## Verification Checklist
+
+Before WS-003 can proceed, verify:
+
+### WS-001 Verification:
+- [ ] `wrangler deployments list --name db-service` shows deployment
+- [ ] Service accessible at `https://db-service.ACCOUNT.workers.dev`
+- [ ] RPC test: `const thing = await env.DB_SERVICE.getThing('onet', 'test')`
+- [ ] All database operations working
+- [ ] Performance: <10ms p95 for RPC calls
+
+### WS-002 Verification:
+- [ ] `wrangler deployments list --name auth-service` shows deployment
+- [ ] Service accessible at `https://auth-service.ACCOUNT.workers.dev`
+- [ ] RPC test: `const user = await env.AUTH_SERVICE.validateToken('test')`
+- [ ] Token validation working
+- [ ] Performance: <5ms p95 for validation
+
+### WS-003 Ready:
+- [ ] Both WS-001 and WS-002 verified
+- [ ] Service bindings configured in `@api/wrangler.jsonc`
+- [ ] Test environment configured
+- [ ] Implementation plan reviewed
+
+---
+
+## Summary
+
+**Current State:** BLOCKED
+**Dependencies:** 2 services (WS-001, WS-002)
+**Blocker Status:** BOTH incomplete
+**Impact:** Cannot start WS-003 implementation
+**Recommendation:** Prioritize WS-001 and WS-002 immediately
+
+**Timeline:**
+- WS-001 and WS-002: 3-5 days each (can be parallel)
+- WS-003: 4-5 days (after dependencies complete)
+- Total: ~8-15 days for foundation phase
+
+**Next Action:** Assign engineers to WS-001 and WS-002, wait for completion before starting WS-003.
+
+---
+
+**Report Generated:** 2025-10-02
+**Agent:** Backend Engineer C
+**Status:** Awaiting dependency completion

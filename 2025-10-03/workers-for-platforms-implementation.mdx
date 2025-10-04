@@ -1,0 +1,996 @@
+# Workers for Platforms Implementation Plan
+
+**Date:** 2025-10-03
+**Status:** 📋 Planning
+**Priority:** P0 - Critical Architecture Migration
+**Estimated Effort:** 1-2 weeks
+
+## Executive Summary
+
+This document outlines the complete migration plan from traditional Workers deployment (with Cloudflare API tokens in CI/CD) to **Workers for Platforms** (with our own deploy API handling authentication).
+
+**Key Benefits:**
+- ✅ Zero Cloudflare credentials in GitHub Actions
+- ✅ Fine-grained RBAC via our AUTH_SERVICE
+- ✅ Complete audit trail of all deployments
+- ✅ Namespace isolation for dev/staging/production
+- ✅ Foundation for multi-tenant SaaS platform
+
+## Architecture Overview
+
+### Current vs. Workers for Platforms
+
+**Before (Insecure):**
+```
+GitHub Actions
+  └─> wrangler deploy (using CLOUDFLARE_API_TOKEN)
+      └─> Cloudflare API
+          └─> Production Workers
+```
+
+**After (Secure):**
+```
+GitHub Actions
+  └─> curl https://api.do/.deploy (using DEPLOY_API_KEY)
+      └─> Deploy API Service (AUTH_SERVICE validates)
+          └─> Cloudflare Workers for Platforms API
+              └─> Dispatch Namespace (production/staging/dev)
+                  └─> User Workers (gateway, db, auth, etc.)
+```
+
+### Key Components
+
+1. **Dispatch Namespaces** - Isolated environments
+   - `dotdo-production` - Production workers
+   - `dotdo-staging` - Staging environment
+   - `dotdo-development` - Dev environment
+
+2. **Dynamic Dispatch Worker** - Routes requests to user workers
+   - Subdomain-based routing: `gateway.do` → `gateway` worker
+   - Path-based routing: `/api/db/*` → `db` worker
+   - Custom metadata routing for advanced use cases
+
+3. **Deploy API Service** - Handles authenticated deployments
+   - Validates API keys via AUTH_SERVICE
+   - Checks RBAC permissions
+   - Deploys to dispatch namespace via Cloudflare API
+   - Logs all deployments for audit trail
+
+4. **User Workers** - Our 8 microservices
+   - `gateway`, `db`, `auth`, `schedule`, `webhooks`, `email`, `mcp`, `queue`
+   - Deployed to dispatch namespace
+   - Invoked by dynamic dispatch worker
+
+## Phase 1: Setup Infrastructure (Days 1-2)
+
+### 1.1 Create Dispatch Namespaces
+
+**Create three namespaces:**
+
+```bash
+# Production namespace
+npx wrangler dispatch-namespace create dotdo-production
+
+# Staging namespace
+npx wrangler dispatch-namespace create dotdo-staging
+
+# Development namespace
+npx wrangler dispatch-namespace create dotdo-development
+```
+
+**Expected output:**
+```json
+{
+  "success": true,
+  "result": {
+    "namespace_id": "ns_1234567890",
+    "namespace_name": "dotdo-production",
+    "created_on": "2025-10-03T01:30:00Z"
+  }
+}
+```
+
+**Store namespace IDs in environment:**
+```bash
+# Add to .dev.vars (local dev)
+PRODUCTION_NAMESPACE_ID=ns_1234567890
+STAGING_NAMESPACE_ID=ns_0987654321
+DEV_NAMESPACE_ID=ns_1122334455
+
+# Add to Cloudflare Workers secret (production)
+echo "ns_1234567890" | wrangler secret put PRODUCTION_NAMESPACE_ID
+```
+
+### 1.2 Configure Namespace Mode
+
+**Set to "trusted" mode** (we control all worker code):
+
+```bash
+curl -X PUT "https://api.cloudflare.com/client/v4/accounts/b6641681fe423910342b9ffa1364c76d/workers/dispatch/namespaces/dotdo-production" \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "trusted": true
+  }'
+```
+
+**Trusted mode benefits:**
+- `request.cf` object available
+- Shared cache across workers (controlled by us)
+- Better performance
+
+**Repeat for staging and development namespaces.**
+
+### 1.3 Test Namespace Creation
+
+```bash
+# List all namespaces
+npx wrangler dispatch-namespace list
+
+# Expected output shows all 3 namespaces
+```
+
+## Phase 2: Create Dynamic Dispatch Worker (Days 2-3)
+
+### 2.1 Create Dispatcher Service
+
+**Create new service:**
+
+```bash
+cd workers
+mkdir dispatcher
+cd dispatcher
+```
+
+**File: `workers/dispatcher/src/index.ts`**
+
+```typescript
+/**
+ * Dynamic Dispatch Worker
+ * Routes incoming requests to appropriate user workers in dispatch namespace
+ */
+
+interface Env {
+  // Dispatch namespace bindings
+  PRODUCTION: DispatchNamespace
+  STAGING: DispatchNamespace
+  DEVELOPMENT: DispatchNamespace
+
+  // Service bindings
+  AUTH_SERVICE: any
+  DB_SERVICE: any
+
+  // Environment
+  ENVIRONMENT: 'production' | 'staging' | 'development'
+}
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    try {
+      const url = new URL(request.url)
+
+      // Determine which namespace to use based on environment
+      const namespace = env[env.ENVIRONMENT.toUpperCase() as 'PRODUCTION' | 'STAGING' | 'DEVELOPMENT']
+
+      // Route based on hostname/path
+      const workerName = determineWorker(url)
+
+      if (!workerName) {
+        return new Response('Service not found', { status: 404 })
+      }
+
+      // Get worker from namespace
+      const worker = namespace.get(workerName)
+
+      // Forward request to user worker
+      return await worker.fetch(request)
+
+    } catch (error: any) {
+      if (error.message.includes('Worker not found')) {
+        return new Response('Service not found', { status: 404 })
+      }
+
+      console.error('Dispatch error:', error)
+      return new Response('Internal server error', { status: 500 })
+    }
+  }
+}
+
+/**
+ * Determine which worker to route to based on URL
+ */
+function determineWorker(url: URL): string | null {
+  const hostname = url.hostname
+  const path = url.pathname
+
+  // Subdomain-based routing
+  // gateway.do → gateway
+  // api.do → gateway
+  const subdomain = hostname.split('.')[0]
+  const validWorkers = ['gateway', 'db', 'auth', 'schedule', 'webhooks', 'email', 'mcp', 'queue']
+
+  if (validWorkers.includes(subdomain)) {
+    return subdomain
+  }
+
+  // Path-based routing
+  // /api/db/* → db
+  // /api/auth/* → auth
+  const pathMatch = path.match(/^\/api\/([^\/]+)/)
+  if (pathMatch && validWorkers.includes(pathMatch[1])) {
+    return pathMatch[1]
+  }
+
+  // Default to gateway for root domain
+  if (hostname === 'do' || hostname === 'api.do') {
+    return 'gateway'
+  }
+
+  return null
+}
+```
+
+**File: `workers/dispatcher/wrangler.jsonc`**
+
+```jsonc
+{
+  "name": "dispatcher",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-01",
+
+  "dispatch_namespaces": [
+    {
+      "binding": "PRODUCTION",
+      "namespace": "dotdo-production"
+    },
+    {
+      "binding": "STAGING",
+      "namespace": "dotdo-staging"
+    },
+    {
+      "binding": "DEVELOPMENT",
+      "namespace": "dotdo-development"
+    }
+  ],
+
+  "vars": {
+    "ENVIRONMENT": "production"
+  },
+
+  "routes": [
+    { "pattern": "*.do/*", "zone_name": "do" },
+    { "pattern": "api.do/*", "zone_name": "do" }
+  ]
+}
+```
+
+### 2.2 Deploy Dispatcher
+
+```bash
+cd workers/dispatcher
+npx wrangler deploy
+```
+
+### 2.3 Test Dispatcher
+
+```bash
+# Should return 404 (no user workers deployed yet)
+curl https://gateway.do/health
+
+# Expected: {"error": "Service not found"}
+```
+
+## Phase 3: Create Deploy API Service (Days 3-5)
+
+### 3.1 Service Structure
+
+**Create new service:**
+
+```bash
+cd workers
+mkdir deploy
+cd deploy
+```
+
+**File: `workers/deploy/src/index.ts`**
+
+```typescript
+import { Hono } from 'hono'
+import { z } from 'zod'
+import { WorkerEntrypoint } from 'cloudflare:workers'
+
+interface Env {
+  // Service bindings
+  AUTH_SERVICE: any
+  DB_SERVICE: any
+
+  // Cloudflare API credentials (stored as secrets)
+  CLOUDFLARE_ACCOUNT_ID: string
+  CLOUDFLARE_API_TOKEN: string
+
+  // Namespace names
+  PRODUCTION_NAMESPACE: string
+  STAGING_NAMESPACE: string
+  DEV_NAMESPACE: string
+}
+
+// Deployment request schema
+const deploySchema = z.object({
+  service: z.enum(['gateway', 'db', 'auth', 'schedule', 'webhooks', 'email', 'mcp', 'queue']),
+  environment: z.enum(['production', 'staging', 'development']),
+  script: z.string(), // base64-encoded bundle
+  bindings: z.record(z.any()).optional(),
+  metadata: z.object({
+    commit: z.string(),
+    branch: z.string(),
+    author: z.string(),
+    version: z.string().optional(),
+  }),
+})
+
+type DeploymentRequest = z.infer<typeof deploySchema>
+
+export class DeployService extends WorkerEntrypoint<Env> {
+  /**
+   * Deploy a service to dispatch namespace
+   */
+  async deploy(request: DeploymentRequest): Promise<{ success: boolean; deployment: any }> {
+    // Validate schema
+    const validated = deploySchema.parse(request)
+
+    // Deploy to Cloudflare
+    const result = await this.deployToCloudflare(validated)
+
+    // Log deployment
+    await this.logDeployment(validated, result)
+
+    return {
+      success: true,
+      deployment: result,
+    }
+  }
+
+  /**
+   * Deploy worker to Cloudflare dispatch namespace
+   */
+  private async deployToCloudflare(request: DeploymentRequest) {
+    const { service, environment, script, bindings, metadata } = request
+
+    // Determine namespace
+    const namespace = this.getNamespace(environment)
+
+    // Decode script
+    const scriptContent = atob(script)
+
+    // Build form data for multipart upload
+    const formData = new FormData()
+
+    // Add main module
+    formData.append(
+      `${service}.mjs`,
+      new Blob([scriptContent], { type: 'application/javascript+module' }),
+      `${service}.mjs`
+    )
+
+    // Add metadata
+    const metadataJson = {
+      main_module: `${service}.mjs`,
+      compatibility_date: '2025-01-01',
+      bindings: bindings || {},
+      tags: [
+        `service:${service}`,
+        `env:${environment}`,
+        `commit:${metadata.commit}`,
+        `branch:${metadata.branch}`,
+      ],
+    }
+
+    formData.append('metadata', JSON.stringify(metadataJson))
+
+    // Upload to Cloudflare API
+    const url = `https://api.cloudflare.com/client/v4/accounts/${this.env.CLOUDFLARE_ACCOUNT_ID}/workers/dispatch/namespaces/${namespace}/scripts/${service}`
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${this.env.CLOUDFLARE_API_TOKEN}`,
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`Deployment failed: ${error}`)
+    }
+
+    const result = await response.json()
+
+    return {
+      id: `deploy_${Date.now()}`,
+      service,
+      environment,
+      namespace,
+      status: 'deployed',
+      timestamp: new Date().toISOString(),
+      url: this.getServiceUrl(service, environment),
+      version: metadata.version || metadata.commit.substring(0, 7),
+      metadata,
+    }
+  }
+
+  /**
+   * Get namespace name for environment
+   */
+  private getNamespace(environment: string): string {
+    switch (environment) {
+      case 'production': return this.env.PRODUCTION_NAMESPACE
+      case 'staging': return this.env.STAGING_NAMESPACE
+      case 'development': return this.env.DEV_NAMESPACE
+      default: throw new Error(`Invalid environment: ${environment}`)
+    }
+  }
+
+  /**
+   * Get service URL after deployment
+   */
+  private getServiceUrl(service: string, environment: string): string {
+    const domain = environment === 'production' ? 'do' : `${environment}.do`
+    return `https://${service}.${domain}`
+  }
+
+  /**
+   * Log deployment to database
+   */
+  private async logDeployment(request: DeploymentRequest, result: any) {
+    try {
+      await this.env.DB_SERVICE.insert('deployments', {
+        id: result.id,
+        service: request.service,
+        environment: request.environment,
+        status: 'success',
+        commit: request.metadata.commit,
+        branch: request.metadata.branch,
+        author: request.metadata.author,
+        version: result.version,
+        deployed_at: new Date().toISOString(),
+      })
+    } catch (error) {
+      console.error('Failed to log deployment:', error)
+      // Don't fail deployment if logging fails
+    }
+  }
+
+  /**
+   * Rollback to previous deployment
+   */
+  async rollback(service: string, environment: string): Promise<{ success: boolean }> {
+    // Get previous deployment from database
+    const previous = await this.env.DB_SERVICE.query(
+      `SELECT * FROM deployments
+       WHERE service = ? AND environment = ? AND status = 'success'
+       ORDER BY deployed_at DESC
+       LIMIT 1 OFFSET 1`,
+      [service, environment]
+    )
+
+    if (!previous || previous.length === 0) {
+      throw new Error('No previous deployment found')
+    }
+
+    // Redeploy previous version
+    // (Implementation depends on whether we store scripts)
+
+    return { success: true }
+  }
+
+  /**
+   * List deployments
+   */
+  async listDeployments(filters: {
+    service?: string
+    environment?: string
+    limit?: number
+  }): Promise<any[]> {
+    const { service, environment, limit = 50 } = filters
+
+    let query = 'SELECT * FROM deployments WHERE 1=1'
+    const params: any[] = []
+
+    if (service) {
+      query += ' AND service = ?'
+      params.push(service)
+    }
+
+    if (environment) {
+      query += ' AND environment = ?'
+      params.push(environment)
+    }
+
+    query += ' ORDER BY deployed_at DESC LIMIT ?'
+    params.push(limit)
+
+    return await this.env.DB_SERVICE.query(query, params)
+  }
+}
+
+// HTTP API
+const app = new Hono<{ Bindings: Env }>()
+
+// Middleware: Authentication
+app.use('*', async (c, next) => {
+  const apiKey = c.req.header('Authorization')?.replace('Bearer ', '')
+
+  if (!apiKey) {
+    return c.json({ error: 'Missing API key' }, 401)
+  }
+
+  // Validate API key via AUTH_SERVICE
+  const auth = await c.env.AUTH_SERVICE.validateApiKey(apiKey)
+
+  if (!auth.valid) {
+    return c.json({ error: 'Invalid API key' }, 401)
+  }
+
+  // Check deployment permission
+  if (!auth.permissions.includes('deploy')) {
+    return c.json({ error: 'Insufficient permissions' }, 403)
+  }
+
+  // Store auth context
+  c.set('auth', auth)
+
+  await next()
+})
+
+// POST /deploy - Deploy a service
+app.post('/deploy', async (c) => {
+  try {
+    const body = await c.req.json()
+    const service = new DeployService(c.env.ctx, c.env)
+
+    const result = await service.deploy(body)
+
+    return c.json(result)
+  } catch (error: any) {
+    console.error('Deploy error:', error)
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// POST /rollback - Rollback a service
+app.post('/rollback', async (c) => {
+  try {
+    const { service, environment } = await c.req.json()
+    const deployService = new DeployService(c.env.ctx, c.env)
+
+    const result = await deployService.rollback(service, environment)
+
+    return c.json(result)
+  } catch (error: any) {
+    console.error('Rollback error:', error)
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// GET /deployments - List deployments
+app.get('/deployments', async (c) => {
+  try {
+    const service = c.req.query('service')
+    const environment = c.req.query('environment')
+    const limit = parseInt(c.req.query('limit') || '50')
+
+    const deployService = new DeployService(c.env.ctx, c.env)
+    const deployments = await deployService.listDeployments({ service, environment, limit })
+
+    return c.json({ deployments })
+  } catch (error: any) {
+    console.error('List deployments error:', error)
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+export default app
+```
+
+**File: `workers/deploy/wrangler.jsonc`**
+
+```jsonc
+{
+  "name": "deploy",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-01",
+
+  "services": [
+    { "binding": "AUTH_SERVICE", "service": "auth" },
+    { "binding": "DB_SERVICE", "service": "db" }
+  ],
+
+  "vars": {
+    "PRODUCTION_NAMESPACE": "dotdo-production",
+    "STAGING_NAMESPACE": "dotdo-staging",
+    "DEV_NAMESPACE": "dotdo-development"
+  }
+}
+```
+
+### 3.2 Setup Secrets
+
+```bash
+cd workers/deploy
+
+# Set Cloudflare credentials (only here, not in GitHub!)
+echo "b6641681fe423910342b9ffa1364c76d" | wrangler secret put CLOUDFLARE_ACCOUNT_ID
+echo "$YOUR_CF_TOKEN" | wrangler secret put CLOUDFLARE_API_TOKEN
+```
+
+### 3.3 Deploy Deploy Service
+
+```bash
+npx wrangler deploy
+```
+
+## Phase 4: Migrate Services to Dispatch Namespace (Days 5-8)
+
+### 4.1 Update Wrangler Configs
+
+For each service, update `wrangler.jsonc`:
+
+**Before:**
+```jsonc
+{
+  "name": "gateway",
+  "main": "src/index.ts"
+}
+```
+
+**After:**
+```jsonc
+{
+  "name": "gateway",
+  "main": "src/index.ts",
+  "dispatch_namespace": "dotdo-production"
+}
+```
+
+### 4.2 Deploy Services to Namespace
+
+**Manual test deployment:**
+
+```bash
+cd workers/gateway
+npx wrangler deploy --dispatch-namespace dotdo-production
+```
+
+**Verify deployment:**
+
+```bash
+# Via dispatcher
+curl https://gateway.do/health
+
+# Should return: {"status": "healthy", "service": "gateway"}
+```
+
+### 4.3 Deploy via Deploy API
+
+**Build service bundle:**
+
+```bash
+cd workers/gateway
+pnpm build  # Creates dist/index.js
+```
+
+**Base64 encode:**
+
+```bash
+cat dist/index.js | base64 > bundle.txt
+```
+
+**Deploy via API:**
+
+```bash
+curl -X POST https://deploy.do/deploy \
+  -H "Authorization: Bearer $DEPLOY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "service": "gateway",
+    "environment": "production",
+    "script": "'$(cat bundle.txt)'",
+    "bindings": {
+      "DB_SERVICE": "db",
+      "AUTH_SERVICE": "auth"
+    },
+    "metadata": {
+      "commit": "abc123",
+      "branch": "main",
+      "author": "ci@do",
+      "version": "v1.0.0"
+    }
+  }'
+```
+
+**Repeat for all 8 services.**
+
+## Phase 5: Update CI/CD Workflows (Days 8-9)
+
+### 5.1 Update Deployment Workflow
+
+**File: `.github/workflows/deploy.yml`**
+
+Replace wrangler commands with deploy API calls:
+
+**Before:**
+```yaml
+- name: Deploy to Cloudflare
+  run: |
+    cd workers/${{ matrix.service }}
+    npx wrangler deploy
+  env:
+    CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+```
+
+**After:**
+```yaml
+- name: Build service
+  run: |
+    cd workers/${{ matrix.service }}
+    pnpm build
+
+- name: Deploy via API
+  run: |
+    SCRIPT_B64=$(cat workers/${{ matrix.service }}/dist/index.js | base64)
+
+    curl -X POST https://deploy.do/deploy \
+      -H "Authorization: Bearer ${{ secrets.DEPLOY_API_KEY }}" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"service\": \"${{ matrix.service }}\",
+        \"environment\": \"production\",
+        \"script\": \"$SCRIPT_B64\",
+        \"metadata\": {
+          \"commit\": \"${{ github.sha }}\",
+          \"branch\": \"${{ github.ref_name }}\",
+          \"author\": \"${{ github.actor }}\",
+          \"version\": \"${{ github.run_number }}\"
+        }
+      }"
+```
+
+### 5.2 Update GitHub Secrets
+
+**Remove:**
+- `CLOUDFLARE_API_TOKEN` ✅ Delete
+
+**Add:**
+- `DEPLOY_API_KEY` - API key for deploy service
+
+**Create deploy API key:**
+
+```bash
+# Via your AUTH_SERVICE
+curl -X POST https://auth.do/api-keys \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -d '{
+    "name": "GitHub Actions Deploy",
+    "permissions": ["deploy"],
+    "expires_at": "2026-12-31"
+  }'
+```
+
+**Add to GitHub:**
+
+```bash
+echo "$DEPLOY_API_KEY" | gh secret set DEPLOY_API_KEY
+```
+
+## Phase 6: Testing & Validation (Days 9-10)
+
+### 6.1 Test Deployment Flow
+
+**Create test commit:**
+
+```bash
+# Make trivial change
+echo "// test" >> workers/gateway/src/index.ts
+
+# Commit and push
+git add workers/gateway/src/index.ts
+git commit -m "test: Workers for Platforms deployment"
+git push
+```
+
+**Monitor workflow:**
+
+```bash
+gh run watch
+```
+
+**Verify deployment:**
+
+```bash
+# Check deployment succeeded
+curl https://deploy.do/deployments?service=gateway&limit=1
+
+# Test service is working
+curl https://gateway.do/health
+```
+
+### 6.2 Test All Services
+
+**Health check all services:**
+
+```bash
+for service in gateway db auth schedule webhooks email mcp queue; do
+  echo "Testing $service..."
+  curl https://$service.do/health
+done
+```
+
+### 6.3 Integration Tests
+
+Run full integration test suite:
+
+```bash
+pnpm test:integration
+```
+
+**Expected:** All 121 tests pass ✅
+
+## Phase 7: Production Rollout (Days 10-12)
+
+### 7.1 Staging Deployment
+
+**Deploy all services to staging:**
+
+```bash
+for service in gateway db auth schedule webhooks email mcp queue; do
+  echo "Deploying $service to staging..."
+
+  cd workers/$service
+  pnpm build
+  SCRIPT_B64=$(cat dist/index.js | base64)
+
+  curl -X POST https://deploy.do/deploy \
+    -H "Authorization: Bearer $DEPLOY_API_KEY" \
+    -d "{
+      \"service\": \"$service\",
+      \"environment\": \"staging\",
+      \"script\": \"$SCRIPT_B64\",
+      \"metadata\": {
+        \"commit\": \"$(git rev-parse HEAD)\",
+        \"branch\": \"main\",
+        \"author\": \"manual\",
+        \"version\": \"v1.0.0\"
+      }
+    }"
+
+  cd ../..
+done
+```
+
+**Test staging:**
+
+```bash
+# Update dispatcher to route staging.do to STAGING namespace
+curl https://gateway.staging.do/health
+```
+
+### 7.2 Production Deployment
+
+**Same process, environment = "production"**
+
+### 7.3 Monitor
+
+**Watch logs:**
+
+```bash
+# Deployment logs
+curl https://deploy.do/deployments?limit=100
+
+# Service logs via Cloudflare dashboard
+```
+
+## Phase 8: Cleanup (Days 12-14)
+
+### 8.1 Remove Old Workflows
+
+Delete or archive old CI/CD files that used wrangler directly.
+
+### 8.2 Update Documentation
+
+- [ ] Update `workers/CLAUDE.md` with Workers for Platforms architecture
+- [ ] Update `README.md` with new deployment process
+- [ ] Create runbook for common operations
+- [ ] Document rollback procedure
+
+### 8.3 Remove Cloudflare Credentials from GitHub
+
+```bash
+# Delete secret
+gh secret delete CLOUDFLARE_API_TOKEN
+```
+
+**Verify:**
+
+```bash
+gh secret list | grep CLOUDFLARE
+# Should only show CLOUDFLARE_ACCOUNT_ID (not sensitive)
+```
+
+## Success Criteria
+
+- [ ] All 3 dispatch namespaces created
+- [ ] Dynamic dispatch worker deployed and routing correctly
+- [ ] Deploy API service operational with full RBAC
+- [ ] All 8 microservices deployed to production namespace
+- [ ] Integration tests passing (121/121)
+- [ ] CI/CD workflows updated and working
+- [ ] No Cloudflare API tokens in GitHub secrets
+- [ ] Complete audit trail of all deployments
+- [ ] Rollback functionality tested and working
+- [ ] Documentation updated
+
+## Rollback Plan
+
+If Workers for Platforms causes issues:
+
+1. **Keep old wrangler configs** - Don't delete them
+2. **Keep CLOUDFLARE_API_TOKEN secret** - Don't delete until fully validated
+3. **Parallel deployment** - Run both systems during transition
+4. **Easy rollback** - Just revert GitHub Actions workflows
+
+## Cost Analysis
+
+### Workers for Platforms Pricing
+
+- **Dispatch namespaces:** $0 (free)
+- **Worker requests:** Standard pricing ($5/month per 10M requests)
+- **Deploy API service:** Minimal additional cost (likely free tier)
+
+**Total additional cost:** $0-5/month
+
+**Savings:**
+- Security incident cost: Priceless
+- Developer time debugging credential issues: Hours saved
+- Confidence in deployment process: High
+
+## Timeline
+
+| Phase | Duration | Blocker | Risk |
+|-------|----------|---------|------|
+| 1. Setup Infrastructure | 1-2 days | None | Low |
+| 2. Dynamic Dispatch Worker | 1 day | Phase 1 | Low |
+| 3. Deploy API Service | 2-3 days | Phase 2 | Medium |
+| 4. Migrate Services | 3 days | Phase 3 | Medium |
+| 5. Update CI/CD | 1 day | Phase 4 | Low |
+| 6. Testing | 1-2 days | Phase 5 | Low |
+| 7. Production Rollout | 2 days | Phase 6 | High |
+| 8. Cleanup | 2 days | Phase 7 | Low |
+| **TOTAL** | **13-16 days** | | **Medium** |
+
+## Team Resources
+
+**Required:**
+- 1 developer full-time
+- Access to Cloudflare account
+- Access to GitHub repository
+- Staging environment for testing
+
+**Optional:**
+- DevOps review of CI/CD changes
+- Security review of deploy API
+- QA testing of staging environment
+
+## Next Steps
+
+1. **Decision:** Approve Workers for Platforms migration
+2. **Setup:** Create dispatch namespaces (15 minutes)
+3. **Development:** Build deploy API service (2-3 days)
+4. **Testing:** Validate in staging (1-2 days)
+5. **Rollout:** Deploy to production (2 days)
+
+---
+
+**Status:** Ready to begin
+**Blockers:** None (documentation complete, API understood)
+**Risk:** Low-Medium (well-documented Cloudflare feature)
+**Recommendation:** ✅ Proceed with implementation

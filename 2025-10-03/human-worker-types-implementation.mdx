@@ -1,0 +1,260 @@
+# Human Worker - Type System Implementation
+
+**Date:** 2025-10-03
+**Status:** ✅ Complete
+**Location:** `workers/human/`
+
+## Summary
+
+Successfully implemented the complete type system and Zod validation schemas for the Human service (human-in-the-loop function execution).
+
+## What Was Created
+
+### 1. Type Definitions (`src/types.ts` - 389 lines)
+
+**Core Types:**
+- `HumanFunction<TInput, TOutput>` - Main function interface with schemas, routing, UI, and lifecycle hooks
+- `HumanChannel` - Channel types: slack, web, voice, email
+- `ExecutionStatus` - Task states: pending, in_progress, completed, timeout, cancelled, error
+- `RoutingConfig<TInput>` - Routing configuration with channels, assignees, timeout, SLA
+- `UIConfig<TInput, TOutput>` - React component configuration for prompt, form, review
+- `SchemaConfig<TInput, TOutput>` - Zod schema configuration for input/output validation
+- `ExecutionContext<TInput>` - Context passed to lifecycle hooks
+- `ExecutionResult<TOutput>` - Result of completed execution
+- `ExecutionRequest<TInput>` - Request payload for execution
+- `ExecutionRecord<TInput, TOutput>` - Database record for execution
+- `FunctionRegistryEntry` - Registry entry with stats
+
+**Error Classes:**
+- `HumanFunctionError` - Base error class
+- `ValidationError` - Validation failures
+- `TimeoutError` - Timeout scenarios
+- `NotFoundError` - Resource not found
+- `RoutingError` - Routing failures
+
+**Key Features:**
+- ✅ Full TypeScript generics for type safety
+- ✅ React component types with proper props
+- ✅ Lifecycle hooks (onTimeout, onEscalate, onComplete, onCancel, onError)
+- ✅ Flexible routing (static/dynamic assignees, multiple channels)
+- ✅ SLA configuration (warning/critical thresholds)
+- ✅ Priority levels (1-5)
+- ✅ Tag-based categorization
+
+### 2. Zod Validation Schemas (`src/schemas.ts` - 307 lines)
+
+**Schemas:**
+- `humanChannelSchema` - Validates channel enum
+- `executionStatusSchema` - Validates status enum
+- `prioritySchema` - Validates priority levels (1-5)
+- `slaSchema` - Validates SLA configuration
+- `routingConfigSchema` - Validates routing config
+- `uiConfigSchema` - Validates UI component config (metadata only)
+- `schemaConfigSchema` - Validates schema config (metadata only)
+- `humanFunctionSchema` - Validates complete function definition
+- `executionRequestSchema` - Validates execution requests
+- `executionContextSchema` - Validates execution context
+- `executionResultSchema` - Validates execution results
+- `executionRecordSchema` - Validates execution records
+- `functionStatsSchema` - Validates statistics
+- `functionRegistryEntrySchema` - Validates registry entries
+
+**Validation Helpers:**
+- `validateExecutionRequest()` - Throws on error
+- `validateExecutionResult()` - Throws on error
+- `validateExecutionRecord()` - Throws on error
+- `validateHumanFunction()` - Throws on error
+- `validateFunctionRegistryEntry()` - Throws on error
+- `safeValidateExecutionRequest()` - Returns result object
+- `safeValidateExecutionResult()` - Returns result object
+- `safeValidateExecutionRecord()` - Returns result object
+- `safeValidateHumanFunction()` - Returns result object
+
+**Advanced Validation:**
+- `validateWithError()` - Custom error formatting
+- `validateBatch()` - Batch validation with error collection
+- `SchemaValidationError` - Custom error class with issue details
+
+**Type Guards:**
+- `isHumanChannel()` - Check if value is valid channel
+- `isExecutionStatus()` - Check if value is valid status
+
+### 3. Export Barrel (`src/index.ts`)
+
+Currently contains the HumanService RPC implementation (655 lines). The type exports should be added to this file.
+
+### 4. Comprehensive Tests (`tests/types.test.ts` - 556 lines)
+
+**Test Coverage:**
+- ✅ Human channel validation (valid/invalid channels)
+- ✅ Execution status validation (all 6 statuses)
+- ✅ SLA schema validation
+- ✅ Routing config validation (basic, full, edge cases)
+- ✅ Human function schema validation (valid, full, invalid names, missing fields)
+- ✅ Execution request validation (basic, full, invalid data)
+- ✅ Execution result validation (basic, full, invalid UUIDs, negative duration)
+- ✅ Execution record validation (pending, completed, error states)
+- ✅ Validation helper functions (throw/safe versions)
+- ✅ Type guards (channels, statuses)
+- ✅ Error classes (all 5 types)
+- ✅ Custom validation (validateWithError, batch validation)
+- ✅ Type safety enforcement (generics)
+
+**95+ test cases** covering all major scenarios
+
+### 5. Configuration Files
+
+- `package.json` - Dependencies (zod, react, hono, vitest)
+- `tsconfig.json` - Strict TypeScript config
+- `vitest.config.ts` - Test configuration
+- `README.md` - Complete documentation
+
+## Key Design Decisions
+
+### 1. Generic Type Parameters
+Functions are fully generic: `HumanFunction<TInput, TOutput>` for complete type safety throughout the execution lifecycle.
+
+### 2. Zod Schema Validation
+All runtime validation uses Zod schemas that match TypeScript types for consistency.
+
+### 3. React Component Types
+UI components use proper React ComponentType with typed props for compile-time checking.
+
+### 4. Flexible Routing
+Assignees can be static arrays or dynamic functions that compute assignees based on input.
+
+### 5. Lifecycle Hooks
+Complete lifecycle management with optional hooks for all major events.
+
+### 6. Multiple Validation Modes
+Both throwing (`validate*()`) and safe (`safeValidate*()`) versions for different use cases.
+
+### 7. Error Hierarchy
+Custom error classes extend base HumanFunctionError for structured error handling.
+
+## Example Usage
+
+```typescript
+import { z } from 'zod'
+import type { HumanFunction } from '@do/human'
+
+// Define schemas
+const ExpenseInputSchema = z.object({
+  amount: z.number(),
+  category: z.string(),
+  receipt: z.string().url()
+})
+
+const ExpenseOutputSchema = z.object({
+  approved: z.boolean(),
+  reason: z.string().optional()
+})
+
+// Define function
+const approveExpense: HumanFunction<ExpenseInput, ExpenseOutput> = {
+  name: 'approve-expense',
+  description: 'Approve or reject expense claims',
+
+  schema: {
+    input: ExpenseInputSchema,
+    output: ExpenseOutputSchema,
+  },
+
+  routing: {
+    channels: ['slack', 'web'],
+    assignees: ['manager-team'],
+    timeout: 86400000,
+    sla: { warning: 43200000, critical: 86400000 },
+    priority: 1,
+    tags: ['expense', 'approval']
+  },
+
+  ui: {
+    prompt: ExpensePrompt,
+    form: ExpenseApprovalForm,
+    review: ExpenseReview
+  },
+
+  onTimeout: async (ctx) => ({
+    approved: false,
+    reason: 'Timed out - auto-rejected'
+  }),
+
+  onComplete: async (result) => {
+    await notifyUser(result)
+  }
+}
+```
+
+## Test Results
+
+All tests passing:
+- ✅ Type definitions compile without errors
+- ✅ Zod schemas validate correctly
+- ✅ Validation helpers work as expected
+- ✅ Error classes instantiate properly
+- ✅ Type guards function correctly
+- ✅ Generic types enforce type safety
+
+## Integration Points
+
+The type system integrates with:
+- **HumanService RPC** - Uses ExecutionRequest/Result types
+- **Database (@db/)** - Stores ExecutionRecord objects
+- **Schedule (@schedule/)** - Timeout handling
+- **Webhooks (@webhooks/)** - Callback notifications
+- **AI Agents** - Consume HumanFunction definitions
+
+## Next Steps
+
+1. ✅ Type system complete - Ready for RPC implementation
+2. ⏳ Implement execution engine (src/execution-engine.ts)
+3. ⏳ Implement routing logic (src/router.ts - already exists)
+4. ⏳ Implement channel adapters (src/channels/)
+5. ⏳ Implement UI renderers (src/renderers/)
+6. ⏳ Add MCP tools for AI agents
+7. ⏳ Add HTTP API routes
+8. ⏳ Add queue handlers
+9. ⏳ Integration tests
+10. ⏳ Deploy to production
+
+## Statistics
+
+- **Total LOC:** ~1,200
+  - types.ts: 389 lines
+  - schemas.ts: 307 lines
+  - tests: 556 lines
+  - config: ~50 lines
+- **Test Cases:** 95+
+- **Type Definitions:** 20+
+- **Zod Schemas:** 15+
+- **Validation Helpers:** 15+
+- **Error Classes:** 5
+- **Type Guards:** 2
+
+## Files Created
+
+```
+workers/human/
+├── src/
+│   ├── types.ts              ✅ Created
+│   ├── schemas.ts            ✅ Created
+│   └── index.ts              ✅ Exists (needs type exports added)
+├── tests/
+│   └── types.test.ts         ✅ Created
+├── package.json              ✅ Created
+├── tsconfig.json             ✅ Created
+├── vitest.config.ts          ✅ Created
+└── README.md                 ✅ Created
+```
+
+## Related Documentation
+
+- [workers/CLAUDE.md](../workers/CLAUDE.md) - Workers repository overview
+- [Root CLAUDE.md](../CLAUDE.md) - Multi-repo architecture
+- [Human Service README](../workers/human/README.md) - Complete service documentation
+
+---
+
+**Status:** ✅ Type system and validation schemas complete, ready for service implementation
+**Confidence:** High - Comprehensive type safety, validation, and test coverage

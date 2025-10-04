@@ -1,0 +1,1542 @@
+# Content Generation Automation Guide
+
+**Created:** 2025-10-03
+**Subagent:** E3 - Content Generation Automation
+**Status:** Complete
+
+---
+
+## Executive Summary
+
+This guide provides comprehensive AI-powered content generation tools to accelerate blog posts, social media, documentation, and marketing copy creation. With 80+ content topics from Phase 2, manual creation would require 200+ hours. This automation system reduces that to 40-50 hours while maintaining quality.
+
+**System Overview:**
+- 7 TypeScript content generation scripts
+- AI-powered blog post generation (1,500-2,500 words)
+- Multi-platform social media automation
+- API documentation auto-generator
+- Multi-language code example generator
+- Content variation system (repurposing)
+- Quality assurance automation (80+ score threshold)
+- Editorial calendar automation (6-month schedule)
+
+**Expected ROI:**
+- **Time savings:** 75-80% (200+ hours → 40-50 hours)
+- **Consistency:** Standardized formatting and brand voice
+- **Quality:** Human review required but faster
+- **Scale:** Generate 80+ blog posts in 6 months
+
+---
+
+## Table of Contents
+
+1. [System Architecture](#1-system-architecture)
+2. [AI API Setup](#2-ai-api-setup)
+3. [Blog Post Generator](#3-blog-post-generator)
+4. [Social Media Automation](#4-social-media-automation)
+5. [Documentation Generator](#5-documentation-generator)
+6. [Code Example Generator](#6-code-example-generator)
+7. [Content Variation Generator](#7-content-variation-generator)
+8. [Quality Checker](#8-quality-checker)
+9. [Editorial Calendar Automation](#9-editorial-calendar-automation)
+10. [Usage Examples](#10-usage-examples)
+11. [Quality Control Workflow](#11-quality-control-workflow)
+12. [Troubleshooting](#12-troubleshooting)
+
+---
+
+## 1. System Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│           Editorial Calendar (Phase 2)                  │
+│           80+ Topics × 6 Months                         │
+└───────────────────────┬─────────────────────────────────┘
+                        │
+                        │ Automated Scheduling
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────┐
+│         Content Queue (scheduled/)                      │
+│         - 1 week before publish date                    │
+│         - Topic + metadata                              │
+└───────────────────────┬─────────────────────────────────┘
+                        │
+                        │ AI Generation
+                        │
+                        ▼
+    ┌───────────────────┴───────────────────┐
+    │                                       │
+    ▼                                       ▼
+┌───────────┐                        ┌──────────┐
+│ Blog Post │                        │ Social   │
+│ Generator │                        │ Content  │
+│ (GPT-4)   │                        │(Claude)  │
+└─────┬─────┘                        └─────┬────┘
+      │                                    │
+      │                                    │
+      ▼                                    ▼
+┌─────────────────────────────────────────────────────────┐
+│           Generated Content (generated/)                │
+│           - Full blog post (markdown)                   │
+│           - Social media copy (JSON)                    │
+│           - Meta tags, internal links                   │
+└───────────────────────┬─────────────────────────────────┘
+                        │
+                        │ Quality Check
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────┐
+│         Quality Checker                                 │
+│         - Grammar/spelling (LanguageTool)               │
+│         - Readability (Flesch score)                    │
+│         - SEO optimization                              │
+│         - Code syntax validation                        │
+│         - Link validity                                 │
+│         - Score: 0-100 (threshold: 80+)                 │
+└───────────────────────┬─────────────────────────────────┘
+                        │
+                ┌───────┴───────┐
+                │               │
+        Score < 80      Score >= 80
+                │               │
+                ▼               ▼
+        ┌──────────┐    ┌──────────┐
+        │ Reject & │    │ Approved │
+        │ Regenerate│    │ for      │
+        │          │    │ Review   │
+        └──────────┘    └─────┬────┘
+                              │
+                              │ Human Review
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────┐
+│         Reviewed Content (reviewed/)                    │
+│         - Editorial approval                            │
+│         - Minor edits/adjustments                       │
+└───────────────────────┬─────────────────────────────────┘
+                        │
+                        │ Auto-Publish
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────┐
+│         Published Content (published/)                  │
+│         - Live on blog                                  │
+│         - Social media posts                            │
+│         - Dev.to syndication                            │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Key Components:**
+1. **Scheduled Queue** - Topics 1 week before publish date
+2. **AI Generators** - Create content (blog, social, docs, code)
+3. **Quality Checker** - Automated QA (grammar, SEO, links)
+4. **Review Queue** - Human editorial approval
+5. **Auto-Publisher** - Deploy to blog, social, syndication
+
+**File Structure:**
+```
+/Users/nathanclevenger/Projects/.do/
+├── scripts/
+│   ├── generate-blog-post.ts          # AI blog generation
+│   ├── generate-social-content.ts     # Social media automation
+│   ├── generate-api-docs.ts           # API docs from code
+│   ├── generate-code-examples.ts      # Multi-language examples
+│   ├── generate-content-variations.ts # Repurposing
+│   ├── check-content-quality.ts       # QA automation
+│   └── automate-content-calendar.ts   # Scheduling
+├── templates/
+│   ├── blog-post-template.md          # Structure
+│   ├── social-post-templates.json     # Formats
+│   ├── code-example-templates/        # Per language
+│   └── quality-checklist.md           # Review criteria
+├── content-queue/
+│   ├── scheduled/                     # Upcoming posts
+│   ├── generated/                     # AI-created, needs review
+│   ├── reviewed/                      # Approved, ready to publish
+│   └── published/                     # Live content
+└── data/
+    ├── editorial-calendar.json        # 80+ topics from Phase 2
+    ├── content-tracking.csv           # Status, publish dates
+    └── quality-scores.csv             # QA metrics
+```
+
+---
+
+## 2. AI API Setup
+
+### Recommended AI Providers
+
+**For Blog Posts (Quality Priority):**
+- **Primary:** OpenAI GPT-4o ($5/1M input tokens, $15/1M output)
+- **Alternative:** Anthropic Claude 3.5 Sonnet ($3/1M input, $15/1M output)
+- **Budget:** OpenAI GPT-3.5 Turbo ($0.50/1M input, $1.50/1M output)
+
+**For Social Media (Speed Priority):**
+- **Primary:** Anthropic Claude 3.5 Haiku ($0.80/1M input, $4/1M output)
+- **Alternative:** OpenAI GPT-4o-mini ($0.15/1M input, $0.60/1M output)
+
+**For Documentation (Accuracy Priority):**
+- **Primary:** OpenAI GPT-4o (best at code understanding)
+- **Alternative:** Anthropic Claude 3.5 Sonnet
+
+### Environment Setup
+
+Create `.env` file in project root:
+
+```bash
+# AI API Keys
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Quality Check APIs
+LANGUAGETOOL_API_KEY=... # https://languagetool.org/
+READABILITY_API_KEY=...   # Optional, can calculate locally
+
+# Optional: Social Media APIs (for auto-posting)
+BUFFER_API_KEY=...        # https://buffer.com/
+TWITTER_API_KEY=...       # For direct posting
+LINKEDIN_API_KEY=...      # For direct posting
+
+# GitHub (for docs and blog repo commits)
+GITHUB_TOKEN=ghp_...
+GITHUB_BLOG_REPO=dot-do/blog
+GITHUB_DOCS_REPO=dot-do/docs
+```
+
+### Install Dependencies
+
+```bash
+# AI SDKs
+pnpm add openai anthropic @ai-sdk/openai @ai-sdk/anthropic
+
+# Content Processing
+pnpm add marked gray-matter zod
+
+# Quality Checking
+pnpm add languagetool-api readability-scores
+
+# Code Generation
+pnpm add typescript @types/node
+
+# Social Media (optional)
+pnpm add buffer twitter-api-v2 linkedin-api-v2
+
+# GitHub Integration
+pnpm add @octokit/rest
+
+# Development
+pnpm add -D tsx dotenv
+```
+
+### Cost Estimates
+
+**80 Blog Posts (1,500-2,500 words each):**
+- Input: ~2K tokens/post × 80 = 160K tokens
+- Output: ~2.5K tokens/post × 80 = 200K tokens
+- **GPT-4o cost:** (160K × $5/1M) + (200K × $15/1M) = $0.80 + $3.00 = **$3.80**
+- **Claude 3.5 Sonnet cost:** (160K × $3/1M) + (200K × $15/1M) = $0.48 + $3.00 = **$3.48**
+
+**Social Media (5 posts per blog × 80 blogs = 400 posts):**
+- Input: ~500 tokens/post × 400 = 200K tokens
+- Output: ~200 tokens/post × 400 = 80K tokens
+- **Claude Haiku cost:** (200K × $0.80/1M) + (80K × $4/1M) = $0.16 + $0.32 = **$0.48**
+
+**API Documentation (30+ services):**
+- Input: ~3K tokens/service × 30 = 90K tokens
+- Output: ~4K tokens/service × 30 = 120K tokens
+- **GPT-4o cost:** (90K × $5/1M) + (120K × $15/1M) = $0.45 + $1.80 = **$2.25**
+
+**Total AI Costs:** ~$6.53 for 80 blog posts + 400 social posts + 30 docs
+
+**Comparison to Manual Creation:**
+- Manual: 200+ hours × $50/hour = **$10,000+**
+- Automated: 40-50 hours × $50/hour + $6.53 API = **$2,006.53**
+- **Savings:** $7,993.47 (80% reduction)
+
+---
+
+## 3. Blog Post Generator
+
+**Script:** `scripts/generate-blog-post.ts`
+
+### Features
+
+- **AI-powered outline generation** (H2/H3 structure)
+- **Introduction writing** (hook + problem statement)
+- **Body section generation** (technical depth)
+- **Code examples** (TypeScript preferred, syntax validated)
+- **Conclusion writing** (summary + CTA)
+- **Meta tags generation** (SEO title, description, keywords)
+- **Internal link suggestions** (to other .do services)
+- **1,500-2,500 word target**
+
+### Input Format
+
+```json
+{
+  "topic": "Building Microservices on Cloudflare Workers: The .do Architecture",
+  "keywords": ["cloudflare workers", "microservices", "edge computing"],
+  "targetLength": 2500,
+  "tone": "technical but accessible",
+  "audience": "full-stack developers",
+  "relatedServices": ["api.do", "db.do", "workers.do"],
+  "includeCodeExamples": true,
+  "codeLanguages": ["typescript", "bash"]
+}
+```
+
+### Output Format
+
+```markdown
+---
+title: "Building Microservices on Cloudflare Workers: The .do Architecture"
+description: "Learn how we built 30+ microservices on Cloudflare Workers with sub-10ms latency and 95% cost reduction"
+keywords: ["cloudflare workers", "microservices", "edge computing", "workers rpc"]
+author: ".do Team"
+date: "2025-10-03"
+readingTime: "10 min"
+category: "Architecture"
+seoScore: 95
+internalLinks:
+  - "[api.do gateway](/blog/api-gateway)"
+  - "[db.do database](/blog/database-layer)"
+  - "[workers.do platform](/blog/microservices-platform)"
+---
+
+# Building Microservices on Cloudflare Workers: The .do Architecture
+
+Microservices are supposed to make our lives easier. In practice, they often introduce complexity...
+
+[Full blog post content here]
+
+## Conclusion
+
+With Cloudflare Workers and Workers RPC, you get:
+- ✅ Independent scaling
+- ✅ Type-safe communication
+- ✅ 95% cost reduction
+
+**Ready to get started?** Try [api.do](https://api.do) free today.
+```
+
+### Usage
+
+```bash
+# Generate blog post from topic
+pnpm tsx scripts/generate-blog-post.ts \
+  --topic "Building Microservices on Cloudflare Workers" \
+  --keywords "cloudflare workers,microservices" \
+  --output content-queue/generated/
+
+# Generate from editorial calendar
+pnpm tsx scripts/generate-blog-post.ts \
+  --from-calendar \
+  --week 1 \
+  --day 1
+
+# Regenerate with different model
+pnpm tsx scripts/generate-blog-post.ts \
+  --topic "..." \
+  --model gpt-4o \
+  --retry
+```
+
+### Quality Controls
+
+1. **Fact-checking:** Cross-reference with documentation
+2. **Code validation:** TypeScript compiler check
+3. **Readability:** Flesch reading ease score (target: 60-70)
+4. **SEO:** Keyword density (1-2%), heading structure
+5. **Links:** Validate internal links exist
+6. **Length:** 1,500-2,500 words (warn if outside range)
+
+### Customization
+
+Edit prompts in `scripts/generate-blog-post.ts`:
+
+```typescript
+const systemPrompt = `
+You are a technical writer for .do, a microservices platform built on Cloudflare Workers.
+
+Write engaging, technically accurate blog posts that:
+- Lead with compelling hook and problem statement
+- Provide actionable insights and code examples
+- Use simple language (avoid jargon unless explained)
+- Include TypeScript code with syntax highlighting
+- Link to related .do services naturally
+- End with clear call-to-action
+
+Target audience: Full-stack developers building SaaS products
+Tone: Technical but accessible, developer-to-developer
+Length: 1,500-2,500 words
+`
+```
+
+---
+
+## 4. Social Media Automation
+
+**Script:** `scripts/generate-social-content.ts`
+
+### Features
+
+- **Generate from blog posts** (automatic summarization)
+- **Multi-platform formats:**
+  - Twitter/X: 3-5 tweets (280 chars each, thread)
+  - LinkedIn: 1300 chars, professional tone
+  - Dev.to: 300-word summary, cross-post
+  - Hacker News: 60-char title, compelling
+- **Brand voice consistency** (technical but accessible)
+- **Relevant hashtags** (platform-specific)
+- **Call-to-action** (customizable per platform)
+
+### Input Format
+
+```json
+{
+  "blogPostPath": "content-queue/generated/microservices-architecture.md",
+  "platforms": ["twitter", "linkedin", "devto", "hackernews"],
+  "hashtags": {
+    "twitter": ["#CloudflareWorkers", "#TypeScript", "#DevTools"],
+    "linkedin": ["#WebDevelopment", "#API", "#Microservices"]
+  },
+  "cta": {
+    "twitter": "Try api.do free: api.do",
+    "linkedin": "Learn more at api.do"
+  }
+}
+```
+
+### Output Format
+
+```json
+{
+  "twitter": {
+    "thread": [
+      {
+        "text": "🚀 We built 30+ microservices on Cloudflare Workers with sub-10ms latency and 95% cost reduction. Here's how: (1/5)",
+        "hashtags": ["#CloudflareWorkers", "#TypeScript"],
+        "images": []
+      },
+      {
+        "text": "Problem: Traditional microservices need K8s, service mesh, load balancers = $5K/month baseline (2/5)"
+      },
+      {
+        "text": "Solution: Workers RPC provides type-safe service bindings with zero infrastructure. Deploy 30+ services, pay $30/month. (3/5)"
+      },
+      {
+        "text": "Results:\n✅ Sub-50ms P95 latency\n✅ 0ms cold starts\n✅ Global deployment\n✅ 80%+ test coverage\n\nFull writeup 👇 (4/5)"
+      },
+      {
+        "text": "Read: \"Building Microservices on Cloudflare Workers\"\n\napi.do/blog/microservices-architecture\n\nTry api.do free (100K requests/day) (5/5)"
+      }
+    ]
+  },
+  "linkedin": {
+    "post": "🏗️ How we built 30+ production microservices on Cloudflare Workers\n\nTraditional microservices are complex: Kubernetes, service meshes, load balancers, and $5,000+/month in infrastructure costs.\n\nWe took a different approach...\n\n[Full LinkedIn post with formatted sections, emojis, and CTA]",
+    "hashtags": ["#WebDevelopment", "#API", "#Microservices"]
+  },
+  "devto": {
+    "title": "Building Microservices on Cloudflare Workers: The .do Architecture",
+    "body": "[300-word summary with dev.to formatting]",
+    "tags": ["cloudflare", "microservices", "typescript", "serverless"],
+    "canonicalUrl": "https://blog.do/microservices-architecture"
+  },
+  "hackernews": {
+    "title": "Show HN: Building 30+ microservices on Cloudflare Workers",
+    "url": "https://blog.do/microservices-architecture",
+    "type": "article"
+  }
+}
+```
+
+### Usage
+
+```bash
+# Generate social content from blog post
+pnpm tsx scripts/generate-social-content.ts \
+  --blog content-queue/generated/microservices-architecture.md \
+  --platforms twitter,linkedin,devto \
+  --output content-queue/generated/microservices-social.json
+
+# Generate for specific platform only
+pnpm tsx scripts/generate-social-content.ts \
+  --blog content-queue/generated/microservices-architecture.md \
+  --platform twitter \
+  --thread-length 7
+
+# Auto-schedule with Buffer API
+pnpm tsx scripts/generate-social-content.ts \
+  --blog content-queue/generated/microservices-architecture.md \
+  --platforms twitter,linkedin \
+  --schedule "2025-10-04T10:00:00Z" \
+  --buffer-auto-post
+```
+
+### Platform-Specific Guidelines
+
+**Twitter/X:**
+- Thread format (3-7 tweets)
+- First tweet: Hook + preview
+- Middle tweets: Key points (1 per tweet)
+- Last tweet: Link + CTA
+- Use emojis sparingly (1-2 per thread)
+- Max 3 hashtags total (not per tweet)
+
+**LinkedIn:**
+- Professional tone
+- First line must hook (shown in feed)
+- Use line breaks for readability
+- Include relevant emojis (professional)
+- Max 1300 characters
+- 3-5 hashtags at end
+
+**Dev.to:**
+- 300-word summary
+- Include code snippet if relevant
+- Cross-post with canonical URL
+- Use dev.to-specific tags (max 4)
+- Add "Read more on [blog.do]" at end
+
+**Hacker News:**
+- Compelling 60-char title
+- No clickbait (HN users hate it)
+- Focus on technical achievement
+- "Show HN" format if appropriate
+- Post Tuesday-Thursday 8-10am EST
+
+---
+
+## 5. Documentation Generator
+
+**Script:** `scripts/generate-api-docs.ts`
+
+### Features
+
+- **Parse TypeScript source code** (automatic discovery)
+- **Extract JSDoc comments** (maintain documentation)
+- **Generate markdown API reference**
+- **Include:**
+  - Function signatures
+  - Parameters (types, descriptions)
+  - Return types
+  - Usage examples
+  - Error codes
+- **Output format:** MDX for GitHub Pages
+- **Auto-update:** Run on every code change (CI/CD)
+
+### Input Format
+
+```json
+{
+  "sourceFiles": [
+    "workers/db/src/index.ts",
+    "workers/auth/src/index.ts",
+    "workers/ai/src/index.ts"
+  ],
+  "outputDir": "docs/api/",
+  "format": "mdx",
+  "includeExamples": true,
+  "includeErrorCodes": true
+}
+```
+
+### Output Format
+
+````mdx
+---
+title: "Database Service API"
+description: "Complete API reference for @db/ worker RPC interface"
+category: "API Reference"
+---
+
+# Database Service API
+
+Type-safe database access via Workers RPC.
+
+## Installation
+
+```bash
+pnpm add @dot-do/db
+```
+
+## Usage
+
+```typescript
+import type { Env } from './types'
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    // Call database service via RPC
+    const user = await env.DB_SERVICE.getUser('123')
+    return Response.json(user)
+  }
+}
+```
+
+## API Reference
+
+### `getUser(id: string): Promise<User | null>`
+
+Retrieve user by ID.
+
+**Parameters:**
+- `id` (string) - User ID
+
+**Returns:**
+- `Promise<User | null>` - User object or null if not found
+
+**Example:**
+
+```typescript
+const user = await env.DB_SERVICE.getUser('123')
+if (!user) {
+  return new Response('Not found', { status: 404 })
+}
+```
+
+**Errors:**
+- `DATABASE_ERROR` - Database query failed
+- `INVALID_ID` - ID format invalid
+
+---
+
+### `createUser(data: NewUser): Promise<User>`
+
+Create new user.
+
+**Parameters:**
+- `data` (NewUser) - User data
+  - `email` (string) - User email (required)
+  - `name` (string) - User name (required)
+  - `role` (string) - User role (optional, default: 'user')
+
+**Returns:**
+- `Promise<User>` - Created user with ID
+
+**Example:**
+
+```typescript
+const user = await env.DB_SERVICE.createUser({
+  email: 'alice@example.com',
+  name: 'Alice'
+})
+```
+
+**Errors:**
+- `DUPLICATE_EMAIL` - Email already exists
+- `VALIDATION_ERROR` - Invalid data format
+
+[Continue for all RPC methods]
+````
+
+### Usage
+
+```bash
+# Generate docs from TypeScript source
+pnpm tsx scripts/generate-api-docs.ts \
+  --source workers/db/src/index.ts \
+  --output docs/api/database.mdx
+
+# Generate for all services
+pnpm tsx scripts/generate-api-docs.ts \
+  --source "workers/*/src/index.ts" \
+  --output docs/api/ \
+  --format mdx
+
+# Auto-update on file change (watch mode)
+pnpm tsx scripts/generate-api-docs.ts \
+  --watch \
+  --source "workers/*/src/index.ts" \
+  --output docs/api/
+```
+
+### CI/CD Integration
+
+Add to `.github/workflows/docs.yml`:
+
+```yaml
+name: Generate API Docs
+
+on:
+  push:
+    paths:
+      - 'workers/*/src/**'
+  pull_request:
+    paths:
+      - 'workers/*/src/**'
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install
+      - run: pnpm tsx scripts/generate-api-docs.ts --source "workers/*/src/index.ts" --output docs/api/
+
+      - name: Commit docs
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/api/
+          git commit -m "docs: auto-update API reference" || echo "No changes"
+          git push
+```
+
+---
+
+## 6. Code Example Generator
+
+**Script:** `scripts/generate-code-examples.ts`
+
+### Features
+
+- **Multi-language examples:**
+  - TypeScript (Node.js)
+  - Python (requests)
+  - cURL (command line)
+  - JavaScript (fetch)
+  - Go (http client)
+  - Ruby (httparty)
+- **Include:**
+  - Authentication (API key, JWT)
+  - Request parameters
+  - Response handling
+  - Error handling
+  - Complete working code
+- **Validation:** Run examples to ensure they work
+- **Output format:** Markdown code blocks with syntax highlighting
+
+### Input Format
+
+```json
+{
+  "endpoint": "POST /users",
+  "service": "db.do",
+  "description": "Create a new user",
+  "authentication": "api_key",
+  "requestBody": {
+    "email": "alice@example.com",
+    "name": "Alice"
+  },
+  "responseBody": {
+    "id": "123",
+    "email": "alice@example.com",
+    "name": "Alice",
+    "createdAt": "2025-10-03T12:00:00Z"
+  },
+  "languages": ["typescript", "python", "curl", "javascript"]
+}
+```
+
+### Output Format
+
+````markdown
+## Create User
+
+**Endpoint:** `POST /users`
+
+**Authentication:** API Key (pass in `Authorization: Bearer` header)
+
+### TypeScript (Node.js)
+
+```typescript
+import { createClient } from '@dot-do/db'
+
+const client = createClient({
+  apiKey: process.env.API_KEY
+})
+
+const user = await client.users.create({
+  email: 'alice@example.com',
+  name: 'Alice'
+})
+
+console.log('Created user:', user)
+```
+
+### Python
+
+```python
+import requests
+import os
+
+url = "https://db.do/users"
+headers = {
+    "Authorization": f"Bearer {os.environ['API_KEY']}",
+    "Content-Type": "application/json"
+}
+data = {
+    "email": "alice@example.com",
+    "name": "Alice"
+}
+
+response = requests.post(url, headers=headers, json=data)
+user = response.json()
+print(f"Created user: {user}")
+```
+
+### cURL
+
+```bash
+curl -X POST https://db.do/users \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alice@example.com",
+    "name": "Alice"
+  }'
+```
+
+### JavaScript (Fetch)
+
+```javascript
+const response = await fetch('https://db.do/users', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${process.env.API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    email: 'alice@example.com',
+    name: 'Alice'
+  })
+})
+
+const user = await response.json()
+console.log('Created user:', user)
+```
+
+### Response
+
+```json
+{
+  "id": "123",
+  "email": "alice@example.com",
+  "name": "Alice",
+  "createdAt": "2025-10-03T12:00:00Z"
+}
+```
+
+### Error Handling
+
+```typescript
+try {
+  const user = await client.users.create({ email, name })
+} catch (error) {
+  if (error.code === 'DUPLICATE_EMAIL') {
+    console.error('Email already exists')
+  } else {
+    console.error('Failed to create user:', error)
+  }
+}
+```
+````
+
+### Usage
+
+```bash
+# Generate examples for endpoint
+pnpm tsx scripts/generate-code-examples.ts \
+  --endpoint "POST /users" \
+  --service db.do \
+  --languages typescript,python,curl \
+  --output docs/examples/
+
+# Generate from OpenAPI spec
+pnpm tsx scripts/generate-code-examples.ts \
+  --openapi openapi.json \
+  --output docs/examples/
+
+# Validate examples (run code)
+pnpm tsx scripts/generate-code-examples.ts \
+  --validate \
+  --endpoint "POST /users"
+```
+
+---
+
+## 7. Content Variation Generator
+
+**Script:** `scripts/generate-content-variations.ts`
+
+### Features
+
+- **Generate multiple formats from one source:**
+  - Long-form blog post (2000+ words)
+  - Medium-form guide (1000 words)
+  - Short-form explainer (500 words)
+  - Tweet thread (5-7 tweets)
+  - Email newsletter (800 words)
+  - Video script (3 minutes)
+- **Maintain consistency** (same key points, adapted tone)
+- **Platform-specific CTAs** (blog vs. email vs. social)
+- **Efficient repurposing** (write once, publish everywhere)
+
+### Input Format
+
+```json
+{
+  "sourceContent": "content-queue/published/microservices-architecture.md",
+  "formats": [
+    "blog-long",
+    "blog-medium",
+    "blog-short",
+    "twitter-thread",
+    "email-newsletter",
+    "video-script"
+  ],
+  "outputDir": "content-queue/variations/"
+}
+```
+
+### Output Format
+
+```json
+{
+  "sourceTitle": "Building Microservices on Cloudflare Workers",
+  "variations": {
+    "blog-long": {
+      "title": "Building Microservices on Cloudflare Workers: The .do Architecture",
+      "wordCount": 2487,
+      "readingTime": "10 min",
+      "path": "content-queue/variations/microservices-long.md"
+    },
+    "blog-medium": {
+      "title": "How We Built 30+ Microservices on Cloudflare Workers",
+      "wordCount": 1245,
+      "readingTime": "5 min",
+      "path": "content-queue/variations/microservices-medium.md"
+    },
+    "blog-short": {
+      "title": "Microservices on Edge: The .do Approach",
+      "wordCount": 623,
+      "readingTime": "3 min",
+      "path": "content-queue/variations/microservices-short.md"
+    },
+    "twitter-thread": {
+      "tweets": 7,
+      "path": "content-queue/variations/microservices-thread.json"
+    },
+    "email-newsletter": {
+      "subject": "🚀 How we built 30+ microservices for $30/month",
+      "preheader": "Workers RPC changed the game",
+      "wordCount": 814,
+      "path": "content-queue/variations/microservices-email.html"
+    },
+    "video-script": {
+      "duration": "3:00",
+      "scenes": 5,
+      "path": "content-queue/variations/microservices-video-script.md"
+    }
+  }
+}
+```
+
+### Usage
+
+```bash
+# Generate all variations
+pnpm tsx scripts/generate-content-variations.ts \
+  --source content-queue/published/microservices-architecture.md \
+  --formats all \
+  --output content-queue/variations/
+
+# Generate specific formats
+pnpm tsx scripts/generate-content-variations.ts \
+  --source content-queue/published/microservices-architecture.md \
+  --formats twitter-thread,email-newsletter \
+  --output content-queue/variations/
+
+# Batch process published content
+pnpm tsx scripts/generate-content-variations.ts \
+  --source-dir content-queue/published/ \
+  --formats blog-medium,twitter-thread \
+  --output content-queue/variations/
+```
+
+---
+
+## 8. Quality Checker
+
+**Script:** `scripts/check-content-quality.ts`
+
+### Features
+
+- **Grammar and spelling** (LanguageTool API)
+- **Readability** (Flesch reading ease score, target: 60-70)
+- **SEO optimization** (keyword density 1-2%, heading structure)
+- **Code syntax** (TypeScript compiler validation)
+- **Link validity** (HTTP checks for internal/external links)
+- **Plagiarism** (basic similarity check against published content)
+- **Brand voice** (keyword presence, tone consistency)
+- **Overall score:** 0-100 (threshold: 80+ for publication)
+- **Auto-fix:** Format code blocks, fix common typos, add missing headings
+
+### Input Format
+
+```json
+{
+  "contentPath": "content-queue/generated/microservices-architecture.md",
+  "checks": [
+    "grammar",
+    "readability",
+    "seo",
+    "code-syntax",
+    "links",
+    "brand-voice"
+  ],
+  "thresholds": {
+    "overallScore": 80,
+    "readability": 60,
+    "seoScore": 90
+  },
+  "autoFix": true
+}
+```
+
+### Output Format
+
+```json
+{
+  "contentPath": "content-queue/generated/microservices-architecture.md",
+  "overallScore": 87,
+  "checks": {
+    "grammar": {
+      "score": 95,
+      "issues": [
+        {
+          "line": 42,
+          "message": "Possible typo: 'microservice' should be 'microservices'",
+          "suggestion": "microservices",
+          "severity": "warning"
+        }
+      ],
+      "autoFixed": 2
+    },
+    "readability": {
+      "score": 68,
+      "fleschScore": 64.2,
+      "fleschKincaid": 9.3,
+      "averageSentenceLength": 18.5,
+      "issues": [
+        {
+          "line": 87,
+          "message": "Sentence is too long (42 words)",
+          "suggestion": "Consider breaking into multiple sentences"
+        }
+      ]
+    },
+    "seo": {
+      "score": 92,
+      "keywordDensity": {
+        "cloudflare workers": 1.8,
+        "microservices": 2.1,
+        "edge computing": 0.9
+      },
+      "headingStructure": "valid",
+      "metaTags": {
+        "title": "Building Microservices on Cloudflare Workers: The .do Architecture",
+        "description": "Learn how we built 30+ microservices on Cloudflare Workers with sub-10ms latency and 95% cost reduction",
+        "length": 115,
+        "optimalLength": true
+      },
+      "issues": []
+    },
+    "codeSyntax": {
+      "score": 100,
+      "blocks": 8,
+      "valid": 8,
+      "issues": []
+    },
+    "links": {
+      "score": 85,
+      "internal": {
+        "total": 12,
+        "valid": 11,
+        "broken": 1
+      },
+      "external": {
+        "total": 5,
+        "valid": 5,
+        "broken": 0
+      },
+      "issues": [
+        {
+          "link": "/blog/database-layer",
+          "message": "404 Not Found",
+          "severity": "error"
+        }
+      ]
+    },
+    "brandVoice": {
+      "score": 80,
+      "keywordsPresent": [
+        ".do",
+        "Cloudflare Workers",
+        "TypeScript",
+        "type-safe"
+      ],
+      "keywordsMissing": [
+        "free tier"
+      ],
+      "toneConsistency": "good",
+      "issues": []
+    }
+  },
+  "passed": true,
+  "fixedContent": "content-queue/generated/microservices-architecture-fixed.md"
+}
+```
+
+### Usage
+
+```bash
+# Check content quality
+pnpm tsx scripts/check-content-quality.ts \
+  --content content-queue/generated/microservices-architecture.md \
+  --threshold 80 \
+  --auto-fix
+
+# Batch check all generated content
+pnpm tsx scripts/check-content-quality.ts \
+  --dir content-queue/generated/ \
+  --threshold 80 \
+  --auto-fix \
+  --output quality-report.json
+
+# Check specific aspects only
+pnpm tsx scripts/check-content-quality.ts \
+  --content content-queue/generated/microservices-architecture.md \
+  --checks grammar,seo,links
+```
+
+### Quality Score Calculation
+
+```
+Overall Score = (
+  Grammar Score × 0.25 +
+  Readability Score × 0.20 +
+  SEO Score × 0.25 +
+  Code Syntax Score × 0.10 +
+  Links Score × 0.10 +
+  Brand Voice Score × 0.10
+)
+```
+
+**Pass/Fail Criteria:**
+- **Pass:** Overall score >= 80
+- **Warning:** Overall score 70-79 (manual review recommended)
+- **Fail:** Overall score < 70 (regenerate content)
+
+---
+
+## 9. Editorial Calendar Automation
+
+**Script:** `scripts/automate-content-calendar.ts`
+
+### Features
+
+- **Read 6-month calendar** from Phase 2
+- **Auto-schedule content generation** (1 week before publish)
+- **Track status:**
+  - Scheduled → Generated → Reviewed → Published
+- **Notify editor** for review
+- **Auto-publish** after approval:
+  - Commit to GitHub (blog repo)
+  - Trigger GitHub Pages rebuild
+  - Post to social media (Buffer API)
+- **Cron job:** Run daily to check schedule
+
+### Input Format
+
+```json
+{
+  "calendarPath": "data/editorial-calendar.json",
+  "schedule": {
+    "generateBeforeDays": 7,
+    "reviewDeadlineDays": 2,
+    "publishOnSchedule": true
+  },
+  "notifications": {
+    "email": "editor@do.com",
+    "slack": "https://hooks.slack.com/services/...",
+    "discord": "https://discord.com/api/webhooks/..."
+  },
+  "publishing": {
+    "githubRepo": "dot-do/blog",
+    "socialMedia": {
+      "buffer": true,
+      "twitter": false,
+      "linkedin": false
+    }
+  }
+}
+```
+
+### Editorial Calendar Format
+
+```json
+{
+  "schedule": [
+    {
+      "week": 1,
+      "day": 1,
+      "publishDate": "2025-10-04",
+      "topic": "Building Microservices on Cloudflare Workers: The .do Architecture",
+      "keywords": ["cloudflare workers", "microservices", "edge computing"],
+      "category": "Architecture",
+      "status": "published",
+      "contentPath": "content-queue/published/microservices-architecture.md",
+      "socialPath": "content-queue/published/microservices-social.json",
+      "url": "https://blog.do/microservices-architecture"
+    },
+    {
+      "week": 1,
+      "day": 2,
+      "publishDate": "2025-10-07",
+      "topic": "Zero to Production: Deploy Your First .do API in 5 Minutes",
+      "keywords": ["tutorial", "getting started", "deployment"],
+      "category": "Tutorial",
+      "status": "scheduled"
+    }
+  ]
+}
+```
+
+### Status Workflow
+
+```
+Scheduled
+    ↓ (7 days before publish)
+Generated (AI creates content)
+    ↓ (quality check: score >= 80)
+Reviewed (awaiting human approval)
+    ↓ (editor approves)
+Published (auto-deploy to blog, social)
+```
+
+### Usage
+
+```bash
+# Run content calendar automation (daily cron)
+pnpm tsx scripts/automate-content-calendar.ts \
+  --calendar data/editorial-calendar.json \
+  --check-daily
+
+# Manual trigger for specific week
+pnpm tsx scripts/automate-content-calendar.ts \
+  --calendar data/editorial-calendar.json \
+  --week 1 \
+  --generate-all
+
+# Publish approved content
+pnpm tsx scripts/automate-content-calendar.ts \
+  --calendar data/editorial-calendar.json \
+  --publish-approved
+
+# Generate report
+pnpm tsx scripts/automate-content-calendar.ts \
+  --calendar data/editorial-calendar.json \
+  --report
+```
+
+### Cron Setup (GitHub Actions)
+
+Add to `.github/workflows/content-automation.yml`:
+
+```yaml
+name: Content Automation
+
+on:
+  schedule:
+    # Run daily at 9am UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  automate-content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install
+
+      - name: Run content automation
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+        run: |
+          pnpm tsx scripts/automate-content-calendar.ts \
+            --calendar data/editorial-calendar.json \
+            --check-daily \
+            --notify
+
+      - name: Commit changes
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add content-queue/ data/
+          git commit -m "chore: content automation update" || echo "No changes"
+          git push
+```
+
+---
+
+## 10. Usage Examples
+
+### Complete Workflow Example
+
+**Scenario:** Generate and publish blog post for Week 1, Day 1
+
+```bash
+# Step 1: Generate blog post
+pnpm tsx scripts/generate-blog-post.ts \
+  --from-calendar \
+  --week 1 \
+  --day 1 \
+  --output content-queue/generated/
+
+# Output: content-queue/generated/microservices-architecture.md
+
+# Step 2: Check quality
+pnpm tsx scripts/check-content-quality.ts \
+  --content content-queue/generated/microservices-architecture.md \
+  --threshold 80 \
+  --auto-fix
+
+# Output: Score 87 (PASS), fixed content saved
+
+# Step 3: Generate social media content
+pnpm tsx scripts/generate-social-content.ts \
+  --blog content-queue/generated/microservices-architecture-fixed.md \
+  --platforms twitter,linkedin,devto \
+  --output content-queue/generated/microservices-social.json
+
+# Step 4: Human review (manual)
+# Editor reviews content-queue/generated/ files
+# Makes minor edits if needed
+# Moves to content-queue/reviewed/
+
+# Step 5: Publish
+pnpm tsx scripts/automate-content-calendar.ts \
+  --publish content-queue/reviewed/microservices-architecture.md \
+  --social content-queue/reviewed/microservices-social.json
+
+# Output: Published to blog, posted to social media
+```
+
+### Batch Generation Example
+
+**Scenario:** Generate all content for Week 1
+
+```bash
+# Generate all 4 posts for Week 1
+for day in 1 2 3 4; do
+  pnpm tsx scripts/generate-blog-post.ts \
+    --from-calendar \
+    --week 1 \
+    --day $day \
+    --output content-queue/generated/
+
+  # Check quality
+  CONTENT_FILE=$(ls -t content-queue/generated/*.md | head -1)
+  pnpm tsx scripts/check-content-quality.ts \
+    --content "$CONTENT_FILE" \
+    --threshold 80 \
+    --auto-fix
+done
+
+# Generate social content for all
+pnpm tsx scripts/generate-social-content.ts \
+  --blog-dir content-queue/generated/ \
+  --platforms twitter,linkedin \
+  --output content-queue/generated/
+```
+
+### API Documentation Example
+
+**Scenario:** Generate docs for all workers
+
+```bash
+# Generate API docs for all services
+pnpm tsx scripts/generate-api-docs.ts \
+  --source "workers/*/src/index.ts" \
+  --output docs/api/ \
+  --format mdx \
+  --include-examples
+
+# Generate code examples for each endpoint
+pnpm tsx scripts/generate-code-examples.ts \
+  --openapi workers/gateway/openapi.json \
+  --languages typescript,python,curl,javascript \
+  --output docs/examples/ \
+  --validate
+```
+
+---
+
+## 11. Quality Control Workflow
+
+### Manual Review Checklist
+
+Before approving AI-generated content:
+
+**Content Quality:**
+- [ ] Hook is compelling (first sentence)
+- [ ] Problem statement is clear
+- [ ] Solution is explained well
+- [ ] Code examples are correct and runnable
+- [ ] Technical details are accurate
+- [ ] Tone is appropriate (technical but accessible)
+- [ ] CTAs are clear and natural
+
+**SEO Quality:**
+- [ ] Title is compelling and <60 chars
+- [ ] Meta description is informative and <160 chars
+- [ ] Keywords are naturally integrated
+- [ ] Heading hierarchy is logical (H1 → H2 → H3)
+- [ ] Internal links are relevant and correct
+- [ ] URL slug is clean and descriptive
+
+**Technical Quality:**
+- [ ] Code blocks have correct syntax highlighting
+- [ ] TypeScript examples are type-safe
+- [ ] Commands are copy-pasteable
+- [ ] Links are valid (no 404s)
+- [ ] Images load correctly (if any)
+- [ ] Markdown formatting is clean
+
+**Brand Quality:**
+- [ ] Mentions .do services naturally
+- [ ] Uses consistent terminology
+- [ ] Follows brand voice guidelines
+- [ ] Includes free tier information
+- [ ] Links to related docs/services
+
+### Common Issues & Fixes
+
+**Issue:** AI-generated code doesn't compile
+**Fix:** Run TypeScript compiler, fix errors, regenerate
+
+**Issue:** Blog post is too generic
+**Fix:** Add specific .do examples, metrics, architecture details
+
+**Issue:** SEO score too low
+**Fix:** Add more keywords, improve headings, add meta tags
+
+**Issue:** Readability score too low
+**Fix:** Simplify sentences, break long paragraphs, add subheadings
+
+**Issue:** Links are broken
+**Fix:** Update links, remove or replace broken ones
+
+### Quality Score Interpretation
+
+- **90-100:** Excellent - publish immediately
+- **80-89:** Good - minor edits, quick review
+- **70-79:** Fair - needs review, moderate edits
+- **60-69:** Poor - needs significant editing
+- **<60:** Fail - regenerate content
+
+---
+
+## 12. Troubleshooting
+
+### Common Errors
+
+**Error:** `OpenAI API key invalid`
+**Solution:** Check `.env` file, ensure `OPENAI_API_KEY=sk-...` is set
+
+**Error:** `Rate limit exceeded`
+**Solution:** Wait 60 seconds, or upgrade API plan, or switch to alternative model
+
+**Error:** `TypeScript compilation failed`
+**Solution:** Check `tsconfig.json`, ensure all dependencies installed
+
+**Error:** `Quality check score too low`
+**Solution:** Review issues in quality report, fix manually or regenerate
+
+**Error:** `GitHub push failed: authentication`
+**Solution:** Check `GITHUB_TOKEN` in `.env`, ensure token has repo write permissions
+
+### Performance Optimization
+
+**Slow generation (>60s per post):**
+- Use faster models (GPT-3.5, Claude Haiku)
+- Reduce max_tokens parameter
+- Parallelize batch operations
+
+**High API costs:**
+- Use GPT-3.5 instead of GPT-4 for drafts
+- Enable prompt caching (90% cost reduction)
+- Batch requests when possible
+
+**Quality issues:**
+- Use GPT-4 or Claude Sonnet for quality
+- Provide more specific prompts
+- Include .do context and examples
+
+### Debug Mode
+
+Run scripts with debug flag:
+
+```bash
+DEBUG=1 pnpm tsx scripts/generate-blog-post.ts \
+  --topic "..." \
+  --output content-queue/generated/
+```
+
+---
+
+## Summary
+
+This content automation system provides:
+
+**7 Core Scripts:**
+1. ✅ Blog post generator (AI-powered, 1,500-2,500 words)
+2. ✅ Social media automation (multi-platform)
+3. ✅ API documentation generator (TypeScript → MDX)
+4. ✅ Code example generator (multi-language)
+5. ✅ Content variation generator (repurposing)
+6. ✅ Quality checker (grammar, SEO, links, brand voice)
+7. ✅ Editorial calendar automation (scheduling, publishing)
+
+**Expected Results:**
+- **Time savings:** 75-80% (200+ hours → 40-50 hours)
+- **Cost savings:** 80% ($10,000+ → $2,006.53)
+- **Quality:** Human review required but faster
+- **Scale:** Generate 80+ blog posts in 6 months
+- **Consistency:** Standardized formatting and brand voice
+
+**Implementation Status:**
+- ✅ Documentation complete
+- ✅ Scripts specifications ready
+- ⏳ Script implementation pending
+- ⏳ Testing and validation pending
+
+**Next Steps:**
+1. Implement TypeScript scripts (Week 1)
+2. Test with sample topics (Week 1)
+3. Generate Week 1 content (Week 1)
+4. Refine prompts based on results (Week 2)
+5. Scale to full editorial calendar (Weeks 2-26)
+
+---
+
+**Document Status:** Complete ✅
+**Ready for:** Script implementation and testing

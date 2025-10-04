@@ -1,0 +1,314 @@
+# Patent.click Week 1: Data Loading Infrastructure Setup
+
+**Date:** October 3, 2025 (continued from Phase 2 completion)
+**Status:** ✅ Infrastructure Ready, ⚠️ API Integration Needs Debugging
+**Project:** projects/patent.click
+
+## Executive Summary
+
+Completed the infrastructure setup for Week 1 data loading, including D1 database provisioning, schema migration, and worker deployment. The patent-ingestor worker is deployed and operational, but the USPTO PatentsView API integration requires debugging as it's currently fetching 0 patents.
+
+## Completed Tasks ✅
+
+### 1. D1 Database Provisioning
+- Created D1 database: `patent-click`
+- Database ID: `5254f3f6-82bc-453f-893c-dfc488d62b02`
+- Region: ENAM (East North America)
+- Status: Production-ready
+
+### 2. Wrangler Configuration
+**File:** `wrangler.patent-ingestor.jsonc`
+
+**Changes:**
+```json
+{
+  "d1_databases": [{
+    "database_id": "5254f3f6-82bc-453f-893c-dfc488d62b02"  // Updated from "to-be-set"
+  }],
+  "compatibility_flags": ["nodejs_compat"],  // Fixed from deprecated "node_compat": true
+}
+```
+
+### 3. Database Schema Migration
+**Using Cloudflare MCP Tools** (not wrangler CLI):
+- Created `patents` table with 9 columns
+- Created 3 indexes: `idx_issue_date`, `idx_assignee`, `idx_filing_date`
+- Schema matches Phase 2 design from notes/2025-10-03-patent-click-phase2-complete.md
+
+**Table Structure:**
+```sql
+CREATE TABLE patents (
+  patent_number TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  abstract TEXT,
+  inventors TEXT,              -- JSON array
+  assignee TEXT,
+  filing_date TEXT,            -- ISO date
+  issue_date TEXT,             -- ISO date
+  cpc_codes TEXT,              -- JSON array
+  ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+```
+
+### 4. Patent Storage Layer Fix
+**File:** `src/lib/patent-storage.ts`
+
+**Issue:** `db.exec()` method failed with multi-statement SQL:
+```
+D1_EXEC_ERROR: Error in line 1: CREATE TABLE IF NOT EXISTS patents (: incomplete input
+```
+
+**Solution:** Replaced `exec()` with individual `prepare().run()` calls:
+```typescript
+// Before (failed)
+await this.db.exec(`
+  CREATE TABLE IF NOT EXISTS patents (...);
+  CREATE INDEX IF NOT EXISTS idx_issue_date ON patents(issue_date);
+  ...
+`)
+
+// After (works)
+await this.db.prepare(`CREATE TABLE IF NOT EXISTS patents (...)`).run()
+await this.db.prepare('CREATE INDEX IF NOT EXISTS idx_issue_date ON patents(issue_date)').run()
+await this.db.prepare('CREATE INDEX IF NOT EXISTS idx_assignee ON patents(assignee)').run()
+await this.db.prepare('CREATE INDEX IF NOT EXISTS idx_filing_date ON patents(filing_date)').run()
+```
+
+### 5. Worker Deployment
+**Worker:** `patent-ingestor`
+- **URL:** https://patent-ingestor.drivly.workers.dev
+- **Version:** 093082d7-e9cd-46cc-8ceb-d6fa961a84ca
+- **Cron:** `0 2 * * *` (daily at 2 AM UTC)
+- **Upload Size:** 196.37 KiB / 38.07 KiB gzipped
+- **Startup Time:** 13 ms
+- **Status:** ✅ Deployed and operational
+
+**Bindings:**
+- `env.DB` → D1 Database (patent-click)
+- `env.NODE_ENV` → "production"
+
+### 6. Dependencies Installation
+**Command:** `pnpm install --ignore-workspace`
+- Installed 292 packages
+- Resolved workspace dependency conflicts
+- Fixed deprecated `@types/bcryptjs` warning
+
+### 7. Version Control
+**Commits:**
+1. `e6fef2b` - fix(payload-marketplace): Improve O*NET task type mapping
+2. `7a0306a` - feat(patent.click): Set up Week 1 data loading infrastructure
+
+**Pushed to:** `origin/main`
+
+## Pending Tasks ⚠️
+
+### 1. USPTO PatentsView API Integration (BLOCKER)
+**Issue:** API returning 0 patents when queried
+
+**Test Run Output:**
+```
+🚀 Starting patent ingestion...
+   Target: 100 patents
+   Batch size: 100 per batch
+   Worker URL: https://patent-ingestor.drivly.workers.dev
+
+📊 Results:
+   Status: completed
+   Fetched: 0 patents        ← Problem
+   Inserted: 0 new patents
+   Skipped: 0 duplicates
+   Errors: 0
+```
+
+**Root Cause Analysis:**
+The `USPTOClient.searchPatents()` method in `src/lib/uspto.ts` is querying PatentsView API with only a date range filter:
+
+```typescript
+// patent-ingestor.ts lines 56-64
+const results = await usptoClient.searchPatents({
+  limit: batchSize,
+  dateRange: {
+    start: '2020-01-01',
+    end: new Date().toISOString().split('T')[0],
+  },
+})
+
+// uspto.ts lines 56-88 (query building)
+const qParams: any = { _and: [] }
+
+// Only date range is added when keywords/assignee/cpcCodes are empty
+if (query.dateRange) {
+  qParams._and.push({
+    patent_date: {
+      _gte: query.dateRange.start,
+      _lte: query.dateRange.end,
+    },
+  })
+}
+```
+
+**Potential Issues:**
+1. PatentsView API may not support queries with only date range filters
+2. API response format may have changed since implementation
+3. Query syntax might be incorrect for v4.0 of PatentsView API
+4. Rate limiting or API key requirements
+
+**Next Steps:**
+1. Review PatentsView API v4.0 documentation
+2. Test API directly with curl/Postman to verify query format
+3. Add logging to worker to inspect actual API responses
+4. Consider alternative query strategies:
+   - Add minimal keyword filter (e.g., `*` wildcard)
+   - Use pagination-based approach without filters
+   - Switch to different USPTO API endpoint
+
+### 2. Remaining Week 1 Tasks
+Once API integration is fixed:
+- [ ] Run patent ingestion for 10,000 patents (~20 minutes)
+- [ ] Generate embeddings for all patents (embedding-generator worker)
+- [ ] Generate AI summaries with Mermaid diagrams (summary-generator worker)
+- [ ] Test semantic search functionality (70% vector + 30% keyword)
+
+## Architecture Overview
+
+### Data Flow (When Working)
+```
+USPTO PatentsView API
+    ↓
+patent-ingestor Worker (Cloudflare Worker)
+    ↓
+PatentStorage.insertPatentBatch()
+    ↓
+D1 Database (patent-click)
+    ↓
+Deduplication (check patent_number)
+    ↓
+Insert 100 patents/batch
+```
+
+### Related Workers
+From Phase 2 implementation:
+1. **patent-ingestor** - ✅ Deployed, ⚠️ API issue
+2. **embedding-generator** - Ready to deploy after data ingestion
+3. **summary-generator/** - Ready to deploy after data ingestion
+4. **blog-generator/** - 6 workers, ready for content generation
+5. **lead-ingestion/** - Apollo integration ready
+6. **personalization/** - AI personalization engine ready
+7. **email-sequences/** - Queue-based automation ready
+
+## Technical Notes
+
+### Cloudflare MCP Tools Used
+**CRITICAL:** Always use MCP tools, never wrangler CLI for resource provisioning:
+- `mcp__cloudflare__d1_database_create` - Created database
+- `mcp__cloudflare__d1_database_query` - Ran migrations
+- `mcp__cloudflare__d1_databases_list` - Verified database exists
+
+### D1 API Compatibility
+**Lesson Learned:** D1's `exec()` method doesn't handle multi-statement SQL well in production. Always use `prepare().run()` for each statement individually.
+
+### Wrangler v4 Changes
+**Deprecated:** `node_compat: true`
+**Replacement:** `compatibility_flags: ["nodejs_compat"]`
+
+## Cost Analysis
+
+### Current Infrastructure (Free Tier)
+- **D1 Database:** 5 GB storage, 25 million read units/month (FREE)
+- **Cloudflare Workers:** 100,000 requests/day (FREE)
+- **Cloudflare Queues:** 1M messages/month (FREE)
+- **Workers AI:** 10,000 requests/day (FREE)
+
+### Expected Usage (10K Patents)
+- **D1 Storage:** ~100 MB (patents table)
+- **Worker Requests:** ~100 requests (10K patents / 100 batch size)
+- **Total Cost:** $0 (well within free tier)
+
+## Files Changed
+
+```
+wrangler.patent-ingestor.jsonc       - Database ID, compatibility flags
+src/lib/patent-storage.ts            - Fixed initializeSchema()
+```
+
+## Related Documentation
+
+- **Phase 2 Completion:** [notes/2025-10-03-patent-click-phase2-complete.md](./2025-10-03-patent-click-phase2-complete.md)
+- **IP Filing Strategy:** [notes/2025-10-03-ip-filing-strategy.md](./2025-10-03-ip-filing-strategy.md)
+- **Quickstart Guide:** [projects/patent.click/docs/QUICKSTART_INGESTION.md](../projects/patent.click/docs/QUICKSTART_INGESTION.md)
+- **Patent Ingestion Docs:** [projects/patent.click/docs/PATENT_INGESTION.md](../projects/patent.click/docs/PATENT_INGESTION.md)
+
+## Success Criteria (Week 1)
+
+- [x] D1 database created
+- [x] Schema migrations completed
+- [x] Worker deployed
+- [ ] **10,000 patents ingested** ← BLOCKED by API integration
+- [ ] Embeddings generated
+- [ ] AI summaries created
+- [ ] Semantic search tested
+
+## Next Session Priorities
+
+1. **P0 - Fix USPTO API Integration**
+   - Debug PatentsView API query format
+   - Test with API documentation examples
+   - Add comprehensive logging
+   - Consider fallback strategies
+
+2. **P1 - Complete Data Ingestion**
+   - Run full 10,000 patent ingestion
+   - Monitor performance and errors
+   - Verify data quality
+
+3. **P2 - Embeddings & Summaries**
+   - Deploy embedding-generator worker
+   - Deploy summary-generator worker
+   - Generate AI content for all patents
+
+4. **P3 - Search Testing**
+   - Test semantic search queries
+   - Validate 70/30 hybrid algorithm
+   - Benchmark search performance
+
+## Deployment URLs
+
+- **Patent Ingestor:** https://patent-ingestor.drivly.workers.dev
+- **Health Check:** https://patent-ingestor.drivly.workers.dev/ (returns service info)
+- **Stats Endpoint:** https://patent-ingestor.drivly.workers.dev/stats
+- **Search Endpoint:** https://patent-ingestor.drivly.workers.dev/search
+
+## Testing Commands
+
+```bash
+# Health check
+curl https://patent-ingestor.drivly.workers.dev/
+
+# Statistics
+curl https://patent-ingestor.drivly.workers.dev/stats
+
+# Count patents
+curl https://patent-ingestor.drivly.workers.dev/count
+
+# Manual ingestion
+curl -X POST https://patent-ingestor.drivly.workers.dev/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"targetCount": 100, "batchSize": 100}'
+```
+
+## Lessons Learned
+
+1. **Always use MCP tools** for Cloudflare resource management (per CLAUDE.md)
+2. **D1 exec() is unreliable** - use prepare().run() for each statement
+3. **Wrangler v4 breaking changes** - `node_compat` → `nodejs_compat`
+4. **Test API integrations early** - don't assume they work until verified
+5. **Commit frequently** - following CLAUDE.md guidelines, committed at logical checkpoints
+
+---
+
+**Generated:** October 3, 2025
+**Project:** patent.click
+**Phase:** Week 1 - Data Loading Infrastructure
+**Status:** 🟡 Infrastructure Ready, API Integration Blocked
+**Next:** Debug USPTO PatentsView API integration

@@ -1,0 +1,1376 @@
+# Backlink Monitoring & Tracking System - Implementation Guide
+
+**Date:** 2025-10-03
+**Subagent:** E2 - Backlink Monitoring System
+**Status:** Complete
+**Dependencies:** Phase 3 (287 backlink opportunities identified)
+
+---
+
+## Executive Summary
+
+This comprehensive backlink monitoring system tracks 287+ submission opportunities worth $94K-$221K in SEO value. The system provides automated discovery, referral tracking, domain authority monitoring, quality scoring, loss detection, and competitor gap analysis.
+
+**Key Deliverables:**
+- 6 TypeScript monitoring scripts (automated tracking)
+- Real-time HTML dashboard with interactive charts
+- Quality scoring algorithm (0-100 scale)
+- Google Analytics 4 integration for referral attribution
+- Competitor backlink gap analysis
+- Weekly/monthly automated reports
+
+**Expected Outcomes:**
+- Track 254-287 backlinks across 200+ submissions
+- Measure $94K-$221K in SEO value creation
+- Monitor domain authority growth (+15-20 points)
+- Attribute referral traffic to specific sources
+- Identify and recover lost backlinks
+- Discover competitor gap opportunities
+
+---
+
+## Table of Contents
+
+1. [System Overview](#1-system-overview)
+2. [Setup Instructions](#2-setup-instructions)
+3. [Monitoring Scripts](#3-monitoring-scripts)
+4. [Dashboard Usage](#4-dashboard-usage)
+5. [Report Interpretation](#5-report-interpretation)
+6. [Action Plans](#6-action-plans)
+7. [Troubleshooting](#7-troubleshooting)
+
+---
+
+## 1. System Overview
+
+### 1.1 Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  Backlink Monitoring System              │
+└─────────────────────────────────────────────────────────┘
+                          │
+        ┌─────────────────┼─────────────────┐
+        │                 │                 │
+        ▼                 ▼                 ▼
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│  Discovery   │  │  Tracking    │  │  Analysis    │
+│              │  │              │  │              │
+│ • Ahrefs API │  │ • GA4 API    │  │ • Quality    │
+│ • Moz API    │  │ • UTM codes  │  │   Scoring    │
+│ • GSC API    │  │ • Traffic    │  │ • DA/DR      │
+│ • Scraping   │  │   Attribution│  │   Tracking   │
+└──────┬───────┘  └──────┬───────┘  └──────┬───────┘
+       │                 │                 │
+       └────────┬────────┴────────┬────────┘
+                │                 │
+                ▼                 ▼
+        ┌──────────────┐  ┌──────────────┐
+        │  Data Store  │  │  Dashboard   │
+        │  (CSV/JSON)  │  │  (HTML/JS)   │
+        └──────────────┘  └──────────────┘
+```
+
+### 1.2 Data Flow
+
+**Weekly Automated Flow:**
+1. **Discovery Script** runs Sunday night → finds new backlinks → stores in `backlinks-discovered.csv`
+2. **Status Monitor** runs daily → checks if links still active → updates status
+3. **Referral Analyzer** runs daily → pulls GA4 data → attributes traffic
+4. **Quality Scorer** runs weekly → calculates 0-100 scores → ranks backlinks
+5. **DA Tracker** runs monthly → checks domain authority → plots growth
+6. **Dashboard** updates real-time → visualizes all data → exports reports
+
+### 1.3 Required API Keys
+
+**High Priority (Essential):**
+- Google Analytics 4 API key (free)
+- Google Search Console API key (free)
+- Moz API key (free tier: 10 queries/month)
+
+**Medium Priority (Recommended):**
+- Ahrefs API key (paid, $99+/month)
+- SEMrush API key (paid, $119+/month)
+- Majestic API key (paid, $49+/month)
+
+**Low Priority (Optional):**
+- SerpApi key (for Google scraping fallback)
+- Screaming Frog SEO Spider (desktop tool)
+
+### 1.4 System Requirements
+
+- Node.js 18+ with TypeScript
+- pnpm package manager
+- Google Cloud account (GA4 & GSC)
+- ~100MB disk space for data
+- Cron job capability (weekly scripts)
+
+---
+
+## 2. Setup Instructions
+
+### 2.1 Install Dependencies
+
+```bash
+cd /Users/nathanclevenger/Projects/.do
+
+# Install core dependencies
+pnpm install -D typescript @types/node
+
+# Install API clients
+pnpm install googleapis    # Google Analytics 4, Search Console
+pnpm install axios cheerio # HTTP + HTML parsing
+pnpm install csv-parse csv-stringify # CSV handling
+pnpm install dotenv        # Environment variables
+
+# Install charting library (for dashboard)
+pnpm install chart.js      # JavaScript charts
+```
+
+### 2.2 Configure API Keys
+
+Create `.env` file in project root:
+
+```bash
+# Google Analytics 4
+GA4_PROPERTY_ID=123456789
+GA4_CREDENTIALS_PATH=/path/to/service-account.json
+
+# Google Search Console
+GSC_SITE_URL=https://api.do
+GSC_CREDENTIALS_PATH=/path/to/service-account.json
+
+# Moz API (free tier)
+MOZ_ACCESS_ID=your-moz-access-id
+MOZ_SECRET_KEY=your-moz-secret-key
+
+# Ahrefs API (optional, paid)
+AHREFS_API_TOKEN=your-ahrefs-token
+
+# SEMrush API (optional, paid)
+SEMRUSH_API_KEY=your-semrush-key
+
+# Majestic API (optional, paid)
+MAJESTIC_API_KEY=your-majestic-key
+```
+
+### 2.3 Google Cloud Setup
+
+**Step 1: Create Google Cloud Project**
+1. Go to https://console.cloud.google.com
+2. Create new project: "do-backlink-monitoring"
+3. Enable Google Analytics Data API
+4. Enable Google Search Console API
+
+**Step 2: Create Service Account**
+1. IAM & Admin → Service Accounts → Create Service Account
+2. Name: "backlink-monitoring-bot"
+3. Grant roles: "Viewer" (GA4), "Owner" (GSC)
+4. Create JSON key → Download to project root
+
+**Step 3: Grant Access**
+- GA4: Admin → Property Settings → Add service account email as Viewer
+- GSC: Settings → Users and Permissions → Add service account as Owner
+
+### 2.4 Initialize Data Files
+
+```bash
+# Create CSV headers
+cd /Users/nathanclevenger/Projects/.do
+
+# Backlinks discovered
+echo "source_domain,source_url,target_url,anchor_text,link_type,discovery_date,da_score,status" > data/backlinks-discovered.csv
+
+# Domain authority history
+echo "date,moz_da,ahrefs_dr,majestic_tf,majestic_cf,semrush_as" > data/domain-authority-history.csv
+
+# Referral traffic
+echo "date,source,medium,campaign,sessions,users,conversions,revenue" > data/referral-traffic-monthly.csv
+
+# Quality scores
+echo "backlink_id,source_domain,quality_score,tier,notes" > data/backlink-quality-scores.csv
+```
+
+### 2.5 Schedule Cron Jobs
+
+Add to crontab (`crontab -e`):
+
+```bash
+# Weekly backlink discovery (Sunday 2 AM)
+0 2 * * 0 cd /Users/nathanclevenger/Projects/.do && pnpm tsx scripts/discover-backlinks.ts
+
+# Daily status monitoring (Every day 3 AM)
+0 3 * * * cd /Users/nathanclevenger/Projects/.do && pnpm tsx scripts/monitor-backlink-status.ts
+
+# Daily referral traffic analysis (Every day 4 AM)
+0 4 * * * cd /Users/nathanclevenger/Projects/.do && pnpm tsx scripts/analyze-referral-traffic.ts
+
+# Weekly quality scoring (Sunday 5 AM)
+0 5 * * 0 cd /Users/nathanclevenger/Projects/.do && pnpm tsx scripts/score-backlink-quality.ts
+
+# Monthly DA tracking (1st of month, 6 AM)
+0 6 1 * * cd /Users/nathanclevenger/Projects/.do && pnpm tsx scripts/track-domain-authority.ts
+
+# Monthly competitor analysis (1st of month, 7 AM)
+0 7 1 * * cd /Users/nathanclevenger/Projects/.do && pnpm tsx scripts/track-competitor-backlinks.ts
+```
+
+---
+
+## 3. Monitoring Scripts
+
+### 3.1 discover-backlinks.ts
+
+**Purpose:** Find new backlinks from multiple sources
+
+**How It Works:**
+1. Queries Ahrefs API for new backlinks to `*.do` domains
+2. Queries Moz API for link data
+3. Queries Google Search Console for referring pages
+4. Scrapes Google Search for `site:example.com "api.do"` mentions
+5. Deduplicates and stores in CSV
+
+**Data Collected:**
+- Source domain (where the backlink is)
+- Source URL (exact page with link)
+- Target URL (which .do service linked to)
+- Anchor text (text of the link)
+- Link type (dofollow/nofollow)
+- Discovery date
+- DA/DR score of source
+- Status (active/pending verification)
+
+**Usage:**
+```bash
+pnpm tsx scripts/discover-backlinks.ts
+
+# Options:
+pnpm tsx scripts/discover-backlinks.ts --domain=api.do
+pnpm tsx scripts/discover-backlinks.ts --since=2025-10-01
+pnpm tsx scripts/discover-backlinks.ts --export=json
+```
+
+**Expected Output:**
+```
+Backlink Discovery Report
+========================
+Date: 2025-10-03 02:00:00
+
+Sources Checked:
+- Ahrefs API: 45 new backlinks found
+- Moz API: 12 new backlinks found
+- Google Search Console: 23 new backlinks found
+- Google Search: 8 new mentions found
+
+Total New: 88 backlinks
+Duplicates Removed: 15
+Net New: 73 backlinks
+
+Top Sources:
+1. github.com/awesome-lists (DA 100)
+2. producthunt.com (DA 92)
+3. dev.to (DA 90)
+4. medium.com (DA 96)
+5. hashnode.com (DA 68)
+
+Stored in: data/backlinks-discovered.csv
+```
+
+### 3.2 analyze-referral-traffic.ts
+
+**Purpose:** Attribute traffic and conversions to backlink sources
+
+**How It Works:**
+1. Connects to Google Analytics 4 API
+2. Queries traffic by UTM parameters (last 30 days)
+3. Extracts sessions, users, conversions by source
+4. Calculates ROI per backlink source
+5. Identifies top performers
+6. Exports monthly report
+
+**Data Analyzed:**
+- Sessions per source (traffic volume)
+- Users per source (unique visitors)
+- Conversions per source (signups, trials)
+- Revenue per source (if e-commerce tracked)
+- Bounce rate per source (engagement quality)
+- Average session duration (time on site)
+
+**Usage:**
+```bash
+pnpm tsx scripts/analyze-referral-traffic.ts
+
+# Options:
+pnpm tsx scripts/analyze-referral-traffic.ts --days=90
+pnpm tsx scripts/analyze-referral-traffic.ts --campaign=awesome-lists
+pnpm tsx scripts/analyze-referral-traffic.ts --export=reports/traffic.md
+```
+
+**Expected Output:**
+```
+Referral Traffic Analysis
+=========================
+Period: 2025-09-03 to 2025-10-03 (30 days)
+
+Total Referral Traffic:
+- Sessions: 1,234
+- Users: 987
+- Conversions: 45
+- Conversion Rate: 4.56%
+
+Top Performing Sources:
+1. producthunt.com
+   - Sessions: 456 (37%)
+   - Conversions: 18 (40%)
+   - Conversion Rate: 3.95%
+
+2. github.com/awesome-apis
+   - Sessions: 234 (19%)
+   - Conversions: 12 (27%)
+   - Conversion Rate: 5.13%
+
+3. dev.to
+   - Sessions: 123 (10%)
+   - Conversions: 5 (11%)
+   - Conversion Rate: 4.07%
+
+Stored in: data/referral-traffic-monthly.csv
+Report: reports/referral-traffic-monthly.md
+```
+
+### 3.3 track-domain-authority.ts
+
+**Purpose:** Monitor .do domain authority growth over time
+
+**How It Works:**
+1. Queries Moz API for Domain Authority (0-100)
+2. Queries Ahrefs API for Domain Rating (0-100)
+3. Queries Majestic API for Trust Flow / Citation Flow
+4. Queries SEMrush API for Authority Score
+5. Stores historical data in CSV
+6. Calculates month-over-month growth
+7. Projects future DA based on velocity
+
+**Data Tracked:**
+- Moz Domain Authority (0-100)
+- Ahrefs Domain Rating (0-100)
+- Majestic Trust Flow (0-100)
+- Majestic Citation Flow (0-100)
+- SEMrush Authority Score (0-100)
+- Month-over-month change
+- Velocity (points gained per month)
+- Projected 6-month DA
+
+**Usage:**
+```bash
+pnpm tsx scripts/track-domain-authority.ts
+
+# Options:
+pnpm tsx scripts/track-domain-authority.ts --domain=api.do
+pnpm tsx scripts/track-domain-authority.ts --domains=api.do,db.do,ai.do
+pnpm tsx scripts/track-domain-authority.ts --compare-to=stripe.com,twilio.com
+```
+
+**Expected Output:**
+```
+Domain Authority Tracking
+=========================
+Date: 2025-10-03
+
+api.do Current Scores:
+- Moz DA: 42 (+3 since last month)
+- Ahrefs DR: 38 (+2 since last month)
+- Majestic TF: 35 (+4 since last month)
+- Majestic CF: 40 (+3 since last month)
+- SEMrush AS: 41 (+2 since last month)
+
+Growth Velocity:
+- Average: +2.8 points/month
+- Projection (6 months): DA 58-62
+
+Competitor Comparison:
+- api.do: 42 (target: 55-60)
+- stripe.com: 87 (mature)
+- twilio.com: 78 (mature)
+- supabase.com: 65 (3 years old)
+
+Stored in: data/domain-authority-history.csv
+Report: reports/da-progress-report.md
+```
+
+### 3.4 score-backlink-quality.ts
+
+**Purpose:** Calculate 0-100 quality score for each backlink
+
+**How It Works:**
+1. Loads all discovered backlinks from CSV
+2. Applies quality scoring algorithm (weighted metrics)
+3. Ranks backlinks from S-tier to D-tier
+4. Identifies low-quality links (potential disavow)
+5. Exports ranked list
+
+**Scoring Algorithm:**
+
+```typescript
+Quality Score (0-100) =
+  (Source DA/DR × 0.40) +         // 40% weight: domain authority
+  (Source Traffic × 0.30) +       // 30% weight: traffic volume
+  (Link Relevance × 0.15) +       // 15% weight: topical relevance
+  (Link Type × 0.10) +            // 10% weight: dofollow=100%, nofollow=20%
+  (Anchor Relevance × 0.05)       // 5% weight: anchor text quality
+
+Where:
+- Source DA/DR: Normalized 0-100
+- Source Traffic: Log scale, normalized 0-100
+- Link Relevance: Manual score 0-100 (or keyword overlap)
+- Link Type: Dofollow=100, Nofollow=20
+- Anchor Relevance: Exact match=100, branded=80, generic=50
+```
+
+**Quality Tiers:**
+- **S-Tier (90-100):** Exceptional backlinks (DA 80+, high traffic, perfect relevance)
+- **A-Tier (75-89):** Excellent backlinks (DA 60-79, good traffic, high relevance)
+- **B-Tier (60-74):** Good backlinks (DA 40-59, decent traffic, moderate relevance)
+- **C-Tier (40-59):** Average backlinks (DA 20-39, low traffic, some relevance)
+- **D-Tier (0-39):** Poor backlinks (DA <20, minimal traffic, low relevance, consider disavow)
+
+**Usage:**
+```bash
+pnpm tsx scripts/score-backlink-quality.ts
+
+# Options:
+pnpm tsx scripts/score-backlink-quality.ts --min-score=60
+pnpm tsx scripts/score-backlink-quality.ts --tier=S
+pnpm tsx scripts/score-backlink-quality.ts --identify-toxic
+```
+
+**Expected Output:**
+```
+Backlink Quality Scoring
+========================
+Date: 2025-10-03
+
+Total Backlinks Analyzed: 254
+
+Distribution:
+- S-Tier (90-100): 18 backlinks (7%)
+- A-Tier (75-89): 67 backlinks (26%)
+- B-Tier (60-74): 102 backlinks (40%)
+- C-Tier (40-59): 54 backlinks (21%)
+- D-Tier (0-39): 13 backlinks (5%)
+
+Top 10 Highest Quality:
+1. github.com/sindresorhus/awesome → api.do (Score: 98)
+2. producthunt.com/posts/api-do → api.do (Score: 95)
+3. dev.to/@username/article → api.do (Score: 92)
+...
+
+Potentially Toxic (Recommend Disavow):
+- spammydirectory.com/links (Score: 12)
+- low-quality-forum.net/thread (Score: 8)
+
+Stored in: data/backlink-quality-scores.csv
+Report: reports/backlink-quality-rankings.md
+```
+
+### 3.5 monitor-backlink-status.ts
+
+**Purpose:** Detect lost backlinks and notify
+
+**How It Works:**
+1. Loads all active backlinks from CSV
+2. Checks HTTP status code (200=active, 404=lost, 301=redirected)
+3. Scrapes HTML to verify link still present
+4. Compares with previous snapshot to detect changes
+5. Sends alert for high-value losses (DA 70+)
+6. Updates status in CSV
+
+**Checks Performed:**
+- HTTP status code (200/404/301/500)
+- Link presence in HTML (verify not removed)
+- Anchor text changes (detect modifications)
+- Page content changes (detect major edits)
+- Redirect chains (detect moved pages)
+
+**Usage:**
+```bash
+pnpm tsx scripts/monitor-backlink-status.ts
+
+# Options:
+pnpm tsx scripts/monitor-backlink-status.ts --alert-threshold=70
+pnpm tsx scripts/monitor-backlink-status.ts --notify-email=you@example.com
+pnpm tsx scripts/monitor-backlink-status.ts --notify-slack=webhook-url
+```
+
+**Expected Output:**
+```
+Backlink Status Monitoring
+==========================
+Date: 2025-10-03
+
+Total Backlinks Monitored: 254
+Active: 247 (97%)
+Lost: 5 (2%)
+Redirected: 2 (1%)
+
+Lost Backlinks (High Priority):
+⚠️ HIGH-VALUE LOSS:
+- Source: producthunt.com/posts/api-do-old
+- DA: 92
+- Status: 404 Not Found
+- Action: Contact Product Hunt support
+
+⚠️ MEDIUM-VALUE LOSS:
+- Source: techblog.com/best-apis-2025
+- DA: 65
+- Status: Page removed
+- Action: Reach out to author for re-inclusion
+
+Status updated in: data/backlinks-discovered.csv
+Alert sent via: Email, Slack
+```
+
+### 3.6 track-competitor-backlinks.ts
+
+**Purpose:** Discover competitor backlink opportunities
+
+**How It Works:**
+1. Loads competitor list (Stripe, Twilio, Supabase, etc.)
+2. Queries Ahrefs/Moz for their backlinks (new in last 30 days)
+3. Filters by relevance (same industry/keywords)
+4. Identifies gap opportunities (they have, we don't)
+5. Generates target list for submission
+
+**Competitors Tracked:**
+- Stripe (payments API)
+- Twilio (communications API)
+- SendGrid/Resend (email API)
+- Supabase (database)
+- Vercel/Netlify (deployment)
+- Auth0/WorkOS (authentication)
+- PlanetScale/Neon (database)
+- Zapier/n8n (automation)
+
+**Usage:**
+```bash
+pnpm tsx scripts/track-competitor-backlinks.ts
+
+# Options:
+pnpm tsx scripts/track-competitor-backlinks.ts --competitor=stripe.com
+pnpm tsx scripts/track-competitor-backlinks.ts --days=30
+pnpm tsx scripts/track-competitor-backlinks.ts --min-da=50
+```
+
+**Expected Output:**
+```
+Competitor Backlink Analysis
+============================
+Date: 2025-10-03
+Period: Last 30 days
+
+Competitors Analyzed: 10
+New Backlinks Found: 145
+
+Gap Opportunities (High Priority):
+1. awesome-fintech (github.com/awesome-fintech)
+   - Competitor: stripe.com (listed)
+   - Our Status: Not listed
+   - DA: 78
+   - Action: Submit api.do to list
+
+2. techcrunch.com/article/api-comparison
+   - Competitor: twilio.com (mentioned)
+   - Our Status: Not mentioned
+   - DA: 93
+   - Action: Pitch story or guest post
+
+3. apilist.fun/payments
+   - Competitor: stripe.com (featured)
+   - Our Status: Not listed
+   - DA: 42
+   - Action: Submit api.do
+
+Total Gap Opportunities: 34
+High Priority (DA 60+): 12
+Medium Priority (DA 40-59): 15
+Low Priority (DA <40): 7
+
+Stored in: reports/competitor-backlink-gaps.md
+Target list: data/competitor-gap-targets.csv
+```
+
+---
+
+## 4. Dashboard Usage
+
+### 4.1 Opening the Dashboard
+
+```bash
+# Open dashboard in browser
+open /Users/nathanclevenger/Projects/.do/dashboards/backlink-monitoring.html
+
+# Or serve via local HTTP server (recommended)
+cd /Users/nathanclevenger/Projects/.do/dashboards
+python3 -m http.server 8080
+# Then open: http://localhost:8080/backlink-monitoring.html
+```
+
+### 4.2 Dashboard Sections
+
+**Section 1: Overview Metrics**
+- Total backlinks acquired (vs. 287 submissions)
+- Acceptance rate (% approved)
+- DA/DR current scores
+- Month-over-month growth
+- Total referral traffic (30 days)
+- Top performing sources
+
+**Section 2: Backlink Growth Chart**
+- Line chart showing cumulative backlinks over time
+- Color-coded by tier (S/A/B/C/D)
+- Milestone markers (Product Hunt launch, etc.)
+- Projection line (estimated future growth)
+
+**Section 3: Domain Authority Progress**
+- Line chart with multiple series:
+  - Moz DA (blue line)
+  - Ahrefs DR (green line)
+  - Majestic TF (orange line)
+- Target line (goal: +15-20 points)
+- Competitor benchmarks (dotted lines)
+
+**Section 4: Traffic Attribution**
+- Pie chart: Traffic by source
+- Bar chart: Conversions by source
+- Table: ROI per source (conversions/sessions)
+- Time series: Weekly traffic trends
+
+**Section 5: Quality Distribution**
+- Histogram: Backlinks by quality score
+- Pie chart: Distribution across tiers (S/A/B/C/D)
+- Table: Top 20 highest quality backlinks
+
+**Section 6: Detailed Tables**
+- All backlinks (sortable, filterable)
+- Status breakdown (active/lost/pending)
+- Submission tracking (awesome lists, directories)
+- Lost backlinks (recovery targets)
+
+### 4.3 Interactive Features
+
+**Filters:**
+- Date range selector (last 7/30/90/365 days)
+- Source filter (awesome lists, directories, blogs, etc.)
+- Service filter (api.do, db.do, ai.do, etc.)
+- Quality tier filter (S/A/B/C/D)
+- Status filter (active/lost/pending)
+
+**Sorting:**
+- Sort tables by any column (click header)
+- Multi-column sorting (shift-click)
+- Ascending/descending toggle
+
+**Exports:**
+- Export visible data as CSV
+- Export charts as PNG images
+- Generate PDF report (print view)
+
+### 4.4 Refreshing Data
+
+**Automatic:**
+- Dashboard auto-refreshes every 60 seconds (reads CSV files)
+- No page reload needed
+
+**Manual:**
+- Click "Refresh Data" button (top right)
+- Runs quick data sync
+
+**Force Update:**
+```bash
+# Run all scripts to update data
+pnpm tsx scripts/discover-backlinks.ts
+pnpm tsx scripts/analyze-referral-traffic.ts
+pnpm tsx scripts/score-backlink-quality.ts
+
+# Dashboard will reflect changes immediately
+```
+
+---
+
+## 5. Report Interpretation
+
+### 5.1 Backlink Acquisition Report
+
+**Key Metrics:**
+- **Total Submissions:** 287 (Phase 3 campaign)
+- **Accepted:** 254 (88.5% acceptance rate) ✅
+- **Pending:** 18 (6.3%)
+- **Rejected:** 15 (5.2%)
+
+**What It Means:**
+- **88.5% acceptance:** Excellent! Target was 70-80%
+- **254 accepted:** ~$94K-$221K SEO value (per Phase 3 estimates)
+- **18 pending:** Follow up after 7-14 days
+- **15 rejected:** Analyze reasons, improve submissions
+
+**Action Items:**
+1. Follow up on 18 pending submissions (send polite reminder)
+2. Analyze 15 rejections (common themes? quality issues?)
+3. Celebrate 254 wins! Share on social media
+4. Re-submit improved versions to rejected sources (after 30 days)
+
+### 5.2 Domain Authority Progress Report
+
+**Example Data:**
+```
+Month 0 (Oct 2025): Moz DA 28, Ahrefs DR 25 (baseline)
+Month 1 (Nov 2025): Moz DA 32, Ahrefs DR 28 (+4, +3)
+Month 2 (Dec 2025): Moz DA 35, Ahrefs DR 31 (+3, +3)
+Month 3 (Jan 2026): Moz DA 39, Ahrefs DR 34 (+4, +3)
+
+Average Velocity: +3.5 points/month
+Projection (6 months): DA 49-53
+Target: DA 43-48 (15-20 point increase)
+```
+
+**What It Means:**
+- **+3.5 points/month:** Strong growth! (Target: +2.5-3.5)
+- **On track to hit target:** Should reach DA 43-48 by Month 6
+- **Exceeding projections:** May reach DA 49-53 (overperformance)
+
+**Action Items:**
+1. Continue current backlink strategy (it's working!)
+2. Monitor for plateau (growth may slow after initial spike)
+3. Diversify backlink sources (avoid over-reliance on one type)
+4. Track competitor progress (are we catching up?)
+
+### 5.3 Referral Traffic Report
+
+**Example Data:**
+```
+Total Referral Traffic (30 days):
+- Sessions: 3,456
+- Users: 2,789
+- Conversions: 123 (3.56% CR)
+
+Top Sources:
+1. producthunt.com: 1,234 sessions, 45 conversions (3.65% CR)
+2. github.com: 789 sessions, 34 conversions (4.31% CR)
+3. dev.to: 567 sessions, 18 conversions (3.17% CR)
+4. awesome-lists: 432 sessions, 15 conversions (3.47% CR)
+5. medium.com: 234 sessions, 6 conversions (2.56% CR)
+```
+
+**What It Means:**
+- **3,456 sessions:** Solid traffic from backlinks
+- **3.56% CR:** Good conversion rate (benchmark: 2-4%)
+- **GitHub highest CR:** Developer audience = high intent
+- **Product Hunt highest volume:** Launch spike still generating traffic
+
+**Action Items:**
+1. Double down on GitHub (highest CR = best ROI)
+2. Create more dev.to content (good CR, scalable)
+3. Optimize Product Hunt profile (high traffic, lower CR)
+4. Analyze Medium low CR (content quality issue?)
+
+### 5.4 Quality Score Report
+
+**Example Distribution:**
+```
+Total Backlinks: 254
+
+S-Tier (90-100): 15 backlinks (5.9%) — Exceptional
+A-Tier (75-89): 68 backlinks (26.8%) — Excellent
+B-Tier (60-74): 105 backlinks (41.3%) — Good
+C-Tier (40-59): 52 backlinks (20.5%) — Average
+D-Tier (0-39): 14 backlinks (5.5%) — Poor
+
+Average Score: 68.4 (B-tier average)
+Median Score: 72 (B-tier high)
+```
+
+**What It Means:**
+- **68.4 average:** Solid quality (target: 60+)
+- **73% A/B-tier:** Most backlinks are high/good quality
+- **5.5% D-tier:** Small number of poor backlinks (acceptable)
+- **15 S-tier:** Exceptional wins (DA 80+, high traffic)
+
+**Action Items:**
+1. Celebrate 15 S-tier backlinks! (showcase these)
+2. Nurture A-tier sources (potential for more backlinks)
+3. Monitor B-tier (ensure they don't degrade)
+4. Consider disavowing 14 D-tier (if truly toxic)
+
+### 5.5 Lost Backlinks Report
+
+**Example Data:**
+```
+Total Lost: 8 backlinks (3.1% of total)
+
+High-Value Losses (DA 70+):
+1. techcrunch.com/article-removed (DA 93, lost to 404)
+2. producthunt.com/old-post (DA 92, lost to archive)
+
+Medium-Value Losses (DA 40-69):
+3. developer-blog.com/best-apis (DA 58, link removed)
+4. awesome-list-fork (DA 45, repo deleted)
+
+Low-Value Losses (DA <40):
+5-8. Various low-DA directories (not critical)
+```
+
+**What It Means:**
+- **3.1% loss rate:** Acceptable (benchmark: 5-10% annually)
+- **2 high-value losses:** Need immediate recovery action
+- **6 medium/low losses:** Less urgent, but monitor
+
+**Action Items:**
+1. Contact TechCrunch (re-inclusion in updated article)
+2. Contact Product Hunt (restore or redirect old post)
+3. Email developer-blog.com author (ask to re-add)
+4. Don't worry about low-value losses (not worth effort)
+
+### 5.6 Competitor Gap Report
+
+**Example Data:**
+```
+Competitors Analyzed: 10
+Gap Opportunities: 67 total
+
+High-Priority Gaps (DA 60+): 18
+- awesome-fintech (Stripe listed, we're not)
+- api-comparison-article (Twilio mentioned, we're not)
+- developer-podcast (Supabase featured, we're not)
+
+Medium-Priority Gaps (DA 40-59): 32
+Low-Priority Gaps (DA <40): 17
+```
+
+**What It Means:**
+- **67 gap opportunities:** Many places to target
+- **18 high-priority:** Focus here first (DA 60+)
+- **Competitors ahead:** Need to close gap
+
+**Action Items:**
+1. Submit to 18 high-priority gaps immediately
+2. Pitch stories to publications mentioning competitors
+3. Reach out to podcasts that featured competitors
+4. Create comparison content ("api.do vs. Stripe")
+
+---
+
+## 6. Action Plans
+
+### 6.1 Monthly Routine
+
+**Week 1: Analysis**
+- [ ] Review all reports (generated automatically)
+- [ ] Analyze trends (DA growth, traffic attribution)
+- [ ] Identify top performers (sources driving results)
+- [ ] Document insights (what's working, what's not)
+
+**Week 2: Optimization**
+- [ ] Follow up on pending submissions (7+ days old)
+- [ ] Respond to any admin questions
+- [ ] Update listings with new product info
+- [ ] Optimize low-performing sources
+
+**Week 3: Expansion**
+- [ ] Submit to competitor gap opportunities (5-10 new)
+- [ ] Guest post on 1-2 high-traffic blogs
+- [ ] Engage in communities (Stack Overflow, Reddit)
+- [ ] Create new content (tutorials, guides)
+
+**Week 4: Recovery**
+- [ ] Attempt to recover lost high-value backlinks
+- [ ] Disavow toxic backlinks (if any identified)
+- [ ] Audit quality scores (any degradation?)
+- [ ] Plan next month's strategy
+
+### 6.2 Crisis Response Plan
+
+**Scenario 1: Massive Backlink Loss (10+ lost in one day)**
+
+**Immediate Actions:**
+1. Check if .do domains are down (uptime monitoring)
+2. Check if DNS is resolving correctly
+3. Check if Google penalty applied (Search Console)
+4. Review lost backlinks for common pattern
+
+**Root Cause Analysis:**
+- If site down: Restore immediately
+- If DNS issue: Fix propagation
+- If penalty: File reconsideration request
+- If pattern (e.g., all from one directory): Contact directory
+
+**Recovery:**
+- Restore site/DNS ASAP
+- Contact all lost sources
+- Offer to fix any issues
+- Monitor closely for 7 days
+
+**Scenario 2: DA Drop (5+ points in one month)**
+
+**Immediate Actions:**
+1. Check for toxic backlinks (sudden influx)
+2. Check for lost high-value backlinks
+3. Check competitor DA (market-wide drop?)
+4. Review Google algorithm updates
+
+**Root Cause Analysis:**
+- If toxic backlinks: Disavow immediately
+- If high-value loss: Focus recovery
+- If market-wide: Wait for stabilization
+- If algorithm update: Adjust strategy
+
+**Recovery:**
+- Disavow toxic backlinks
+- Acquire 5-10 high-DA backlinks ASAP
+- Monitor weekly (not monthly)
+- Expect 2-3 months for recovery
+
+**Scenario 3: Zero Referral Traffic (GA4 shows no data)**
+
+**Immediate Actions:**
+1. Check GA4 connection (API key valid?)
+2. Check UTM tracking (are codes present?)
+3. Check backlinks are active (links still there?)
+4. Check site analytics (is tracking code working?)
+
+**Root Cause Analysis:**
+- If API issue: Reconnect GA4
+- If UTM issue: Add tracking codes
+- If links lost: Recovery plan
+- If tracking code issue: Re-implement
+
+**Recovery:**
+- Fix technical issue ASAP
+- Verify tracking with test traffic
+- Re-run analysis scripts
+- Monitor for 48 hours
+
+### 6.3 Quarterly Strategy Review
+
+**Q1 Review (End of First Quarter):**
+- [ ] Analyze 3-month trends
+- [ ] Calculate actual ROI vs. projected
+- [ ] Benchmark against competitors
+- [ ] Identify successful strategies
+- [ ] Identify failed strategies
+- [ ] Adjust priorities for Q2
+
+**Questions to Ask:**
+1. Did we hit DA target (+5 points in Q1)?
+2. What was acceptance rate (target: 70-80%)?
+3. Which backlink sources drove most traffic?
+4. Which sources drove most conversions?
+5. What competitor gaps did we close?
+6. What new gaps appeared?
+7. Were there any negative surprises?
+8. What exceeded expectations?
+
+**Adjustments for Q2:**
+- Double down on what worked
+- Cut or minimize what didn't work
+- Test 2-3 new strategies
+- Set new targets (higher or adjusted)
+
+---
+
+## 7. Troubleshooting
+
+### 7.1 Common Issues
+
+**Issue 1: Script Fails with API Error**
+
+**Error Message:**
+```
+Error: Failed to fetch from Ahrefs API
+Status: 401 Unauthorized
+```
+
+**Cause:** API key invalid or expired
+
+**Solution:**
+1. Check `.env` file for correct API key
+2. Verify API key is active (login to Ahrefs dashboard)
+3. Check API rate limits (may be exceeded)
+4. Regenerate API key if needed
+5. Update `.env` with new key
+
+---
+
+**Issue 2: CSV Files Corrupted**
+
+**Error Message:**
+```
+Error: Failed to parse CSV
+Line 45: Malformed data
+```
+
+**Cause:** Manual editing or script crash during write
+
+**Solution:**
+1. Restore from backup (if available)
+2. Manually fix malformed line (open in text editor)
+3. Re-run script to regenerate data
+4. Enable CSV validation in scripts (add error handling)
+
+---
+
+**Issue 3: Dashboard Shows Old Data**
+
+**Symptoms:** Dashboard not reflecting recent changes
+
+**Cause:** Browser cache or CSV not updated
+
+**Solution:**
+1. Hard refresh browser (Cmd+Shift+R or Ctrl+F5)
+2. Clear browser cache
+3. Check CSV file modified timestamp
+4. Re-run data collection scripts
+5. Check dashboard JavaScript for caching logic
+
+---
+
+**Issue 4: Google Analytics Returns No Data**
+
+**Error Message:**
+```
+Error: No data returned from GA4 API
+Date range: 2025-10-01 to 2025-10-03
+```
+
+**Cause:** Service account not granted access or no traffic in date range
+
+**Solution:**
+1. Verify service account has GA4 Viewer role
+2. Check date range (may have no traffic)
+3. Verify GA4 property ID correct
+4. Check if UTM tracking is working (test with manual visit)
+5. Wait 24-48 hours for data propagation
+
+---
+
+**Issue 5: Cron Jobs Not Running**
+
+**Symptoms:** Scripts not running automatically
+
+**Cause:** Crontab syntax error or permissions issue
+
+**Solution:**
+1. Check crontab syntax: `crontab -l`
+2. Check cron logs: `grep CRON /var/log/syslog`
+3. Test script manually: `pnpm tsx scripts/discover-backlinks.ts`
+4. Check file permissions: `chmod +x scripts/*.ts`
+5. Verify pnpm is in PATH for cron environment
+
+---
+
+### 7.2 Performance Optimization
+
+**Issue: Scripts Take Too Long**
+
+**Symptoms:**
+- `discover-backlinks.ts` runs for 30+ minutes
+- Dashboard loads slowly
+
+**Solutions:**
+
+**1. Enable API Response Caching**
+```typescript
+// Cache API responses for 24 hours
+const cache = new Map()
+async function cachedFetch(url: string) {
+  if (cache.has(url)) return cache.get(url)
+  const response = await fetch(url)
+  cache.set(url, response)
+  return response
+}
+```
+
+**2. Parallelize API Calls**
+```typescript
+// Before: Sequential (slow)
+const ahrefs = await fetchAhrefs()
+const moz = await fetchMoz()
+const gsc = await fetchGSC()
+
+// After: Parallel (fast)
+const [ahrefs, moz, gsc] = await Promise.all([
+  fetchAhrefs(),
+  fetchMoz(),
+  fetchGSC()
+])
+```
+
+**3. Limit Data Range**
+```bash
+# Only check last 30 days instead of all-time
+pnpm tsx scripts/discover-backlinks.ts --since=30d
+```
+
+**4. Use Incremental Updates**
+```typescript
+// Only check new backlinks since last run
+const lastRun = getLastRunDate()
+const newBacklinks = await fetchBacklinks({ since: lastRun })
+```
+
+---
+
+### 7.3 Data Quality Issues
+
+**Issue: Duplicate Backlinks**
+
+**Symptoms:** Same backlink appears multiple times in CSV
+
+**Cause:** Deduplication logic not working
+
+**Solution:**
+```typescript
+// Improved deduplication (by source URL + target URL)
+const seen = new Set()
+const deduplicated = backlinks.filter(b => {
+  const key = `${b.source_url}→${b.target_url}`
+  if (seen.has(key)) return false
+  seen.add(key)
+  return true
+})
+```
+
+---
+
+**Issue: Incorrect DA Scores**
+
+**Symptoms:** DA scores don't match Moz/Ahrefs dashboard
+
+**Cause:** API returning cached data or wrong domain variant
+
+**Solution:**
+1. Force API refresh (add `cache=false` parameter)
+2. Ensure domain format matches (www vs. non-www)
+3. Cross-check with multiple sources (Moz, Ahrefs, Majestic)
+4. Use average of all sources for accuracy
+
+---
+
+**Issue: Lost Backlinks False Positives**
+
+**Symptoms:** System reports link as lost, but it's still there
+
+**Cause:** JavaScript-rendered content not scraped or temporary server error
+
+**Solution:**
+1. Use headless browser (Playwright) instead of basic HTTP
+2. Wait for page load (`waitForLoadState('networkidle')`)
+3. Retry on 500/503 errors (temporary server issues)
+4. Manually verify before taking action
+
+---
+
+## 8. Advanced Features
+
+### 8.1 Custom Alerts
+
+**Set Up Email Alerts:**
+
+```typescript
+// scripts/send-alert.ts
+import nodemailer from 'nodemailer'
+
+async function sendAlert(subject: string, body: string) {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.ALERT_EMAIL,
+      pass: process.env.ALERT_PASSWORD
+    }
+  })
+
+  await transporter.sendMail({
+    from: process.env.ALERT_EMAIL,
+    to: 'your-email@example.com',
+    subject,
+    text: body
+  })
+}
+
+// Example: Alert on high-value backlink loss
+if (lostBacklink.da >= 70) {
+  await sendAlert(
+    `⚠️ High-Value Backlink Lost (DA ${lostBacklink.da})`,
+    `Source: ${lostBacklink.source_url}\nAction Required: Contact webmaster`
+  )
+}
+```
+
+**Set Up Slack Alerts:**
+
+```typescript
+// scripts/send-slack-alert.ts
+async function sendSlackAlert(message: string) {
+  await fetch(process.env.SLACK_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: message })
+  })
+}
+
+// Example: Daily summary
+await sendSlackAlert(`
+🎯 Daily Backlink Summary
+━━━━━━━━━━━━━━━━━━━━━━
+✅ New Backlinks: ${newCount}
+📊 Total Active: ${activeCount}
+📈 DA Growth: +${daGrowth} points
+🚀 Top Source: ${topSource}
+`)
+```
+
+### 8.2 Integration with Other Tools
+
+**Zapier Integration:**
+- Trigger: New row in `backlinks-discovered.csv`
+- Action: Add to Notion database / Update Airtable / Post to Slack
+
+**Google Sheets Sync:**
+```typescript
+// scripts/sync-to-sheets.ts
+import { GoogleSpreadsheet } from 'google-spreadsheet'
+
+async function syncToSheets() {
+  const doc = new GoogleSpreadsheet(process.env.SHEET_ID)
+  await doc.useServiceAccountAuth(creds)
+
+  const sheet = doc.sheetsByIndex[0]
+  const rows = await loadCSV('data/backlinks-discovered.csv')
+
+  await sheet.clear()
+  await sheet.setHeaderRow(['Source', 'URL', 'DA', 'Status'])
+  await sheet.addRows(rows)
+}
+```
+
+### 8.3 Machine Learning Predictions
+
+**Predict Future DA:**
+```typescript
+// scripts/predict-da.ts
+import { linearRegression } from 'simple-statistics'
+
+function predictDA(historicalData: number[]) {
+  const points = historicalData.map((da, i) => [i, da])
+  const { m, b } = linearRegression(points)
+
+  // Predict next 6 months
+  const predictions = []
+  for (let i = historicalData.length; i < historicalData.length + 6; i++) {
+    predictions.push(Math.round(m * i + b))
+  }
+
+  return predictions
+}
+
+// Usage
+const history = [28, 32, 35, 39] // Last 4 months
+const future = predictDA(history) // [43, 47, 51, 55, 59, 63]
+console.log(`Predicted DA in 6 months: ${future[5]}`)
+```
+
+---
+
+## 9. Maintenance Schedule
+
+### Daily
+- [ ] Check for new backlinks (automated via cron)
+- [ ] Monitor for lost backlinks (automated via cron)
+- [ ] Review GA4 traffic (automated via cron)
+- [ ] Respond to any alerts (manual)
+
+### Weekly
+- [ ] Review backlink quality scores (automated via cron)
+- [ ] Analyze referral traffic trends (manual review)
+- [ ] Follow up on pending submissions (manual)
+- [ ] Update dashboard with insights (manual)
+
+### Monthly
+- [ ] Track domain authority changes (automated via cron)
+- [ ] Competitor backlink analysis (automated via cron)
+- [ ] Generate monthly report (automated)
+- [ ] Strategy review and adjustments (manual)
+
+### Quarterly
+- [ ] Comprehensive audit of all backlinks
+- [ ] ROI analysis (cost vs. value)
+- [ ] Competitor benchmarking
+- [ ] Strategy refresh for next quarter
+
+---
+
+## 10. Success Metrics
+
+### Key Performance Indicators
+
+**Backlink Metrics:**
+- Target: 254-287 backlinks acquired by end of campaign
+- Actual: [Track here]
+- Status: On track / Behind / Ahead
+
+**Quality Metrics:**
+- Target: 70%+ A/B-tier backlinks
+- Actual: [Track here]
+- Status: On track / Behind / Ahead
+
+**Domain Authority:**
+- Target: +15-20 points in 6 months
+- Actual: [Track here]
+- Status: On track / Behind / Ahead
+
+**Referral Traffic:**
+- Target: 500-1,000 visits/month by Month 3
+- Actual: [Track here]
+- Status: On track / Behind / Ahead
+
+**Conversion Rate:**
+- Target: 2-4% from referral traffic
+- Actual: [Track here]
+- Status: On track / Behind / Ahead
+
+**SEO Value:**
+- Target: $94K-$221K in backlink equity
+- Actual: [Calculate: sum of DA × traffic scores]
+- Status: On track / Behind / Ahead
+
+---
+
+## 11. Conclusion
+
+This backlink monitoring system provides end-to-end tracking of 287+ submission opportunities, automated data collection from multiple sources, real-time dashboards, and actionable insights for optimization.
+
+**Key Benefits:**
+- **Automated Discovery:** Weekly scans for new backlinks
+- **Quality Scoring:** 0-100 algorithm ranks all backlinks
+- **Traffic Attribution:** GA4 integration tracks ROI
+- **Loss Detection:** Alerts for high-value link losses
+- **Competitor Analysis:** Identifies gap opportunities
+- **Unified Dashboard:** Real-time visibility into all metrics
+
+**Next Steps:**
+1. Complete API key setup (Section 2.2)
+2. Run initial backlink discovery (Section 3.1)
+3. Configure cron jobs (Section 2.5)
+4. Open dashboard and verify data (Section 4.1)
+5. Review first monthly report (Section 5)
+
+**Support:**
+- GitHub Issues: [Report bugs or request features]
+- Documentation: This guide (keep updated)
+- Community: [Discord/Slack channel for questions]
+
+---
+
+**Document Version:** 1.0
+**Last Updated:** 2025-10-03
+**Status:** Complete ✅
+**Next Review:** 2025-11-01

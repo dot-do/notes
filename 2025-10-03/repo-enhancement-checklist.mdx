@@ -1,0 +1,779 @@
+# Repository Enhancement Deployment Checklist
+
+**Date:** October 3, 2025
+**Subagent:** D2 - Repository Enhancement Execution
+**Purpose:** Step-by-step deployment guide with time estimates
+
+---
+
+## Overview
+
+This checklist guides the implementation of B1's 20 quick wins across 8 core repositories. Complete tasks in order for maximum efficiency. Estimated total time: **25 hours** (19 hours work + 6 hours buffer).
+
+**Status Tracking:**
+- ⬜ Not started
+- 🟡 In progress
+- ✅ Complete
+- ❌ Blocked/Issue
+
+---
+
+## Phase 1: Metadata Optimization (4.7 hours)
+
+### api/ - API Services
+
+**Status:** ⬜
+**Time Estimate:** 35 minutes
+**Priority:** P0 (Highest traffic repository)
+
+- [ ] **Add Topics (5 min)**
+  - Navigate to: https://github.com/dot-do/api/settings
+  - Scroll to "Topics" section
+  - Add: `api`, `hono`, `cloudflare-workers`, `rest-api`, `typescript`, `microservices`, `rpc`, `serverless`
+  - Click "Save changes"
+
+- [ ] **Write About Section (10 min)**
+  - Click pencil icon next to description
+  - Paste: "High-performance API services built with Hono on Cloudflare Workers. RPC-first architecture with automatic OpenAPI documentation."
+  - Click "Save"
+
+- [ ] **Add Website URL (2 min)**
+  - Find "Website" field (right sidebar)
+  - Enter: `https://api.do`
+  - Click "Save changes"
+
+- [ ] **Create Social Preview Image (15 min)**
+  - Create 1280x640px image with:
+    - Title: "api.do"
+    - Subtitle: "High-Performance API Services"
+    - Tech icons: Hono, Cloudflare, TypeScript
+    - Background: Blue gradient (#667eea → #764ba2)
+  - Upload via Settings → Social preview → Upload an image
+  - Verify preview displays correctly
+
+- [ ] **Verify Metadata**
+  - Topics appear below repository name
+  - About section visible on main page
+  - Website URL clickable
+  - Social preview displays when shared
+
+**Git Commands:**
+```bash
+# No git commits needed for Phase 1 (GitHub UI only)
+```
+
+---
+
+### db/ - Database Layer
+
+**Status:** ⬜
+**Time Estimate:** 35 minutes
+**Priority:** P0 (Foundation dependency)
+
+- [ ] **Add Topics (5 min)**
+  - Add: `database`, `postgresql`, `drizzle-orm`, `migrations`, `cloudflare-d1`, `neon`, `typescript`, `orm`
+
+- [ ] **Write About Section (10 min)**
+  - Paste: "Type-safe database layer using Drizzle ORM with PostgreSQL and Cloudflare D1. Automated migrations and query builders with 100% TypeScript coverage."
+
+- [ ] **Add Website URL (2 min)**
+  - Enter: `https://db.do`
+
+- [ ] **Create Social Preview Image (15 min)**
+  - Title: "db.do"
+  - Subtitle: "Type-Safe Database Layer"
+  - Tech icons: PostgreSQL, Drizzle, TypeScript
+  - Background: Purple gradient (#6B46C1 → #9333EA)
+
+- [ ] **Verify Metadata**
+
+---
+
+### workers/ - Microservices
+
+**Status:** ⬜
+**Time Estimate:** 35 minutes
+**Priority:** P0 (8/8 core services deployed)
+
+- [ ] **Add Topics (5 min)**
+  - Add: `microservices`, `cloudflare-workers`, `serverless`, `rpc`, `typescript`, `service-bindings`, `mcp`, `queue-processing`
+
+- [ ] **Write About Section (10 min)**
+  - Paste: "30+ microservice workers with RPC, HTTP, MCP, and Queue interfaces. 8/8 core services deployed with independent scaling and deployment."
+
+- [ ] **Add Website URL (2 min)**
+  - Enter: `https://workers.do`
+
+- [ ] **Create Social Preview Image (15 min)**
+  - Title: "workers.do"
+  - Subtitle: "30+ Microservice Workers"
+  - Visual: Grid of 8 service icons
+  - Background: Orange gradient (#F97316 → #FB923C)
+
+- [ ] **Verify Metadata**
+
+---
+
+### sdk/ - TypeScript SDK Packages
+
+**Status:** ⬜
+**Time Estimate:** 35 minutes
+**Priority:** P0 (121 packages, extensive reach)
+
+- [ ] **Add Topics (5 min)**
+  - Add: `sdk`, `typescript`, `npm-packages`, `api-client`, `code-generation`, `monorepo`, `pnpm`, `turborepo`
+
+- [ ] **Write About Section (10 min)**
+  - Paste: "121 TypeScript SDK packages in 5-layer dependency architecture. Zero-dependency foundation with universal AI tool adapters."
+
+- [ ] **Add Website URL (2 min)**
+  - Enter: `https://sdk.do`
+
+- [ ] **Create Social Preview Image (15 min)**
+  - Title: "sdk.do"
+  - Subtitle: "121 TypeScript SDK Packages"
+  - Visual: 5-layer pyramid diagram
+  - Background: Green gradient (#10B981 → #34D399)
+
+- [ ] **Verify Metadata**
+
+---
+
+### ai/ - AI Features
+
+**Status:** ⬜
+**Time Estimate:** 35 minutes
+**Priority:** P1 (High search interest)
+
+- [ ] **Add Topics (5 min)**
+  - Add: `ai`, `openai`, `anthropic`, `cloudflare-workers-ai`, `embeddings`, `vector-search`, `text-generation`, `typescript`
+
+- [ ] **Write About Section (10 min)**
+  - Paste: "Multi-provider AI toolkit for Cloudflare Workers supporting OpenAI, Anthropic, Google, and Workers AI. Unified interface for text generation, embeddings, and chat."
+
+- [ ] **Add Website URL (2 min)**
+  - Enter: `https://ai.do`
+
+- [ ] **Create Social Preview Image (15 min)**
+  - Title: "ai.do"
+  - Subtitle: "Multi-Provider AI Toolkit"
+  - Tech icons: OpenAI, Anthropic, Google, Cloudflare
+  - Background: Teal gradient (#14B8A6 → #2DD4BF)
+
+- [ ] **Verify Metadata**
+
+---
+
+### agent/ - AI Code Generation
+
+**Status:** ⬜
+**Time Estimate:** 35 minutes
+**Priority:** P1 (Unique offering)
+
+- [ ] **Add Topics (5 min)**
+  - Add: `ai`, `agents`, `code-generation`, `durable-objects`, `cloudflare-workers`, `typescript`, `autonomous-coding`, `openai`
+
+- [ ] **Write About Section (10 min)**
+  - Paste: "AI-powered code generation agent using Durable Objects for phase-wise autonomous coding. Generates production-ready code with 95%+ test coverage."
+
+- [ ] **Add Website URL (2 min)**
+  - Enter: `https://agent.do`
+
+- [ ] **Create Social Preview Image (15 min)**
+  - Title: "agent.do"
+  - Subtitle: "AI-Powered Code Generation"
+  - Visual: Robot icon + code symbols
+  - Background: Indigo gradient (#6366F1 → #818CF8)
+
+- [ ] **Verify Metadata**
+
+---
+
+### auth/ - Authentication Service
+
+**Status:** ⬜
+**Time Estimate:** 35 minutes
+**Priority:** P1 (Security critical)
+
+- [ ] **Add Topics (5 min)**
+  - Add: `authentication`, `oauth`, `api-keys`, `security`, `cloudflare-workers`, `workos`, `typescript`, `rbac`
+
+- [ ] **Write About Section (10 min)**
+  - Paste: "Authentication and authorization service with WorkOS integration. Supports OAuth, API keys, sessions, and role-based access control (RBAC)."
+
+- [ ] **Add Website URL (2 min)**
+  - Enter: `https://auth.do`
+
+- [ ] **Create Social Preview Image (15 min)**
+  - Title: "auth.do"
+  - Subtitle: "Authentication & Authorization"
+  - Visual: Lock icon + shield
+  - Background: Red gradient (#EF4444 → #F87171)
+
+- [ ] **Verify Metadata**
+
+---
+
+### app/ - CMS & Admin Dashboard
+
+**Status:** ⬜
+**Time Estimate:** 35 minutes
+**Priority:** P2 (Supporting service)
+
+- [ ] **Add Topics (5 min)**
+  - Add: `cms`, `payload-cms`, `admin`, `nextjs`, `cloudflare-pages`, `database`, `typescript`, `headless-cms`
+
+- [ ] **Write About Section (10 min)**
+  - Paste: "Modern CMS and admin dashboard powered by Payload CMS and Next.js. Deploy to Cloudflare Pages with D1 database backend."
+
+- [ ] **Add Website URL (2 min)**
+  - Enter: `https://app.do`
+
+- [ ] **Create Social Preview Image (15 min)**
+  - Title: "app.do"
+  - Subtitle: "CMS & Admin Dashboard"
+  - Tech icons: Payload, Next.js, Cloudflare
+  - Background: Pink gradient (#EC4899 → #F472B6)
+
+- [ ] **Verify Metadata**
+
+---
+
+**Phase 1 Complete Check:**
+- [ ] All 8 repositories have 5-8 topics
+- [ ] All 8 repositories have About sections (under 120 chars)
+- [ ] All 8 repositories have website URLs
+- [ ] All 8 repositories have social preview images (1280x640px)
+- [ ] No typos or errors in metadata
+
+**Phase 1 Total Time:** 4.7 hours
+
+---
+
+## Phase 2: README Enhancements (10.0 hours)
+
+### All 8 Repositories: Badge Sections (10 min each = 80 min)
+
+**For EACH repository (api, db, workers, sdk, ai, agent, auth, app):**
+
+- [ ] **Edit README.md**
+  - Navigate to repository on GitHub
+  - Click README.md → Edit (pencil icon)
+  - Add after H1 title:
+
+```markdown
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Stars](https://img.shields.io/github/stars/dot-do/[repo-name]?style=social)](https://github.com/dot-do/[repo-name])
+[![Build Status](https://github.com/dot-do/[repo-name]/actions/workflows/ci.yml/badge.svg)](https://github.com/dot-do/[repo-name]/actions)
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange.svg)](https://workers.cloudflare.com/)
+```
+
+  - Replace `[repo-name]` with actual repository name
+  - Commit directly to main or create branch
+
+---
+
+### Core Repos (5): Quick Start Sections (15 min each = 75 min)
+
+**Repositories:** api, db, sdk, ai, agent
+
+- [ ] **api/ - Add Quick Start (15 min)**
+  - Add section after Features:
+
+```markdown
+## Quick Start
+
+### Prerequisites
+
+- Node.js 20+ and pnpm 9+
+- Cloudflare account
+- Database URL (PostgreSQL via Neon)
+
+### Installation
+
+\`\`\`bash
+git clone https://github.com/dot-do/api.git
+cd api
+pnpm install
+cp .dev.vars.example .dev.vars
+# Edit .dev.vars with your configuration
+pnpm dev
+\`\`\`
+
+### Example Usage
+
+\`\`\`typescript
+import { Hono } from 'hono'
+
+const app = new Hono()
+
+app.get('/api/things/:id', async (c) => {
+  const id = c.req.param('id')
+  const thing = await env.DB.getThing(id)
+  return c.json(thing)
+})
+\`\`\`
+```
+
+- [ ] **db/ - Add Quick Start (15 min)**
+- [ ] **sdk/ - Add Quick Start (15 min)**
+- [ ] **ai/ - Add Quick Start (15 min)**
+- [ ] **agent/ - Add Quick Start (15 min)**
+
+---
+
+### Core Repos (5): Usage Examples (20 min each = 100 min)
+
+**Repositories:** api, db, sdk, ai, agent
+
+- [ ] **api/ - Add Usage Examples (20 min)**
+  - Add section with 2-3 realistic code examples
+  - Include RPC examples
+  - Include HTTP endpoint examples
+
+- [ ] **db/ - Add Usage Examples (20 min)**
+- [ ] **sdk/ - Add Usage Examples (20 min)**
+- [ ] **ai/ - Add Usage Examples (20 min)**
+- [ ] **agent/ - Add Usage Examples (20 min)**
+
+---
+
+### Infrastructure Repos (3): Architecture Diagrams (30 min each = 90 min)
+
+**Repositories:** api, db, workers
+
+- [ ] **api/ - Add Architecture Diagram (30 min)**
+  - Use ASCII diagram from `/notes/2025-10-03-architecture-diagrams.md`
+  - Copy "api.do - Gateway Routing Pattern" section
+  - Paste into README after Features or before Configuration
+  - Add description text explaining request flow
+
+- [ ] **db/ - Add Architecture Diagram (30 min)**
+  - Use "db.do - Database Layer with RPC Access" diagram
+  - Include description of dual storage (PostgreSQL + ClickHouse)
+
+- [ ] **workers/ - Add Architecture Diagram (30 min)**
+  - Use "workers.do - Microservices Ecosystem" diagram
+  - Include table of 8 core services with status
+
+---
+
+### All 8 Repositories: Contributing Guidelines (10 min each = 80 min)
+
+- [ ] **Add Contributing Section to README**
+  - Template:
+
+```markdown
+## Contributing
+
+We welcome contributions! Here's how to get started:
+
+1. Fork the repository
+2. Create a branch: `git checkout -b feature/your-feature-name`
+3. Install dependencies: `pnpm install`
+4. Make your changes
+5. Run tests: `pnpm test`
+6. Commit: `git commit -m "feat: add new feature"`
+7. Push: `git push origin feature/your-feature-name`
+8. Open a Pull Request
+
+### Commit Convention
+
+- `feat:` New features
+- `fix:` Bug fixes
+- `docs:` Documentation changes
+- `refactor:` Code refactoring
+- `test:` Test additions/changes
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
+```
+
+**Apply to:** api, db, workers, sdk, ai, agent, auth, app
+
+---
+
+### All 8 Repositories: Related Repositories (10 min each = 80 min)
+
+- [ ] **Add "Related Repositories" Section**
+  - Template:
+
+```markdown
+## Related Repositories
+
+This repository is part of the .do ecosystem:
+
+### Core Infrastructure
+- [**api**](https://github.com/dot-do/api) - API services (Hono, Workers)
+- [**db**](https://github.com/dot-do/db) - Database layer (Drizzle, PostgreSQL)
+- [**ai**](https://github.com/dot-do/ai) - AI features (OpenAI, Workers AI)
+- [**agent**](https://github.com/dot-do/agent) - AI code generation (Durable Objects)
+- [**sdk**](https://github.com/dot-do/sdk) - TypeScript SDK packages (121 total)
+
+### Applications
+- [**app**](https://github.com/dot-do/app) - Admin CMS (Payload, Next.js)
+
+### Workers
+- [**workers**](https://github.com/dot-do/workers) - 30+ microservices
+
+See [.do GitHub Organization](https://github.com/dot-do) for all repositories.
+```
+
+**Apply to:** api, db, workers, sdk, ai, agent, auth, app
+
+---
+
+**Phase 2 Completion:**
+
+**Git Commands for Each Repo:**
+```bash
+# After editing README
+cd [repo-name]
+git add README.md
+git commit -m "docs: enhance README with badges, quick start, and examples"
+git push origin main
+```
+
+**Phase 2 Complete Check:**
+- [ ] All 8 repos have badge sections
+- [ ] 5 core repos have Quick Start sections
+- [ ] 5 core repos have usage examples
+- [ ] 3 infrastructure repos have architecture diagrams
+- [ ] All 8 repos have contributing guidelines
+- [ ] All 8 repos have related repositories section
+- [ ] All changes committed and pushed
+
+**Phase 2 Total Time:** 10.0 hours
+
+---
+
+## Phase 3: CI/CD Setup (4.5 hours)
+
+### All 8 Repositories: GitHub Actions CI (20 min each = 2.7 hours)
+
+**For EACH repository:**
+
+- [ ] **Create `.github/workflows/ci.yml`**
+  - Navigate to repository
+  - Create new file: `.github/workflows/ci.yml`
+  - Paste:
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Type check
+        run: pnpm check-types
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+```
+
+  - Commit: "ci: add GitHub Actions workflow"
+  - Verify workflow runs successfully (check Actions tab)
+
+**Apply to:** api, db, workers, sdk, ai, agent, auth, app
+
+---
+
+### All 8 Repositories: Dependabot (10 min each = 1.3 hours)
+
+**For EACH repository:**
+
+- [ ] **Create `.github/dependabot.yml`**
+  - Create new file: `.github/dependabot.yml`
+  - Paste:
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore"
+```
+
+  - Commit: "chore: configure Dependabot for automated dependency updates"
+
+**Apply to:** api, db, workers, sdk, ai, agent, auth, app
+
+---
+
+### Package Repos (5): Release Automation (15 min each = 1.3 hours)
+
+**Repositories:** api, db, sdk, ai, agent
+
+- [ ] **Create `.github/workflows/release.yml`**
+  - Template:
+
+```yaml
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm test
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+```
+
+  - Commit: "ci: add release automation workflow"
+
+**Apply to:** api, db, sdk, ai, agent
+
+---
+
+**Phase 3 Complete Check:**
+- [ ] All 8 repos have `.github/workflows/ci.yml`
+- [ ] All CI workflows pass (green badges)
+- [ ] All 8 repos have `.github/dependabot.yml`
+- [ ] 5 package repos have release automation
+- [ ] All changes committed and pushed
+
+**Phase 3 Total Time:** 4.5 hours
+
+---
+
+## Phase 4: Documentation Links (2.0 hours)
+
+### All 8 Repositories: Documentation Links (15 min each = 2 hours)
+
+**For EACH repository:**
+
+- [ ] **Add Documentation Section**
+  - Edit README.md
+  - Add before "Related Repositories":
+
+```markdown
+## Documentation
+
+- **[Development Guide](./CLAUDE.md)** - For contributors
+- **[API Reference](./docs/API.md)** - Complete API documentation
+- **[Architecture](./docs/ARCHITECTURE.md)** - System design
+- **[Examples](./examples/)** - Code examples
+
+**Full Docs:** [https://[repo].do/docs](https://[repo].do/docs)
+```
+
+- [ ] **Update README Footer**
+  - Replace footer with:
+
+```markdown
+---
+
+**Part of the [.do ecosystem](https://github.com/dot-do/.do)** | [Documentation](https://docs.do) | [Discord](https://discord.gg/dotdo)
+
+**Built with:** [Tech Stack] | **Deployed on:** Cloudflare Workers
+```
+
+- [ ] **Commit Changes**
+  ```bash
+  git add README.md
+  git commit -m "docs: add documentation links and footer"
+  git push origin main
+  ```
+
+**Apply to:** api, db, workers, sdk, ai, agent, auth, app
+
+---
+
+**Phase 4 Complete Check:**
+- [ ] All 8 repos have documentation links
+- [ ] All 8 repos have updated footers
+- [ ] All links are valid (no 404s)
+- [ ] All changes committed and pushed
+
+**Phase 4 Total Time:** 2.0 hours
+
+---
+
+## Final Quality Assurance (2 hours)
+
+### Comprehensive Testing
+
+- [ ] **Metadata Verification**
+  - Visit each repository on GitHub
+  - Verify About section displays
+  - Verify topics appear correctly
+  - Verify website URL is clickable
+  - Verify social preview on Twitter/LinkedIn
+
+- [ ] **README Verification**
+  - All badges link to correct URLs
+  - All badges display correctly (not 404)
+  - Code examples have correct syntax highlighting
+  - Internal links work (no 404s)
+  - Architecture diagrams render properly
+
+- [ ] **CI/CD Verification**
+  - Check Actions tab for each repo
+  - Verify latest workflow runs passed
+  - Green badges in README
+  - No failing tests
+
+- [ ] **Cross-Repository Navigation**
+  - Click "Related Repositories" links
+  - Verify bidirectional linking works
+  - Check footer links
+
+- [ ] **Mobile Responsiveness**
+  - View READMEs on mobile device
+  - Verify diagrams are readable
+  - Check badge display
+
+---
+
+## Deployment Summary
+
+### Total Time by Phase
+
+| Phase | Tasks | Time Estimate | Actual Time |
+|-------|-------|---------------|-------------|
+| Phase 1: Metadata | 40 items | 4.7 hours | _____ hours |
+| Phase 2: READMEs | 48 items | 10.0 hours | _____ hours |
+| Phase 3: CI/CD | 21 items | 4.5 hours | _____ hours |
+| Phase 4: Links | 16 items | 2.0 hours | _____ hours |
+| QA Testing | - | 2.0 hours | _____ hours |
+| **TOTAL** | **125 items** | **23.2 hours** | **_____ hours** |
+
+### Success Metrics
+
+**Completion Rate:**
+- [ ] 100% of repositories have complete metadata
+- [ ] 100% of repositories have enhanced READMEs
+- [ ] 100% of repositories have CI/CD pipelines
+- [ ] 100% of repositories have documentation links
+
+**Quality Metrics:**
+- [ ] 0 broken links across all READMEs
+- [ ] 100% CI workflows passing
+- [ ] All social previews display correctly
+- [ ] Mobile-responsive documentation
+
+---
+
+## Rollback Procedure
+
+If any changes cause issues:
+
+**Immediate Rollback:**
+```bash
+cd [repo-name]
+git log --oneline  # Find commit before changes
+git revert [commit-hash]  # Revert specific commit
+git push origin main
+```
+
+**Full Rollback:**
+```bash
+# Reset to state before enhancement
+git reset --hard [pre-enhancement-commit]
+git push origin main --force  # USE WITH CAUTION
+```
+
+**Partial Rollback:**
+```bash
+# Revert specific file
+git checkout [commit-hash] -- README.md
+git commit -m "revert: rollback README changes"
+git push origin main
+```
+
+---
+
+## Post-Deployment Actions
+
+### Week 1
+- [ ] Monitor GitHub Insights for traffic changes
+- [ ] Check GitHub stars/forks growth
+- [ ] Review community feedback (issues, PRs)
+- [ ] Fix any reported broken links or issues
+
+### Week 2-4
+- [ ] Measure backlink growth (Ahrefs/Semrush)
+- [ ] Track awesome list submissions
+- [ ] Analyze referral traffic (Google Analytics)
+- [ ] Iterate based on metrics
+
+### Monthly
+- [ ] Update READMEs with new features
+- [ ] Refresh architecture diagrams if needed
+- [ ] Review and respond to community contributions
+- [ ] Quarterly comprehensive audit
+
+---
+
+**Checklist Status:**
+- **Started:** [Date]
+- **Completed:** [Date]
+- **Total Hours:** [Actual]
+- **Issues Encountered:** [List]
+
+---
+
+**Owner:** Subagent D2 - Repository Enhancement Execution
+**Parent Issue:** #150 (Phase 4)
+**Documentation:** See implementation plan and templates in `/notes/` and `/templates/`

@@ -1,0 +1,306 @@
+---
+title: Domain Comparison - Live vs Code
+date: 2025-10-04T12:30:39.300Z
+tags: [domains, comparison, migration]
+---
+
+# Domain Comparison: Live vs Code
+
+**Generated:** 2025-10-04T12:30:39.300Z
+
+## Summary
+
+### All Domains
+
+- **In Both:** 73 domains (exist in Cloudflare/Vercel AND in code)
+- **In Code Only:** 93 domains (defined in code but NOT in Cloudflare/Vercel)
+- **In Live Only:** 358 domains (exist in Cloudflare/Vercel but NOT in code)
+
+### .do Domains (Migration Focus)
+
+- **In Both:** 71 domains ✅
+- **In Code Only:** 85 domains ⚠️
+- **In Live Only:** 34 domains 🔍
+
+## .do Domains in Both (71)
+
+These domains exist in Cloudflare AND are configured in code:
+
+- **action.do**
+- **actions.do**
+- **agents.do** → `agents`
+- **agi.do**
+- **amy.do**
+- **analytics.do**
+- **apis.do**
+- **ari.do**
+- **bdr.do**
+- **benchmarks.do**
+- **bots.do**
+- **browse.do**
+- **browser.do**
+- **browsers.do**
+- **careers.do**
+- **cfo.do**
+- **colo.do**
+- **coo.do**
+- **cro.do**
+- **ctx.do**
+- **dara.do**
+- **database.do**
+- **databases.do**
+- **documentation.do** → `docs`
+- **emails.do**
+- **esbuild.do**
+- **evals.do**
+- **experiments.do**
+- **extract.do**
+- **function.do**
+- **functions.do** → `functions`
+- **gcp.do**
+- **gpt.do**
+- **graph.do** → `graphs`
+- **humans.do**
+- **integrations.do**
+- **issues.do**
+- **ivy.do**
+- **kpis.do**
+- **lena.do**
+- **lexi.do**
+- **lists.do**
+- **llm.do**
+- **lodash.do**
+- **mcp.do** → `mcp`
+- **mdx.do**
+- **models.do**
+- **nouns.do**
+- **oauth.do**
+- **okrs.do**
+- **perf.do**
+- **pkg.do**
+- **prxy.do**
+- **queue.do** → `queue`
+- **research.do**
+- **sdk.do**
+- **sdr.do**
+- **searches.do**
+- **sites.do**
+- **studio.do**
+- **svc.do**
+- **tasks.do**
+- **trace.do**
+- **traces.do**
+- **trigger.do**
+- **triggers.do**
+- **verbs.do**
+- **webhooks.do**
+- **worker.do**
+- **workers.do**
+- **workflows.do** → `workflows`
+
+## .do Domains Mapped to Services (7)
+
+These are **prime candidates for migration to api handler**:
+
+- **agents.do** → `agents`
+- **documentation.do** → `docs`
+- **functions.do** → `functions`
+- **graph.do** → `graphs`
+- **mcp.do** → `mcp`
+- **queue.do** → `queue`
+- **workflows.do** → `workflows`
+
+## .do Domains in Code Only (85)
+
+These are defined in code but NOT in Cloudflare/Vercel:
+
+- agent.do
+- ai.do
+- api.do
+- ast.do
+- auth.do
+- barcode.do
+- batch.do
+- billing.do
+- blogs.do
+- claude-code.do
+- claude.do
+- clickhouse.do
+- cmo.do
+- code.do
+- container.do
+- containers.do
+- cpo.do
+- crawl.do
+- cto.do
+- dash.do
+- dashboard.do
+- db.apis.do
+- dealers.do
+- doc.do
+- docs.do
+- domain.do
+- domains.do
+- embeddings.do
+- eval.do
+- evaluate.do
+- event.do
+- events.do
+- exec.do
+- find.do
+- fn.do
+- generate.do
+- git.do
+- github.do
+- graphs.do
+- llms.do
+- load.do
+- loadtest.do
+- login.do
+- markdown.do
+- marketplace.do
+- md.do
+- nat.do
+- nats.do
+- objects.do
+- payload.do
+- payments.do
+- pdm.do
+- photos.do
+- programmers.do
+- q.do
+- qrcode.do
+- repo.do
+- requests.do
+- responses.do
+- run.do
+- sandbox.do
+- sandboxes.do
+- scrape.do
+- scraper.do
+- search.do
+- services.do
+- slack.do
+- speak.do
+- sso.do
+- state.do
+- store.do
+- stripe.do
+- swe.do
+- tom.do
+- util.do
+- utils.do
+- vapi.do
+- vectors.do
+- vehicle.do
+- vera.do
+- voice.do
+- waitlist.do
+- webhook.do
+- workflow.do
+- workos.do
+
+**Action:** These may be:
+- Planned but not yet purchased
+- On a different platform (not Cloudflare/Vercel)
+- Aliases that redirect elsewhere
+- Old/deprecated entries that should be removed
+
+## .do Domains in Cloudflare Only (34)
+
+These exist in Cloudflare but are NOT configured in code:
+
+<details>
+<summary>Click to expand (34 domains)</summary>
+
+- 402.do
+- ach.do
+- airtable.do
+- businesses.do
+- cli.do
+- cname.do
+- coach.do
+- companies.do
+- context.do
+- d1.do
+- datasets.do
+- devs.do
+- fetch.do
+- goals.do
+- kafka.do
+- mongo.do
+- mqtt.do
+- okr.do
+- pages.do
+- plans.do
+- products.do
+- projects.do
+- reference.do
+- resources.do
+- rpa.do
+- scrapers.do
+- sdb.do
+- src.do
+- startups.do
+- summarize.do
+- thinking.do
+- transform.do
+- vehicles.do
+- ymm.do
+
+</details>
+
+**Action:** These need to be:
+1. Added to code configuration if they should route through api handler
+2. Or documented if they serve a different purpose
+3. Or deprecated if no longer needed
+
+## Non-.do Domains in Live (Top TLDs)
+
+- **.com:** 34 domains
+- **.studio:** 30 domains
+- **.vin:** 27 domains
+- **.dev:** 22 domains
+- **.cfd:** 19 domains
+- **.ng:** 16 domains
+- **.ai:** 13 domains
+- **.se:** 13 domains
+- **.md:** 13 domains
+- **.management:** 11 domains
+
+## Migration Strategy
+
+### Phase 1: Safe Migration (Ready Now)
+
+Migrate these **7 .do domains** that are:
+- ✅ In Cloudflare
+- ✅ Mapped to services in code
+- ✅ Part of API routing config
+
+### Phase 2: Review & Add (Need Decision)
+
+For the **34 .do domains in Cloudflare only**:
+1. Review each domain's current use
+2. Decide: migrate to api handler, keep as-is, or deprecate
+3. Add to code config if migrating
+
+### Phase 3: Cleanup (Optional)
+
+For the **85 .do domains in code only**:
+1. Verify they exist somewhere (other platform?)
+2. Remove from code if deprecated
+3. Purchase and configure if needed
+
+## Next Steps
+
+1. **Create sites/ structure** for 7 ready domains
+2. **Test routing logic** in api worker
+3. **Gradual rollout** starting with non-critical domains
+4. **Monitor** for any issues
+
+---
+
+**Related:**
+- [Code Analysis](./2025-10-04-domain-analysis.md)
+- [Live Domains Inventory](./2025-10-04-live-domains-inventory.md)
+- Issue #2

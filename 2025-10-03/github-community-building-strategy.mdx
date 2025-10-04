@@ -1,0 +1,1336 @@
+# GitHub Community Building & Engagement Strategy
+
+**Date:** October 3, 2025
+**Subagent:** D4 - GitHub Community Building
+**Status:** Complete - Production Ready
+**Timeline:** 27-34 hours of work
+
+---
+
+## Executive Summary
+
+This comprehensive community building strategy transforms the dot-do GitHub organization into a thriving developer community. Based on analysis of successful open source projects (Stripe, Vercel, Supabase, Kubernetes) and competitive research, this plan provides:
+
+1. **GitHub Discussions Setup** - Complete category structure with 10 pinned discussions
+2. **Issue & PR Templates** - 5 production-ready templates for deployment
+3. **Contribution Workflows** - Contributor ladder, recognition system, automation
+4. **Multi-Channel Strategy** - Discord, Twitter, Reddit, Dev.to, Hacker News
+5. **Contributor Onboarding** - 10-step journey from discovery to recognition
+
+**Expected Impact:**
+- 100+ contributors in Year 1
+- Active community engagement (50+ discussions/month)
+- 50+ "good first issues" created
+- 200+ merged PRs from external contributors
+- Self-sustaining community by Month 12
+
+**Success Metrics:**
+- Issue response time: <48 hours (target)
+- PR review time: <7 days (target)
+- PR merge rate: >70% (target)
+- New contributors: 10+/month (target)
+- Returning contributors: 40%+ (target)
+
+---
+
+## Table of Contents
+
+1. [Multi-Channel Community Strategy](#1-multi-channel-community-strategy)
+2. [GitHub Discussions Setup](#2-github-discussions-setup)
+3. [Issue & PR Templates](#3-issue--pr-templates)
+4. [Contribution Workflows](#4-contribution-workflows)
+5. [External Community Channels](#5-external-community-channels)
+6. [Contributor Onboarding Journey](#6-contributor-onboarding-journey)
+7. [Engagement Calendar & Tactics](#7-engagement-calendar--tactics)
+8. [Success Metrics & Tracking](#8-success-metrics--tracking)
+
+---
+
+## 1. Multi-Channel Community Strategy
+
+### 1.1 Channel Hierarchy
+
+**Primary Hub: GitHub Organization**
+- Source of truth for code, issues, discussions
+- All other channels feed back to GitHub
+- DA 95+ (github.io), highest SEO authority
+
+**Secondary Channels:**
+- Discord (real-time chat, support, community)
+- Twitter (announcements, tips, engagement)
+- Dev.to (content syndication, backlinks)
+- Reddit (niche community participation)
+- Stack Overflow (technical Q&A, expertise)
+
+**Tertiary Channels:**
+- Hacker News (major releases, Show HN)
+- LinkedIn (professional updates, hiring)
+- YouTube (video tutorials, walkthroughs)
+- Newsletter (monthly updates, digest)
+
+### 1.2 Content Flow Strategy
+
+```
+GitHub Blog Post (Primary)
+    ↓
+Syndicate within 24 hours:
+├─→ Dev.to (canonical URL to GitHub)
+├─→ Hashnode (canonical URL to GitHub)
+├─→ Twitter (link + excerpt)
+└─→ Discord announcement
+
+Engage within 48 hours:
+├─→ Reddit (relevant subreddit)
+├─→ Hacker News (if major announcement)
+└─→ Stack Overflow (answer related questions)
+
+Follow-up within 1 week:
+├─→ Medium (1 week delay for SEO)
+├─→ LinkedIn (professional angle)
+└─→ Newsletter (if monthly)
+```
+
+### 1.3 Cross-Channel Moderation
+
+**Unified Code of Conduct:**
+- Same guidelines across all channels
+- Consistent enforcement
+- Escalation path: warning → temporary ban → permanent ban
+
+**Moderation Team:**
+- 2-3 core team members
+- 3-5 community moderators (selected from active contributors)
+- Weekly moderation sync meeting
+- Shared moderation tools (Discord, GitHub discussions)
+
+**Response Time Targets:**
+- Questions: <24 hours first response
+- Issues: <48 hours triage and label
+- PRs: <7 days first review
+- CoC violations: <2 hours response
+
+---
+
+## 2. GitHub Discussions Setup
+
+### 2.1 Category Structure
+
+Enable GitHub Discussions on these repositories:
+- **dot-do/.do** (organization-wide hub)
+- **dot-do/workers** (microservices discussions)
+- **dot-do/sdk** (SDK usage questions)
+- **dot-do/api** (API-specific topics)
+- **dot-do/db** (database discussions)
+
+**Categories to Create:**
+
+| Category | Purpose | Format | Permissions |
+|----------|---------|--------|-------------|
+| 📢 **Announcements** | Official updates from team | Announcement | Maintainers only post |
+| 💬 **General** | Casual conversation | Open discussion | Anyone can post |
+| 💡 **Ideas** | Feature requests, suggestions | Open discussion | Anyone can post |
+| ❓ **Q&A** | Questions with answers | Q&A (mark answer) | Anyone can post |
+| 🎨 **Show and Tell** | Community projects | Open discussion | Anyone can post |
+| 🐛 **Bug Reports** | Bug discussion (before issue) | Open discussion | Anyone can post |
+| 📚 **Documentation** | Docs feedback | Open discussion | Anyone can post |
+| 🏗️ **Architecture** | Technical architecture | Open discussion | Anyone can post |
+| 🔌 **Integrations** | Third-party integrations | Open discussion | Anyone can post |
+
+### 2.2 First 10 Pinned Discussions
+
+Full markdown for each discussion included in separate document (see Section 2 of main deliverable).
+
+**Summary:**
+1. **Welcome to .do Community!** (Introduction, rules, resources)
+2. **FAQ - Frequently Asked Questions** (Common Q&A, troubleshooting)
+3. **Getting Started Guide** (Onboarding walkthrough)
+4. **Roadmap & What's Coming** (2025-2026 plans)
+5. **How to Contribute** (Contribution guide summary)
+6. **Show Your Project** (Community showcase)
+7. **Feature Requests Process** (How to suggest features)
+8. **Community Resources** (Discord, Twitter, docs, blog)
+9. **Good First Issues** (Easy contributions for newcomers)
+10. **Monthly Community Call** (Virtual meetup info)
+
+### 2.3 Discussion Guidelines
+
+**Posting Guidelines:**
+- Search before posting (avoid duplicates)
+- Use clear, descriptive titles
+- Provide context and details
+- Be respectful and constructive
+- Mark answers in Q&A discussions
+- Stay on topic in each category
+
+**Etiquette:**
+- No spam, self-promotion without value
+- No offensive language or harassment
+- No sharing private information
+- No off-topic political discussions
+- Credit sources and give attribution
+- Help others when you can
+
+**Enforcement:**
+- First violation: Warning + guidance
+- Second violation: Temporary discussion ban (7 days)
+- Third violation: Permanent ban
+- Severe violations (harassment, spam): Immediate permanent ban
+
+### 2.4 Engagement Strategy
+
+**Weekly Activities:**
+- Monday: Feature spotlight (highlight a .do feature)
+- Wednesday: Community highlight (showcase a user project)
+- Friday: Weekly recap (week's updates, releases, highlights)
+
+**Monthly Activities:**
+- First Tuesday: Monthly community call (virtual meetup)
+- Third Thursday: AMA (Ask Me Anything) with team
+- Last Friday: Community contributor spotlight
+
+**Quarterly Activities:**
+- Q1, Q2, Q3, Q4: Roadmap update and discussion
+- Virtual contributor summit (once per year)
+
+---
+
+## 3. Issue & PR Templates
+
+### 3.1 Issue Template: Bug Report
+
+**File:** `.github/ISSUE_TEMPLATE/bug_report.md`
+
+```markdown
+---
+name: Bug Report
+about: Report a bug or unexpected behavior
+title: '[BUG] '
+labels: 'bug, needs-triage'
+assignees: ''
+---
+
+## Bug Description
+A clear and concise description of what the bug is.
+
+## Steps to Reproduce
+1. Go to '...'
+2. Run command '....'
+3. See error
+
+## Expected Behavior
+What you expected to happen.
+
+## Actual Behavior
+What actually happened.
+
+## Environment
+- **OS:** [e.g., macOS 14.1, Ubuntu 22.04, Windows 11]
+- **Node.js version:** [e.g., 18.17.0]
+- **pnpm version:** [e.g., 8.6.0]
+- **Package:** [e.g., @dot-do/workers]
+- **Package version:** [e.g., 1.2.3]
+
+## Additional Context
+Add any other context about the problem here (screenshots, logs, etc.).
+
+## Logs
+```
+Paste relevant logs here
+```
+```
+
+---
+
+### 3.2 Issue Template: Feature Request
+
+**File:** `.github/ISSUE_TEMPLATE/feature_request.md`
+
+```markdown
+---
+name: Feature Request
+about: Suggest a new feature or improvement
+title: '[FEATURE] '
+labels: 'enhancement, needs-discussion'
+assignees: ''
+---
+
+## Feature Description
+A clear and concise description of the feature you'd like to see.
+
+## Problem / Use Case
+What problem does this feature solve? What use case does it enable?
+
+## Proposed Solution
+How would you like this feature to work? Include code examples if applicable.
+
+```typescript
+// Example usage
+const result = await newFeature.doSomething()
+```
+
+## Alternatives Considered
+Are there alternative solutions or workarounds you've considered?
+
+## Additional Context
+Add any other context, screenshots, mockups, or examples about the feature request here.
+
+## Willingness to Contribute
+- [ ] I'm willing to contribute this feature
+- [ ] I'm willing to test this feature
+- [ ] I'm just suggesting an idea
+
+## Priority (From Your Perspective)
+- [ ] Critical - Blocking my use of .do
+- [ ] High - Would significantly improve my workflow
+- [ ] Medium - Nice to have
+- [ ] Low - Small improvement
+```
+
+---
+
+### 3.3 Issue Template: Question
+
+**File:** `.github/ISSUE_TEMPLATE/question.md`
+
+```markdown
+---
+name: Question
+about: Ask a question (or use GitHub Discussions)
+title: '[QUESTION] '
+labels: 'question'
+assignees: ''
+---
+
+> **Note:** For questions, we recommend using [GitHub Discussions](https://github.com/orgs/dot-do/discussions) instead of issues. You'll get faster responses and help the community learn together!
+
+## Question
+What would you like to know?
+
+## Context
+Provide context for your question. What are you trying to accomplish?
+
+## What I've Tried
+What have you already tried? Where have you looked for an answer?
+
+- [ ] Searched documentation (docs.do)
+- [ ] Searched GitHub Issues
+- [ ] Searched GitHub Discussions
+- [ ] Searched Stack Overflow
+- [ ] Checked examples in repository
+
+## Environment (if relevant)
+- **OS:** [e.g., macOS]
+- **Node.js version:** [e.g., 18.17.0]
+- **Package version:** [e.g., 1.0.0]
+
+## Additional Context
+Code snippets, screenshots, or any other helpful information.
+```
+
+---
+
+### 3.4 Issue Template Config
+
+**File:** `.github/ISSUE_TEMPLATE/config.yml`
+
+```yaml
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/orgs/dot-do/discussions
+    about: Ask questions and discuss with the community
+  - name: 📚 Documentation
+    url: https://docs.do
+    about: Check our comprehensive documentation
+  - name: 💬 Discord Community
+    url: https://discord.gg/dotdo
+    about: Chat with the community in real-time
+  - name: 🔒 Security Issue
+    url: https://github.com/dot-do/.do/security/advisories/new
+    about: Report a security vulnerability (private)
+```
+
+---
+
+### 3.5 Pull Request Template
+
+**File:** `.github/pull_request_template.md`
+
+```markdown
+## Description
+Brief description of what this PR does and why.
+
+## Type of Change
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+- [ ] Refactoring (no functional changes)
+- [ ] Performance improvement
+- [ ] Test update
+- [ ] Dependency update
+- [ ] CI/CD update
+
+## Related Issues
+- Closes #(issue number)
+- Relates to #(issue number)
+- Depends on #(PR number)
+
+## Changes Made
+- Change 1: Description
+- Change 2: Description
+- Change 3: Description
+
+## Testing
+How has this been tested? Please describe the tests you ran.
+
+- [ ] Unit tests
+- [ ] Integration tests
+- [ ] End-to-end tests
+- [ ] Manual testing
+
+**Test Coverage:**
+- Coverage before: _%
+- Coverage after: _%
+
+## Screenshots (if applicable)
+Add screenshots to help reviewers understand your changes.
+
+## Checklist
+Before submitting, please ensure:
+
+- [ ] My code follows the style guidelines of this project
+- [ ] I have performed a self-review of my own code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings or errors
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] New and existing unit tests pass locally with my changes
+- [ ] Any dependent changes have been merged and published
+- [ ] I have updated the CHANGELOG.md (if applicable)
+
+## Breaking Changes
+List any breaking changes and migration steps (if applicable).
+
+## Additional Notes
+Any additional information that reviewers should know.
+
+## Reviewer Guidance
+What should reviewers focus on?
+```
+
+---
+
+## 4. Contribution Workflows
+
+### 4.1 Contributor Ladder
+
+**Level 1: New Contributor**
+- **Requirements:** First PR submitted
+- **Perks:**
+  - Welcome message from bot
+  - Listed in CONTRIBUTORS.md
+  - Special "first-time contributor" badge on PR
+- **Mentorship:** Assigned a mentor for first PR review
+
+**Level 2: Regular Contributor**
+- **Requirements:** 5+ merged PRs
+- **Perks:**
+  - Listed in README.md contributors section
+  - Discord "Contributor" role
+  - Early access to beta features (opt-in)
+  - Monthly contributor newsletter
+- **Responsibilities:** Help review other contributors' PRs (optional)
+
+**Level 3: Core Contributor**
+- **Requirements:** 20+ merged PRs, domain expertise in 1+ areas
+- **Perks:**
+  - Triage permissions on repositories
+  - Listed in MAINTAINERS.md
+  - Discord "Core Team" role
+  - Invited to monthly planning meetings
+  - Swag package (t-shirt, stickers, laptop stickers)
+- **Responsibilities:**
+  - Help triage issues (label, assign, close)
+  - Review PRs in area of expertise
+  - Participate in architecture discussions
+
+**Level 4: Maintainer**
+- **Requirements:** 50+ merged PRs, consistent contribution over 6+ months, trusted by team
+- **Perks:**
+  - Full commit access to repositories
+  - GitHub org "Member" status
+  - Listed as co-maintainer
+  - Access to all private repositories
+  - Invited to all team meetings
+  - Optional paid consulting opportunities
+- **Responsibilities:**
+  - Merge PRs (after review)
+  - Manage releases
+  - Respond to critical issues
+  - Mentor other contributors
+  - Help set roadmap direction
+
+### 4.2 "Good First Issue" Process
+
+**Issue Identification:**
+1. **Criteria for "good first issue":**
+   - Small scope (can be completed in 2-4 hours)
+   - Well-defined (clear acceptance criteria)
+   - Documented (enough context to start)
+   - Low risk (won't break critical functionality)
+   - Requires no deep codebase knowledge
+
+2. **Label and Document:**
+   ```markdown
+   ## Good First Issue: [Description]
+
+   This is a great first contribution! It's small, well-defined, and you'll get a feel for our codebase.
+
+   **What to do:**
+   - Step 1: ...
+   - Step 2: ...
+   - Step 3: ...
+
+   **Where to look:**
+   - File: `path/to/file.ts`
+   - Related: #issue-number
+
+   **Mentorship:**
+   @username is available to help! Comment on this issue to get started.
+
+   **Resources:**
+   - [Contributing Guide](link)
+   - [Development Setup](link)
+   - [Code Style Guide](link)
+   ```
+
+3. **Mentorship Assignment:**
+   - Assign a maintainer as mentor
+   - Mentor commits to respond within 24 hours
+   - Mentor helps with questions, reviews PR, provides guidance
+
+**Target: 50+ Good First Issues**
+- Database optimization (10 issues)
+- Documentation improvements (15 issues)
+- Test coverage (10 issues)
+- Example projects (5 issues)
+- Bug fixes (10 issues)
+
+### 4.3 Recognition & Rewards System
+
+**Immediate Recognition:**
+- First PR merged: 🎉 celebration comment + welcome
+- 5 PRs merged: Thanks comment + contributor badge
+- 10 PRs merged: Highlight in monthly recap
+- 20 PRs merged: Featured in blog post + swag offer
+
+**Monthly Recognition:**
+- **Contributor of the Month:** Highlighted on Twitter, blog, Discord
+- Criteria: Most impactful contribution (quality > quantity)
+- Reward: Swag package, LinkedIn recommendation, blog spotlight
+
+**Quarterly Recognition:**
+- **Top 5 Contributors:** Listed in quarterly review blog post
+- Special "Top Contributor Q1 2025" Discord role
+- Early access to upcoming features
+
+**Annual Recognition:**
+- **Contributor Hall of Fame:** Page on website
+- Special conference invite (if we host one)
+- Merchandise package
+- Thank you video from team
+
+**Automated Recognition (GitHub Actions):**
+```yaml
+# .github/workflows/contributor-recognition.yml
+name: Contributor Recognition
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  recognize:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if first contribution
+        # Check if author has previous merged PRs
+        # If first: post celebration comment
+
+      - name: Update CONTRIBUTORS.md
+        # Add contributor to list if not present
+
+      - name: Send welcome email (optional)
+        # Send thank you email with resources
+```
+
+### 4.4 Response Time Targets
+
+**Issues:**
+- **Triage:** <48 hours (label, assign priority)
+- **First Response:** <72 hours (comment, ask questions)
+- **Resolution:** Varies by priority
+  - P0 (Critical): <24 hours
+  - P1 (High): <7 days
+  - P2 (Medium): <30 days
+  - P3 (Low): Best effort
+
+**Pull Requests:**
+- **First Review:** <7 days (ideally <3 days)
+- **Follow-up Review:** <48 hours after author updates
+- **Merge Decision:** <14 days (approve or request changes)
+- **Stale PR:** After 30 days inactivity, comment to check status
+- **Close Stale:** After 60 days total inactivity, close with kind message
+
+**Discussions:**
+- **Questions (Q&A):** <24 hours first response
+- **Ideas:** <72 hours acknowledge
+- **General:** Best effort, encourage community answers
+
+### 4.5 Automation Opportunities
+
+**GitHub Actions Workflows:**
+
+1. **Auto-label PRs by file paths:**
+```yaml
+# Labels PRs based on changed files
+- label: "area:workers"
+  patterns: ["workers/**"]
+- label: "area:sdk"
+  patterns: ["sdk/**"]
+- label: "area:docs"
+  patterns: ["docs/**", "*.md"]
+```
+
+2. **Auto-assign reviewers (CODEOWNERS):**
+```
+# .github/CODEOWNERS
+/workers/ @maintainer1 @maintainer2
+/sdk/ @maintainer3 @maintainer4
+/db/ @maintainer1 @maintainer5
+*.md @technical-writer
+```
+
+3. **Auto-close stale issues:**
+```yaml
+# After 60 days of inactivity
+- Warn at 30 days
+- Close at 60 days with message
+- Exemptions: "pinned", "security"
+```
+
+4. **Auto-thank first-time contributors:**
+```yaml
+# Triggered on first merged PR
+- Post welcome comment
+- Add to CONTRIBUTORS.md
+- Send Discord notification (optional)
+```
+
+5. **Auto-link related issues:**
+```yaml
+# Based on keywords in PR description
+- "Closes #123" → links and auto-closes
+- "Related to #456" → links without closing
+```
+
+---
+
+## 5. External Community Channels
+
+### 5.1 Discord Server
+
+**Setup & Structure:**
+
+**Channels:**
+- **Welcome**
+  - #welcome (read-only, rules, getting started)
+  - #introductions (new members introduce themselves)
+
+- **General**
+  - #general (casual chat)
+  - #announcements (read-only, team posts)
+  - #showcase (share projects built with .do)
+
+- **Support**
+  - #help (general questions)
+  - #troubleshooting (debugging help)
+  - #feature-requests (discuss ideas)
+
+- **Development**
+  - #contributors (for active contributors)
+  - #core-team (for maintainers, private)
+  - #github-feed (automated GitHub activity)
+
+- **Topic-Specific**
+  - #workers (microservices discussions)
+  - #sdk (SDK usage)
+  - #ai (AI integration)
+  - #database (db.do questions)
+
+- **Off-Topic**
+  - #random (off-topic, memes)
+  - #jobs (job board)
+
+**Roles:**
+- 🎓 New Member (default)
+- ✅ Contributor (5+ merged PRs)
+- ⭐ Core Team (20+ merged PRs)
+- 👑 Maintainer (commit access)
+- 🤖 Bot (automated bots)
+- 🛡️ Moderator (community moderators)
+
+**Moderation Guidelines:**
+- Same Code of Conduct as GitHub
+- 3-strike system (warn, temp ban, perm ban)
+- Zero tolerance for harassment, spam, NSFW
+
+**Bot Setup:**
+- **Welcome Bot:** Greet new members, share rules
+- **GitHub Bot:** Post new issues, PRs, releases
+- **Moderation Bot:** Auto-moderate spam, NSFW
+- **Help Bot:** Answer common questions with docs links
+
+**Engagement Strategy:**
+- Daily: Team members active in #general and #help
+- Weekly: Office hours (1-2 hour live Q&A)
+- Monthly: Community call (voice channel)
+
+**Discord Invite Link:**
+- Custom vanity URL: discord.gg/dotdo
+- Include in README, website, docs, emails
+
+### 5.2 Twitter/X Strategy
+
+**Account:** @dotdo_ai (or @dotdo_services)
+
+**Content Mix (7 tweets/week):**
+- **Monday:** Feature spotlight (1 tweet)
+- **Tuesday:** Blog post share (1 tweet)
+- **Wednesday:** Community highlight (1 tweet thread)
+- **Thursday:** Tip/tutorial (1 tweet)
+- **Friday:** Weekly recap (1 tweet thread)
+- **Saturday:** Behind-the-scenes (1 tweet)
+- **Sunday:** Retweet/engage with community (1 retweet)
+
+**Tweet Templates:**
+
+**Feature Spotlight:**
+```
+🚀 Feature Spotlight: [Feature Name]
+
+[Brief description of what it does]
+
+Perfect for [use case].
+
+[Code snippet or screenshot]
+
+Learn more: [link]
+
+#CloudflareWorkers #TypeScript #Microservices
+```
+
+**Community Highlight:**
+```
+🌟 Community Spotlight: @username
+
+Built [project name] using .do in [timeframe]!
+
+What they built:
+• [Feature 1]
+• [Feature 2]
+• [Feature 3]
+
+Check it out: [link]
+
+Want to be featured? Share your project in our Discord!
+
+#builtwith #cloudflare
+```
+
+**Engagement Tactics:**
+- Reply to mentions within 2 hours (business hours)
+- Retweet community projects
+- Quote tweet with additional value
+- Use relevant hashtags (#CloudflareWorkers, #TypeScript, #Microservices)
+- Tag relevant accounts (@Cloudflare, @typescript)
+- Run polls for feature prioritization
+
+**Growth Strategy:**
+- Follow relevant developers (Cloudflare community, TS devs)
+- Engage with competitor posts (add value, don't spam)
+- Share blog posts on relevant subreddits
+- Cross-promote with Discord, GitHub
+
+### 5.3 Reddit Participation
+
+**Target Subreddits:**
+- r/webdev (1M+ members)
+- r/programming (6M+ members)
+- r/javascript (2M+ members)
+- r/typescript (200K+ members)
+- r/cloudflare (20K+ members)
+- r/node (100K+ members)
+- r/devops (300K+ members)
+- r/selfhosted (400K+ members)
+
+**Participation Guidelines:**
+- **10:1 Rule:** 10 helpful comments for every 1 self-promotion post
+- **Value First:** Always add value, answer questions
+- **No Spam:** Don't post same content across multiple subreddits
+- **Engage:** Reply to comments on your posts
+
+**Content Strategy:**
+- Share blog posts (2-3/month across subreddits)
+- Answer questions with links to docs/blog
+- Participate in "What are you working on?" threads
+- Share "Show HN" style posts (e.g., "Built this API platform in 3 months")
+
+**Example Post Titles:**
+- "Building a microservices platform on Cloudflare Workers - what we learned"
+- "I built 121 TypeScript SDK packages in 2 months - here's how"
+- "Ask me anything about edge computing and microservices"
+- "Show & Tell: Deploying 8 microservices with zero config"
+
+### 5.4 Dev.to Strategy
+
+**Profile:** dev.to/dotdo
+
+**Content Strategy:**
+- Cross-post all blog posts from GitHub Pages
+- Use canonical URL (point to blog.do)
+- Tag appropriately (#typescript, #cloudflare, #microservices, #api)
+- Engage with comments (reply within 24 hours)
+
+**Series to Create:**
+- "Microservices on Edge" (5-part series)
+- "AI Integration Guide" (10-part series)
+- "Database Optimization" (5-part series)
+- "Building in Public" (weekly updates)
+
+**Engagement:**
+- Follow relevant authors
+- Comment on related articles (add value)
+- Participate in discussions
+- Share community articles
+
+**Dev.to Benefits:**
+- Dofollow backlinks in articles
+- Large developer audience (1M+ monthly visitors)
+- SEO benefits (high DA)
+- Built-in community and comments
+
+### 5.5 Hacker News Strategy
+
+**Submission Strategy:**
+- **Best Days:** Tuesday-Thursday
+- **Best Times:** 8-10am EST
+- **Frequency:** 1-2 submissions/month max
+
+**Content to Submit:**
+- Major releases (e.g., "Show HN: .do - Open source microservices platform")
+- Architecture deep-dives (e.g., "Why we chose Workers RPC over REST")
+- Performance benchmarks (e.g., "Cloudflare Workers vs Lambda: 10x faster")
+- Technical post-mortems (e.g., "How we scaled to 1M requests")
+
+**Submission Guidelines:**
+- Use original title or modify slightly
+- Don't manipulate votes (vote rings banned)
+- Participate in discussion (reply to comments)
+- Be humble and informative
+
+**Response Strategy:**
+- Monitor submissions every 30 minutes for first 2 hours
+- Reply to all questions within 1 hour
+- Provide additional value in comments
+- Thank people for feedback
+
+### 5.6 Stack Overflow Strategy
+
+**Approach: Answer Questions + Link to Docs**
+
+**Target Tags:**
+- [cloudflare-workers]
+- [typescript]
+- [microservices]
+- [edge-computing]
+- [drizzle] (Drizzle ORM)
+- [hono] (Hono framework)
+
+**Answer Strategy:**
+1. Search for unanswered questions in target tags
+2. Provide helpful, detailed answer
+3. Include code examples
+4. Link to relevant .do docs/blog (only if genuinely helpful)
+5. Follow up if commenter has questions
+
+**Example Answer Template:**
+```
+You can solve this using .do's [feature]. Here's how:
+
+[Code example]
+
+This approach [benefits].
+
+Additional resources:
+- [Link to docs]
+- [Link to tutorial]
+
+Let me know if you have questions!
+```
+
+**Frequency:**
+- 5-10 answers per week
+- Focus on quality over quantity
+- Build reputation (earn badges, upvotes)
+
+**Benefits:**
+- Establishes expertise
+- Dofollow backlinks (for high-rep users)
+- Drives traffic to docs/blog
+- Helps users genuinely
+
+---
+
+## 6. Contributor Onboarding Journey
+
+### 6.1 10-Step Onboarding Journey
+
+**Step 1: Discovery (Awareness)**
+- **How:** Find .do on GitHub via awesome lists, search, Twitter
+- **Experience:** Professional README, clear value prop, badges
+- **CTA:** "⭐ Star the repo" + "Explore docs"
+
+**Step 2: First Visit (Interest)**
+- **How:** Land on github.com/dot-do/.do
+- **Experience:**
+  - Comprehensive README with architecture diagram
+  - Links to docs, examples, API reference
+  - Pinned repositories visible
+- **CTA:** "Get Started" button → docs.do
+
+**Step 3: Explore (Consideration)**
+- **How:** Browse documentation, examples, API reference
+- **Experience:**
+  - Clear navigation
+  - Code examples in every page
+  - Interactive API playground (optional)
+- **CTA:** "Try it out" + "Join Discord"
+
+**Step 4: Decide to Contribute (Decision)**
+- **How:** Click "Contributing" link in README
+- **Experience:**
+  - Read CONTRIBUTING.md
+  - See contributor ladder
+  - Understand how to help
+- **CTA:** "Find a good first issue"
+
+**Step 5: Find First Issue (Action)**
+- **How:** Filter issues by "good first issue" label
+- **Experience:**
+  - 10+ issues available
+  - Clear descriptions with mentorship offer
+  - Welcoming comments from team
+- **CTA:** "Comment on issue to claim it"
+
+**Step 6: Development Setup (Activation)**
+- **How:** Follow setup guide in issue or CONTRIBUTING.md
+- **Experience:**
+  - One-command setup: `pnpm install`
+  - Dev server starts easily: `pnpm dev`
+  - Tests run locally: `pnpm test`
+- **CTA:** "Make your changes"
+
+**Step 7: Submit PR (Contribution)**
+- **How:** Follow PR template, submit via GitHub
+- **Experience:**
+  - PR template guides what to include
+  - CI checks run automatically
+  - Welcome bot comments with helpful links
+- **CTA:** "Wait for review (within 7 days)"
+
+**Step 8: Review & Iteration (Engagement)**
+- **How:** Maintainer reviews PR, provides feedback
+- **Experience:**
+  - Constructive, encouraging feedback
+  - Clear explanation of requested changes
+  - Mentor available for questions
+- **CTA:** "Update PR based on feedback"
+
+**Step 9: PR Merged (Success)**
+- **How:** Maintainer merges PR
+- **Experience:**
+  - 🎉 Celebration comment from bot
+  - Thank you from team
+  - Name added to CONTRIBUTORS.md
+- **CTA:** "Find your next issue"
+
+**Step 10: Recognition (Retention)**
+- **How:** After first merged PR
+- **Experience:**
+  - Contributor badge on profile
+  - Discord role granted
+  - Email with next steps and resources
+- **CTA:** "Continue contributing" + "Join monthly call"
+
+### 6.2 Welcome Bot Configuration
+
+**GitHub Actions: Welcome First-Time Contributors**
+
+**File:** `.github/workflows/welcome.yml`
+
+```yaml
+name: Welcome First-Time Contributors
+
+on:
+  pull_request_target:
+    types: [opened]
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Welcome first-time contributors
+        uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            👋 **Thanks for opening your first issue!**
+
+            A maintainer will review your issue soon. In the meantime:
+            - Join our [Discord](https://discord.gg/dotdo) to chat with the community
+            - Check out our [Contributing Guide](https://github.com/dot-do/.do/blob/main/CONTRIBUTING.md)
+            - Browse our [Good First Issues](https://github.com/orgs/dot-do/issues?q=is:open+is:issue+label:%22good+first+issue%22)
+
+            We appreciate your contribution! 🎉
+
+          pr-message: |
+            👋 **Thanks for your first contribution!**
+
+            A maintainer will review your PR within 7 days. In the meantime:
+            - Make sure all CI checks pass
+            - Join our [Discord](https://discord.gg/dotdo) to chat
+            - Read our [Code Review Guidelines](https://github.com/dot-do/.do/blob/main/CONTRIBUTING.md#code-review)
+
+            We're excited to work with you! 🚀
+```
+
+### 6.3 Maintainer Response Guidelines
+
+**First PR Review Checklist:**
+- [ ] Thank contributor for PR
+- [ ] Provide clear, constructive feedback
+- [ ] Link to relevant documentation
+- [ ] Offer to help if needed
+- [ ] Set expectations for next steps
+- [ ] Approve or request changes within 7 days
+
+**Example Review Comment Template:**
+```markdown
+Thanks for your contribution, @username! 🎉
+
+This is a great start. I have a few suggestions:
+
+1. **[Issue description]:** [Explanation and how to fix]
+   [Code suggestion or link to docs]
+
+2. **[Issue description]:** [Explanation and how to fix]
+   [Code suggestion or link to docs]
+
+Let me know if you have any questions. I'm here to help!
+
+Once these are addressed, we'll merge this. Thanks again for contributing! 🙌
+```
+
+**Merge Message Template:**
+```markdown
+Merged! 🎉
+
+Thanks for your contribution, @username. Your changes are now in the main branch.
+
+**Next Steps:**
+- Your name has been added to [CONTRIBUTORS.md](link)
+- Check out more [Good First Issues](link)
+- Join our monthly [Community Call](link)
+
+We'd love to have you continue contributing! Feel free to reach out anytime. 🙌
+```
+
+### 6.4 First Contribution Checklist
+
+**For Contributors (Shared in Welcome Message):**
+- [ ] Read CONTRIBUTING.md
+- [ ] Set up development environment
+- [ ] Find a "good first issue"
+- [ ] Comment on issue to claim it
+- [ ] Fork repository
+- [ ] Create feature branch
+- [ ] Make changes
+- [ ] Run tests locally
+- [ ] Commit with conventional commit message
+- [ ] Push to your fork
+- [ ] Open pull request
+- [ ] Respond to review feedback
+- [ ] Celebrate merge! 🎉
+
+---
+
+## 7. Engagement Calendar & Tactics
+
+### 7.1 Daily Engagement
+
+**Every Day:**
+- [ ] Check GitHub notifications (issues, PRs, discussions)
+- [ ] Respond to new issues within 48 hours (triage, label)
+- [ ] Respond to new PRs within 7 days (first review)
+- [ ] Answer questions in Discord #help (within 24 hours)
+- [ ] Monitor Twitter mentions, reply within 2 hours
+- [ ] Check Stack Overflow for new questions in target tags
+
+**Time Commitment:** 1-2 hours/day
+
+### 7.2 Weekly Engagement
+
+**Monday:**
+- [ ] Feature spotlight (GitHub Discussions + Twitter)
+- [ ] Review "good first issue" backlog (add more if needed)
+
+**Wednesday:**
+- [ ] Community highlight (showcase a user project)
+- [ ] Review stale issues (30+ days, comment to check status)
+
+**Friday:**
+- [ ] Weekly recap (GitHub Discussion + Twitter thread)
+  - Merged PRs
+  - New features/releases
+  - Top contributors
+  - Next week preview
+
+**Sunday (Prep):**
+- [ ] Plan next week's content
+- [ ] Review community metrics
+- [ ] Prepare for Monday feature spotlight
+
+**Time Commitment:** 3-4 hours/week
+
+### 7.3 Monthly Engagement
+
+**First Tuesday (Monthly Community Call):**
+- [ ] Host 1-hour virtual meetup (Discord voice channel)
+- [ ] Agenda: Roadmap update, Q&A, open discussion
+- [ ] Record and post to YouTube
+- [ ] Share notes in GitHub Discussions
+
+**Third Thursday (AMA):**
+- [ ] Host Ask Me Anything session (GitHub Discussions)
+- [ ] Team members answer questions for 2 hours
+- [ ] Follow up on unanswered questions later
+
+**Last Friday (Contributor Spotlight):**
+- [ ] Choose contributor of the month
+- [ ] Write blog post featuring contributor
+- [ ] Tweet spotlight + tag contributor
+- [ ] Add to contributor hall of fame
+
+**Monthly Metrics Review:**
+- [ ] Track KPIs (see Section 8)
+- [ ] Review what worked / what didn't
+- [ ] Adjust strategy for next month
+
+**Time Commitment:** 6-8 hours/month
+
+### 7.4 Quarterly Engagement
+
+**Q1, Q2, Q3, Q4 (Roadmap Update):**
+- [ ] Publish roadmap for next quarter
+- [ ] Create GitHub Discussion for feedback
+- [ ] Share on Twitter, Discord, Reddit
+- [ ] Incorporate community feedback
+
+**Quarterly Contributor Survey:**
+- [ ] Send survey to all contributors (5-10 questions)
+- [ ] Ask about experience, suggestions, improvements
+- [ ] Share summary of results publicly
+
+**Time Commitment:** 10-12 hours/quarter
+
+### 7.5 Annual Engagement
+
+**Virtual Contributor Summit:**
+- [ ] Host 2-3 hour virtual event (Discord)
+- [ ] Talks from team and community
+- [ ] Breakout sessions by area (workers, SDK, etc.)
+- [ ] Networking time
+- [ ] Record and share
+
+**Year-End Review:**
+- [ ] Blog post: Year in review
+- [ ] Top 10 contributors of the year
+- [ ] Thank you video from team
+- [ ] Swag giveaway for top contributors
+
+**Time Commitment:** 20-30 hours/year
+
+---
+
+## 8. Success Metrics & Tracking
+
+### 8.1 Community Health Metrics
+
+**GitHub Activity:**
+| Metric | Current | Month 3 | Month 6 | Month 12 |
+|--------|---------|---------|---------|----------|
+| Stars | TBD | +200 | +500 | +1,000 |
+| Forks | TBD | +50 | +150 | +300 |
+| Contributors | TBD | +30 | +75 | +150 |
+| Open Issues | TBD | 20-30 | 30-50 | 40-60 |
+| Open PRs | TBD | 5-10 | 10-15 | 15-25 |
+| Discussions | 0 | 50 | 150 | 300 |
+
+**Engagement Metrics:**
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| Issue Response Time | <48 hours | GitHub insights |
+| PR Review Time | <7 days | GitHub insights |
+| PR Merge Rate | >70% | GitHub insights |
+| New Contributors/Month | 10+ | GitHub insights |
+| Returning Contributors | 40%+ | Custom tracking |
+| Discussion Participation | 50+ posts/month | GitHub insights |
+
+### 8.2 Contributor Metrics
+
+**Contributor Ladder Progress:**
+| Level | Month 3 | Month 6 | Month 12 |
+|-------|---------|---------|----------|
+| New Contributors | 30 | 75 | 150 |
+| Regular Contributors | 10 | 25 | 50 |
+| Core Contributors | 3 | 8 | 15 |
+| Maintainers | 1 | 2 | 4 |
+
+**Good First Issues:**
+| Metric | Target | Month 3 | Month 6 |
+|--------|--------|---------|---------|
+| Issues Created | 50+ | 20 | 40 |
+| Issues Completed | 70%+ | 14 | 28 |
+| Avg Time to Complete | <14 days | 10 days | 7 days |
+
+### 8.3 External Channel Metrics
+
+**Discord:**
+| Metric | Month 3 | Month 6 | Month 12 |
+|--------|---------|---------|----------|
+| Members | 100 | 300 | 500 |
+| Daily Active | 20 | 50 | 100 |
+| Messages/Day | 50 | 150 | 300 |
+| Help Requests/Day | 3 | 8 | 15 |
+
+**Twitter:**
+| Metric | Month 3 | Month 6 | Month 12 |
+|--------|---------|---------|----------|
+| Followers | 200 | 500 | 1,000 |
+| Engagement Rate | 2-3% | 3-4% | 4-5% |
+| Avg Likes/Tweet | 10 | 25 | 50 |
+| Mentions/Week | 5 | 15 | 30 |
+
+**Reddit:**
+| Metric | Month 3 | Month 6 | Month 12 |
+|--------|---------|---------|----------|
+| Posts/Month | 3 | 4 | 6 |
+| Avg Upvotes/Post | 50 | 100 | 200 |
+| Comments/Post | 20 | 40 | 80 |
+
+**Dev.to:**
+| Metric | Month 3 | Month 6 | Month 12 |
+|--------|---------|---------|----------|
+| Followers | 50 | 150 | 300 |
+| Posts Published | 12 | 24 | 48 |
+| Avg Views/Post | 500 | 1,000 | 2,000 |
+| Avg Reactions/Post | 20 | 40 | 80 |
+
+### 8.4 Tracking Tools
+
+**GitHub Insights:**
+- Built-in GitHub analytics (insights tab)
+- Track stars, forks, traffic, clones
+- Contributor stats, PR/issue velocity
+
+**Google Analytics:**
+- Track docs site traffic
+- Blog post views, engagement
+- Referral sources
+
+**Discord Analytics:**
+- Built-in server insights
+- Member growth, activity levels
+- Channel engagement
+
+**Social Media Analytics:**
+- Twitter Analytics (built-in)
+- Reddit (upvotes, comments)
+- Dev.to (views, reactions)
+
+**Custom Tracking Spreadsheet:**
+- Monthly KPI dashboard
+- Track all metrics in one place
+- Visualize trends over time
+
+### 8.5 Success Criteria (12 Months)
+
+**GitHub:**
+- ✅ 1,000+ stars
+- ✅ 150+ contributors (all-time)
+- ✅ 50+ returning contributors
+- ✅ 200+ merged external PRs
+- ✅ 300+ discussions created
+- ✅ Issue response time <48 hours (consistent)
+- ✅ PR review time <7 days (consistent)
+
+**Community:**
+- ✅ 500+ Discord members
+- ✅ 1,000+ Twitter followers
+- ✅ 300+ Dev.to followers
+- ✅ Active participation on Reddit (100+ upvotes/post average)
+- ✅ 20+ Stack Overflow answers with links to .do
+
+**Engagement:**
+- ✅ 50+ "good first issues" completed
+- ✅ Monthly community call with 20+ attendees
+- ✅ Quarterly contributor survey (50+ responses)
+- ✅ Self-sustaining community (users helping users)
+
+**Impact:**
+- ✅ 10+ community-contributed features shipped
+- ✅ 5+ community members promoted to core contributors
+- ✅ 2+ community members promoted to maintainers
+- ✅ Positive sentiment (measured by comments, feedback)
+
+---
+
+## Conclusion
+
+This comprehensive GitHub community building strategy provides everything needed to grow a thriving, self-sustaining developer community around the .do ecosystem.
+
+**Next Steps:**
+1. Deploy GitHub Discussions setup (2-3 hours)
+2. Add issue/PR templates to all repos (1-2 hours)
+3. Create CONTRIBUTING.md (1 hour)
+4. Set up Discord server (2-3 hours)
+5. Create Twitter account and post first content (1 hour)
+6. Begin daily/weekly engagement (ongoing)
+
+**Timeline to Self-Sustaining Community:** 12-18 months
+**Expected Result:** Active community of 150+ contributors, 500+ Discord members, 50+ good first issues completed, 200+ merged external PRs
+
+---
+
+**Document Status:** ✅ Complete - Production Ready
+**Last Updated:** October 3, 2025
+**Subagent:** D4 - GitHub Community Building

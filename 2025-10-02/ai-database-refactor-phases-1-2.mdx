@@ -1,0 +1,270 @@
+# AI-Database Package Refactor - Phases 1 & 2 Complete
+
+**Date:** 2025-10-02
+**Status:** ✅ Phases 1-2 Complete, Ready for Phase 3
+
+## Summary
+
+Created `packages/ai-database` as a unified database abstraction layer supporting both Cloudflare D1 and Durable Objects SQLite, with PayloadCMS integration planned.
+
+## Phase 1: Setup & Legacy Integration ✅
+
+### 1.1 Legacy Repos Added
+- Cloned `dot-do/platform` → `legacy/platform/`
+- Cloned `drivly/ai` → `legacy/ai/`
+- Created `legacy/CLAUDE.md` explaining these are reference-only
+- Legacy repos tracked in git for Devin DeepWiki indexing
+
+### 1.2 Package Structure Created
+```
+packages/ai-database/
+├── src/
+│   ├── adapters/
+│   │   ├── d1/              # D1 adapter (stub)
+│   │   ├── do-sqlite/       # DO SQLite adapter (stub)
+│   │   └── payload/         # PayloadCMS adapters (stub)
+│   ├── core/
+│   │   ├── factory.ts       # createDatabase() factory
+│   │   └── utils.ts         # Shared utilities
+│   ├── migrations/          # (empty - Phase 6)
+│   ├── types/
+│   │   └── index.ts         # All type definitions
+│   └── index.ts             # Public exports
+├── drizzle/                 # (empty - Phase 6)
+├── tests/                   # (empty - Phase 7)
+├── package.json             # Full config with scripts
+├── tsconfig.json            # TypeScript config
+├── CLAUDE.md                # Development guide
+└── README.md                # User documentation
+```
+
+## Phase 2: Core API Design ✅
+
+### Type Definitions (`src/types/index.ts`)
+
+**Database Configuration:**
+- `DatabaseType`: 'D1' | 'DO_SQLITE'
+- `D1Config`: D1 binding, replica support
+- `DOSQLiteConfig`: DO storage, realtime, analytics, routing context
+
+**Entity Types:**
+- `Thing`: ns, id, type, content, code, data, visibility, embedding
+- `Relationship`: ns, id, type, from/to, data, visibility
+- `CreateThingInput`, `CreateRelationshipInput`: Input types
+- `ThingFilter`, `RelationshipFilter`: Query filters
+
+**Query Types:**
+- `Where`: Flexible where clause with operators ($gt, $lt, $in, $like, etc.)
+- `DbQuery`: Union type for select/insert/update/delete/sql
+- `QueryBuilder<T>`: Fluent query builder interface
+- `ListOptions`: Pagination and sorting
+
+**Collections:**
+- `ThingCollection`: CRUD for things
+- `RelationshipCollection`: CRUD for relationships
+- `NamespaceCollection`: Namespace-scoped access
+
+**Main Interface:**
+```typescript
+interface Database {
+  things: ThingCollection
+  relationships: RelationshipCollection
+  namespace(ns: string): NamespaceCollection
+  select<T>(): QueryBuilder<T>
+  from(table: string): QueryBuilder
+  query<T>(query: DbQuery): Promise<T[]>
+  insert/update/delete operations
+  getHealthStatus(): Promise<HealthStatusResult>
+
+  // Optional backend-specific
+  getStats?(): Promise<DatabaseStats>           // DO only
+  subscribe?/unsubscribe?(): Promise<void>      // DO only
+  restore?(timestamp: Date): Promise<void>      // DO only
+  withSession?(type): Database                   // D1 only
+}
+```
+
+### Core Implementation
+
+**Factory (`src/core/factory.ts`):**
+```typescript
+export function createDatabase(config: DatabaseConfig): Database {
+  if (config.type === 'D1') return createD1Database(config)
+  if (config.type === 'DO_SQLITE') return createDODatabase(config)
+  throw new Error('Invalid database type')
+}
+```
+
+**Utilities (`src/core/utils.ts`):**
+- `buildWhereConditions()` - Convert Where to Drizzle conditions
+- `extractTableName()` - Parse table from SQL
+- `generateDOId()` - Create DO routing ID
+- `slugify()` - Convert text to ID
+- `parseJSON()`/`stringifyJSON()` - Safe JSON handling
+- `measureQuery()` - Performance measurement
+
+### Public API (`src/index.ts`)
+
+Exports:
+- Main factory: `createDatabase()`
+- All types
+- All utilities
+- Direct adapter access (optional): `createD1Database()`, `createDODatabase()`
+
+### Adapter Stubs
+
+Created placeholder implementations:
+- `src/adapters/d1/index.ts` - Throws "Phase 3" error
+- `src/adapters/do-sqlite/index.ts` - Throws "Phase 4" error
+- `src/adapters/payload/index.ts` - Throws "Phase 5" error
+
+## Design Inspirations
+
+### From Existing Code
+
+1. **`api.services/code/runtime/db.ts`**
+   - Elegant Drizzle patterns
+   - Query builder chaining
+   - Type-safe operations
+
+2. **`api.services/code/runtime/database.ts`**
+   - Thing/Relationship collections
+   - Namespace routing
+   - Durable Object communication
+
+3. **`api.services/durableObjects/database-do.ts`**
+   - WebSocket real-time updates
+   - Analytics Engine integration
+   - Stats and monitoring
+   - Point-in-time recovery
+
+4. **`agent/worker/database/database.ts`**
+   - Service class pattern
+   - Clean dependency injection
+   - Health checks
+
+5. **`app/src/db-adapters/db-do-sqlite/`**
+   - Production PayloadCMS adapter
+   - D1 vs DO SQLite patterns
+   - Migration handling
+
+### Design Decisions
+
+**Unified Interface:**
+- Same API for both backends
+- Backend-specific features via optional methods
+- Runtime selection via config
+
+**Type Safety:**
+- Full TypeScript throughout
+- Drizzle ORM integration
+- Compile-time errors
+
+**Thing/Relationship Model:**
+- Graph database pattern
+- Namespace isolation
+- Human-readable IDs (slugs)
+
+**Migration Strategy:**
+- D1: Standard Drizzle Kit
+- DO SQLite: Constructor-based with `blockConcurrencyWhile()`
+
+## Dependencies
+
+```json
+{
+  "dependencies": {
+    "drizzle-orm": "^0.44.5",
+    "@cloudflare/workers-types": "^4.20241106.0"
+  },
+  "devDependencies": {
+    "@payloadcms/drizzle": "^3.0.0",  // peer
+    "drizzle-kit": "^0.31.5",
+    "typescript": "^5.5.2",
+    "vitest": "^3.2.0"
+  }
+}
+```
+
+## Next Steps
+
+### Phase 3: D1 Adapter (Next)
+- Implement `src/adapters/d1/database.ts`
+- Implement `src/adapters/d1/collections.ts`
+- Implement `src/adapters/d1/query-builder.ts`
+- Add D1 Sessions API support
+- Unit tests
+
+### Phase 4: DO SQLite Adapter
+- Implement same as D1 plus:
+- WebSocket real-time
+- Analytics Engine
+- Stats/monitoring
+- Point-in-time recovery
+
+### Phase 5: PayloadCMS Integration
+- Copy and refine from `app/src/db-adapters/db-do-sqlite/`
+- Create dual backend support
+- Environment-based selection
+
+### Phase 6: Migration System
+- D1 migration tools
+- DO SQLite migration helpers
+- SQL bundling for Workers
+
+### Phase 7: Testing & Docs
+- Unit tests (80%+ coverage)
+- Integration tests
+- API documentation
+- Performance benchmarks
+
+### Phase 8: Examples & Integration
+- Example projects
+- Update `api.services` to use package
+- Update `app` PayloadCMS to use package
+- Update `agent` to use package
+
+## Files Created
+
+- `legacy/CLAUDE.md` - Legacy repos explanation
+- `packages/ai-database/package.json` - Package config
+- `packages/ai-database/tsconfig.json` - TypeScript config
+- `packages/ai-database/README.md` - User docs
+- `packages/ai-database/CLAUDE.md` - Development guide
+- `packages/ai-database/src/types/index.ts` - All types (450+ lines)
+- `packages/ai-database/src/core/factory.ts` - Main factory
+- `packages/ai-database/src/core/utils.ts` - Utilities
+- `packages/ai-database/src/index.ts` - Public exports
+- `packages/ai-database/src/adapters/d1/index.ts` - D1 stub
+- `packages/ai-database/src/adapters/do-sqlite/index.ts` - DO stub
+- `packages/ai-database/src/adapters/payload/index.ts` - Payload stub
+
+## Key Features
+
+✅ Single unified API for D1 and DO SQLite
+✅ Type-safe with full TypeScript support
+✅ Thing/Relationship graph model
+✅ Namespace isolation
+✅ Query builder with chaining
+✅ Backend-specific optional features
+✅ PayloadCMS integration planned
+✅ Migration utilities planned
+✅ Production-ready patterns from existing code
+
+## Success Metrics
+
+- [x] Package structure created
+- [x] Core types defined
+- [x] Factory pattern implemented
+- [x] Utilities created
+- [x] Adapter stubs in place
+- [x] Documentation written
+- [ ] Compiles without errors (pending `pnpm install`)
+- [ ] Ready for Phase 3 implementation
+
+---
+
+**Phases 1-2 Complete** ✅
+**Total Time:** ~2 hours
+**Lines of Code:** ~800 (types, utils, stubs, docs)
+**Next:** Phase 3 - D1 Adapter Implementation

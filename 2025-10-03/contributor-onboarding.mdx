@@ -1,0 +1,830 @@
+# Contributor Onboarding Guide
+
+**Date:** October 3, 2025
+**Purpose:** 10-step contributor onboarding journey from discovery to recognition
+**Status:** Production-Ready
+
+---
+
+## Executive Summary
+
+This document maps the complete contributor onboarding journey, from first discovering .do on GitHub to becoming a recognized community member. Each step is optimized for conversion and engagement.
+
+**Goal:** Convert 10-15% of visitors into active contributors within 90 days
+
+---
+
+## Table of Contents
+
+1. [10-Step Onboarding Journey](#1-10-step-onboarding-journey)
+2. [Welcome Bot Configuration](#2-welcome-bot-configuration)
+3. [Maintainer Response Guidelines](#3-maintainer-response-guidelines)
+4. [First Contribution Checklist](#4-first-contribution-checklist)
+5. [Onboarding Metrics](#5-onboarding-metrics)
+
+---
+
+## 1. 10-Step Onboarding Journey
+
+### Step 1: Discovery (Awareness)
+
+**How:** Find .do on GitHub
+- Awesome lists (awesome-cloudflare, awesome-typescript)
+- GitHub search ("cloudflare workers microservices")
+- Twitter mentions
+- Dev.to articles
+- Reddit posts
+- Hacker News submissions
+- Stack Overflow answers
+
+**Experience:**
+- Professional README with clear value proposition
+- Visual architecture diagram
+- Badges showing activity (stars, tests, coverage)
+- "Star" CTA prominently displayed
+
+**Success Criteria:**
+- Visitor reads README (scrolls 50%+)
+- Visitor stars repository
+- Time on page: >2 minutes
+
+**CTA:** ⭐ Star the repo + 📚 Explore docs
+
+**Conversion Rate Target:** 5-10% of visitors star the repo
+
+---
+
+### Step 2: First Visit (Interest)
+
+**How:** Land on github.com/dot-do/.do
+
+**Experience:**
+
+**README.md Contents:**
+```markdown
+# .do: AI-Native Infrastructure for Modern APIs
+
+> Build, deploy, and scale API-driven applications with 8 microservices, 121 SDKs, zero config.
+
+[Badges: Build Status, Coverage, Version, License, Stars, etc.]
+
+## 🚀 What is .do?
+
+[Clear value proposition with bullet points]
+
+## 📦 Quick Start
+
+```bash
+npm install @dot-do/api-client
+```
+
+[Simple code example that works immediately]
+
+## 🏗️ Architecture
+
+[Visual diagram]
+
+## 🤝 Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](link) to get started.
+
+**Good first issues:** [link]
+
+[Rest of README...]
+```
+
+**Navigation:**
+- Pinned repositories visible (workers, sdk, mdx, etc.)
+- Links to docs, examples, API reference
+- Discord invite link
+- Contributing guide link
+
+**Success Criteria:**
+- Visitor clicks through to docs or examples
+- Visitor joins Discord
+- Visitor reads CONTRIBUTING.md
+
+**CTA:** "Get Started" (docs) + "Join Discord" + "Contribute"
+
+**Conversion Rate Target:** 20-30% click through to docs or contributing
+
+---
+
+### Step 3: Explore (Consideration)
+
+**How:** Browse documentation, examples, API reference
+
+**Experience:**
+
+**Documentation Site (docs.do):**
+- Clear navigation sidebar
+- Search functionality
+- Code examples on every page
+- Copy-paste-run examples
+- Interactive API playground (future)
+
+**Examples Repository:**
+- 10-15 working examples
+- Each example has README with:
+  - What it does
+  - How to run it
+  - How to modify it
+  - Link to relevant docs
+
+**API Reference:**
+- Auto-generated from code
+- Type definitions visible
+- Usage examples for each function
+- Links to source code
+
+**Success Criteria:**
+- Visitor spends 5+ minutes on docs
+- Visitor runs an example locally
+- Visitor understands how .do works
+
+**CTA:** "Try it out" + "Join Discord" + "Contribute"
+
+**Conversion Rate Target:** 10-15% decide to contribute
+
+---
+
+### Step 4: Decide to Contribute (Decision)
+
+**How:** Click "Contributing" link in README
+
+**Experience:**
+
+**CONTRIBUTING.md Contents:**
+```markdown
+# Contributing to .do
+
+Thank you! We welcome contributions from everyone.
+
+## 🤝 Ways to Contribute
+
+1. **Code** - Fix bugs, add features, improve performance
+2. **Documentation** - Improve README, write tutorials, add examples
+3. **Community** - Answer questions, help others, share projects
+4. **Testing** - Report bugs, test new features, add test coverage
+
+[Detailed guide for each type]
+
+## 🚀 Quick Start for Contributors
+
+[Step-by-step setup instructions]
+
+## 📋 Pull Request Process
+
+[Clear process with visuals]
+
+## 🏆 Contributor Ladder
+
+[Levels: New → Regular → Core → Maintainer]
+
+## 💬 Questions?
+
+[Discord, Discussions, Email]
+```
+
+**Contributor Ladder Visual:**
+```
+New Contributor → Regular → Core → Maintainer
+(1 PR)          (5 PRs)   (20 PRs) (50 PRs)
+```
+
+**Success Criteria:**
+- Visitor reads CONTRIBUTING.md fully
+- Visitor understands how to contribute
+- Visitor decides to try contributing
+
+**CTA:** "Find a good first issue"
+
+**Conversion Rate Target:** 50%+ of visitors who read CONTRIBUTING.md try contributing
+
+---
+
+### Step 5: Find First Issue (Action)
+
+**How:** Filter issues by "good first issue" label
+
+**Experience:**
+
+**Issue List:**
+- 10-15 good first issues available
+- Clear, descriptive titles
+- Well-documented descriptions
+- Mentorship offered
+
+**Example Issue:**
+```markdown
+## Good First Issue: Add JSDoc comments to utility functions
+
+👋 Great first contribution! Help improve documentation.
+
+### What to do:
+1. Open `workers/gateway/src/utils.ts`
+2. Add JSDoc comments above each function
+3. Follow existing style in `workers/db/src/utils.ts`
+
+### Acceptance criteria:
+- [ ] All functions have JSDoc
+- [ ] Types are documented
+- [ ] Examples included
+
+### Mentorship:
+@mentor is available to help!
+
+### Estimated time: 2-3 hours
+```
+
+**Success Criteria:**
+- Visitor finds suitable issue
+- Visitor comments on issue to claim it
+- Mentor responds within 24 hours
+
+**CTA:** "Comment on issue to claim it"
+
+**Conversion Rate Target:** 70%+ of visitors who view good first issues claim one
+
+---
+
+### Step 6: Development Setup (Activation)
+
+**How:** Follow setup guide in issue or CONTRIBUTING.md
+
+**Experience:**
+
+**Setup Instructions:**
+```bash
+# 1. Fork the repository on GitHub
+# 2. Clone your fork
+git clone https://github.com/YOUR-USERNAME/.do.git
+cd .do
+
+# 3. Install dependencies
+pnpm install
+
+# 4. Run tests to verify setup
+pnpm test
+
+# 5. Start dev server
+pnpm dev
+```
+
+**Expected Output:**
+```
+✓ Dependencies installed
+✓ Tests passed (95 tests)
+✓ Dev server running on http://localhost:8787
+```
+
+**Troubleshooting:**
+- Common issues documented
+- Solutions provided
+- Link to Discord #help
+
+**Success Criteria:**
+- Contributor successfully sets up local environment
+- Tests pass locally
+- Dev server starts without errors
+
+**CTA:** "Make your changes"
+
+**Conversion Rate Target:** 80%+ successfully set up (with good docs)
+
+---
+
+### Step 7: Submit PR (Contribution)
+
+**How:** Follow PR template, submit via GitHub
+
+**Experience:**
+
+**PR Template Guides:**
+```markdown
+## Description
+[Brief description of changes]
+
+## Type of Change
+- [x] Bug fix
+- [ ] New feature
+- [ ] Documentation
+
+## Changes Made
+- Added JSDoc to 5 functions
+- Included code examples
+- Updated TypeScript types
+
+## Testing
+- [x] All tests pass
+- [x] New tests added (if applicable)
+
+## Checklist
+- [x] Code follows style guidelines
+- [x] Self-reviewed my code
+- [x] Documentation updated
+- [x] Tests pass
+```
+
+**CI Checks Run Automatically:**
+- ✅ Tests pass
+- ✅ Linter passes
+- ✅ TypeScript compiles
+- ✅ Coverage maintained
+
+**Welcome Bot Comments:**
+```markdown
+👋 Thanks for your first contribution!
+
+A maintainer will review your PR within 7 days. In the meantime:
+- Make sure all CI checks pass ✅
+- Join our Discord to chat 💬
+- Read our Code Review Guidelines 📖
+
+We're excited to work with you! 🚀
+```
+
+**Success Criteria:**
+- PR submitted with complete information
+- CI checks pass
+- Contributor feels welcomed
+
+**CTA:** "Wait for review (within 7 days)"
+
+**Conversion Rate Target:** 90%+ submit PR after setup
+
+---
+
+### Step 8: Review & Iteration (Engagement)
+
+**How:** Maintainer reviews PR, provides feedback
+
+**Experience:**
+
+**First Review (within 7 days):**
+```markdown
+Thanks for this PR, @contributor! 🎉
+
+This is a great start. I have a few suggestions:
+
+1. **JSDoc format:** Let's use `@returns` instead of `@return`
+   ```typescript
+   /** @returns {Promise<User>} The user object */
+   ```
+
+2. **Type examples:** Can you add an example for `getUserById`?
+
+Let me know if you have questions! I'm here to help. 🙌
+```
+
+**Feedback Style:**
+- Kind and encouraging
+- Specific and actionable
+- Explanations provided
+- Links to examples or docs
+- Offers to help
+
+**Contributor Updates PR:**
+- Makes requested changes
+- Pushes updates
+- Replies to comments
+
+**Follow-up Review (within 48 hours):**
+```markdown
+Perfect! Looks great now. 🎉
+
+Merging this. Thank you for your contribution!
+
+[Merge message continues...]
+```
+
+**Success Criteria:**
+- Contributor receives feedback within 7 days
+- Feedback is constructive and clear
+- Contributor successfully addresses feedback
+- PR is merged or clear next steps are provided
+
+**CTA:** "Update PR based on feedback"
+
+**Conversion Rate Target:** 70%+ of PRs are successfully iterated and merged
+
+---
+
+### Step 9: PR Merged (Success)
+
+**How:** Maintainer merges PR
+
+**Experience:**
+
+**Merge Message:**
+```markdown
+Merged! 🎉
+
+Thanks for your contribution, @contributor. Your changes are now in the main branch.
+
+**What's Next:**
+- Your name has been added to [CONTRIBUTORS.md](link)
+- You've earned the "Contributor" badge 🏅
+- Check out more [Good First Issues](link)
+- Join our monthly [Community Call](link)
+
+We'd love to have you continue contributing! Feel free to reach out anytime. 🙌
+
+**Merged as:** a1b2c3d
+```
+
+**Automatic Actions:**
+- Name added to CONTRIBUTORS.md (via bot)
+- Discord role granted (if linked)
+- Email sent with congratulations and next steps
+
+**Celebration in Discord:**
+```
+🎉 Welcome @contributor to the .do community!
+
+They just merged their first PR: [link]
+
+Give them a warm welcome! 👋
+```
+
+**Success Criteria:**
+- Contributor feels celebrated
+- Contributor knows what's next
+- Contributor motivated to continue
+
+**CTA:** "Find your next issue" + "Join community call"
+
+**Conversion Rate Target:** 40%+ contribute again within 30 days
+
+---
+
+### Step 10: Recognition (Retention)
+
+**How:** After first merged PR
+
+**Experience:**
+
+**Email (Automated):**
+```
+Subject: 🎉 Your First .do Contribution is Merged!
+
+Hi [Name],
+
+Congratulations! Your PR was just merged into .do. Welcome to the community! 🚀
+
+**What You Did:**
+- [PR title and description]
+
+**What's Next:**
+- Continue contributing: [Good First Issues](link)
+- Join our Discord: [Discord invite](link)
+- Attend our monthly Community Call: [Calendar link](link)
+- Follow us on Twitter: [@dotdo_ai](link)
+
+**Your Progress:**
+✅ New Contributor (1 merged PR)
+⏳ Regular Contributor (need 4 more PRs)
+⏳ Core Contributor (need 19 more PRs)
+
+**We're so grateful for your contribution!** Here's to many more. 🙌
+
+The .do Team
+
+P.S. Have questions? Reply to this email or ask in Discord!
+```
+
+**Discord Message (Automated):**
+```
+🎉 @contributor just earned the "Contributor" role!
+
+Their first PR: [link]
+
+Give them a warm welcome! 👋
+```
+
+**GitHub Profile:**
+- Contributor badge on profile
+- Listed in CONTRIBUTORS.md
+- Public acknowledgment
+
+**Success Criteria:**
+- Contributor feels recognized
+- Contributor understands progression path
+- Contributor motivated to continue
+
+**CTA:** "Continue contributing" + "Join monthly call"
+
+**Conversion Rate Target:** 30%+ become regular contributors (5+ PRs)
+
+---
+
+## 2. Welcome Bot Configuration
+
+### 2.1 GitHub Actions Welcome Bot
+
+**File:** `.github/workflows/welcome.yml`
+
+```yaml
+name: Welcome First-Time Contributors
+
+on:
+  pull_request_target:
+    types: [opened]
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Welcome first-time contributors
+        uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          issue-message: |
+            👋 **Thanks for opening your first issue!**
+
+            A maintainer will review your issue within 48 hours. In the meantime:
+            - Join our [Discord](https://discord.gg/dotdo) to chat with the community 💬
+            - Check out our [Contributing Guide](https://github.com/dot-do/.do/blob/main/CONTRIBUTING.md) 📖
+            - Browse [Good First Issues](https://github.com/orgs/dot-do/issues?q=is:open+is:issue+label:%22good+first+issue%22) 🎯
+
+            We appreciate your contribution! 🎉
+
+          pr-message: |
+            👋 **Thanks for your first contribution!**
+
+            A maintainer will review your PR within 7 days. In the meantime:
+            - Make sure all CI checks pass ✅
+            - Join our [Discord](https://discord.gg/dotdo) to chat 💬
+            - Read our [Code Review Guidelines](https://github.com/dot-do/.do/blob/main/CONTRIBUTING.md#code-review) 📖
+
+            We're excited to work with you! 🚀
+```
+
+### 2.2 Post-Merge Automation
+
+**File:** `.github/workflows/post-merge.yml`
+
+```yaml
+name: Post-Merge Actions
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  celebrate:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if first PR
+        id: check-first
+        # Custom script to check if this is contributor's first merged PR
+
+      - name: Celebrate first PR
+        if: steps.check-first.outputs.is-first == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🎉 Congratulations on your first merged PR, @${context.payload.pull_request.user.login}!
+
+            Welcome to the .do community! Here's what happens next:
+            - Your name has been added to [CONTRIBUTORS.md](link)
+            - You've earned the "Contributor" badge 🏅
+            - Join us in [Discord](https://discord.gg/dotdo) 💬
+
+            Looking for your next contribution? Check out more [Good First Issues](link)!
+
+            Thanks for helping make .do better! 🚀`
+            })
+
+      - name: Update CONTRIBUTORS.md
+        # Script to add contributor to CONTRIBUTORS.md
+
+      - name: Send welcome email
+        # Script to send automated email (optional)
+```
+
+---
+
+## 3. Maintainer Response Guidelines
+
+### 3.1 First PR Review Template
+
+```markdown
+Thanks for your contribution, @contributor! 🎉
+
+[Personalized comment about what they did well]
+
+I have a few suggestions to make this even better:
+
+1. **[Issue 1]:** [Clear explanation]
+
+   **Suggestion:**
+   ```typescript
+   // Better approach
+   ```
+
+   **Why:** [Explanation of benefit]
+
+2. **[Issue 2]:** [Clear explanation]
+
+   [Suggestion]
+
+**Questions:**
+- [Any clarifying questions]
+
+**Resources:**
+- [Link to relevant docs]
+- [Link to similar example]
+
+Let me know if you have questions! I'm here to help. 🙌
+
+Once these are addressed, we'll merge this. Great work!
+```
+
+### 3.2 Approval Template
+
+```markdown
+Looks great, @contributor! 🎉
+
+[What you liked about their contribution]
+
+[Any final notes or suggestions for future PRs]
+
+Merging now. Thank you for your contribution! 🚀
+```
+
+### 3.3 Major Changes Needed Template
+
+```markdown
+Thanks for the PR, @contributor!
+
+I've identified some larger concerns:
+
+**Main Issues:**
+1. [Issue 1 with detailed explanation]
+2. [Issue 2 with detailed explanation]
+
+**Suggested Approach:**
+[Alternative solution with code example]
+
+This is a bigger change than initially scoped. Let's discuss in the issue thread before continuing. What do you think?
+
+I appreciate your effort! Let's work together to find the best solution. 💪
+```
+
+### 3.4 Abandoned PR Template
+
+```markdown
+Hi @contributor!
+
+This PR has been inactive for 30 days. We still want to merge this!
+
+**Options:**
+1. Let me know if you're still working on this
+2. If you're too busy, I can finish it and credit you as co-author
+3. If you're not interested, we'll close it (no hard feelings!)
+
+What would you prefer? Thanks for your contribution! 🙏
+```
+
+---
+
+## 4. First Contribution Checklist
+
+### For Contributors (Shared in Welcome Message)
+
+**Before Starting:**
+- [ ] Read CONTRIBUTING.md
+- [ ] Join Discord (optional but recommended)
+- [ ] Find a "good first issue"
+- [ ] Comment on issue to claim it
+
+**Setup:**
+- [ ] Fork repository on GitHub
+- [ ] Clone your fork locally
+- [ ] Install dependencies (`pnpm install`)
+- [ ] Run tests to verify setup (`pnpm test`)
+- [ ] Start dev server (`pnpm dev`)
+
+**Making Changes:**
+- [ ] Create feature branch (`git checkout -b fix/issue-123`)
+- [ ] Make changes
+- [ ] Run tests locally (`pnpm test`)
+- [ ] Run linter (`pnpm lint`)
+- [ ] Format code (`pnpm format`)
+
+**Submitting:**
+- [ ] Commit with conventional commit message (`feat: add feature`)
+- [ ] Push to your fork
+- [ ] Open pull request
+- [ ] Fill out PR template completely
+- [ ] Ensure CI checks pass
+
+**After Review:**
+- [ ] Respond to review feedback
+- [ ] Make requested changes
+- [ ] Push updates
+- [ ] Request re-review if needed
+
+**Celebrate:**
+- [ ] PR merged! 🎉
+- [ ] Join Discord to celebrate
+- [ ] Find your next issue
+- [ ] Help others if you can
+
+---
+
+## 5. Onboarding Metrics
+
+### Funnel Metrics
+
+| Step | Visitors | Conversion Rate | Target |
+|------|----------|----------------|--------|
+| 1. Discover (Stars) | 1,000 | 5-10% | 50-100 stars |
+| 2. Visit README | 100 | 20-30% | 20-30 clicks |
+| 3. Explore Docs | 30 | 10-15% | 3-5 decide |
+| 4. Read CONTRIBUTING | 5 | 50%+ | 2-3 try |
+| 5. Claim Issue | 3 | 70%+ | 2 claim |
+| 6. Set Up Environment | 2 | 80%+ | 1-2 succeed |
+| 7. Submit PR | 2 | 90%+ | 1-2 submit |
+| 8. Iterate & Merge | 2 | 70%+ | 1-2 merge |
+| 9. Celebrate | 2 | 100% | 2 celebrate |
+| 10. Return | 2 | 30-40% | 0-1 return |
+
+**Overall Conversion:** 0.1-0.2% of initial visitors become contributors
+
+**Target for Year 1:** 150+ new contributors
+
+### Time to First Contribution
+
+**Targets:**
+- **Discovery to Claim:** <7 days (ideal: <3 days)
+- **Claim to PR:** <14 days (ideal: <7 days)
+- **PR to Merge:** <21 days (ideal: <14 days)
+- **Total Time:** <42 days (ideal: <24 days)
+
+### Retention Metrics
+
+| Metric | Month 3 | Month 6 | Month 12 |
+|--------|---------|---------|----------|
+| New Contributors | 30 | 75 | 150 |
+| Returning (2+ PRs) | 12 (40%) | 30 (40%) | 60 (40%) |
+| Regular (5+ PRs) | 4 (13%) | 12 (16%) | 25 (17%) |
+| Core (20+ PRs) | 1 (3%) | 3 (4%) | 8 (5%) |
+
+### Quality Metrics
+
+| Metric | Target |
+|--------|--------|
+| PR Merge Rate | >70% |
+| First PR Merge Rate | >80% |
+| Time to First Review | <7 days |
+| Time to Merge (Good First Issue) | <21 days |
+| Contributor Satisfaction | >4.5/5 (survey) |
+
+---
+
+## Success Criteria
+
+**Month 3:**
+- ✅ 30+ new contributors
+- ✅ 40% return for 2nd contribution
+- ✅ <7 day first review time
+- ✅ >80% first PR merge rate
+- ✅ Positive feedback (surveys)
+
+**Month 6:**
+- ✅ 75+ new contributors
+- ✅ 40% return for 2nd contribution
+- ✅ <3 day first review time
+- ✅ >85% first PR merge rate
+- ✅ Self-service onboarding (minimal hand-holding)
+
+**Month 12:**
+- ✅ 150+ new contributors
+- ✅ 40%+ return for 2nd contribution
+- ✅ <2 day first review time
+- ✅ >90% first PR merge rate
+- ✅ Community members helping onboard new contributors
+
+---
+
+**Document Status:** ✅ Complete - Production Ready
+**Last Updated:** October 3, 2025
+**Subagent:** D4 - Contributor Onboarding

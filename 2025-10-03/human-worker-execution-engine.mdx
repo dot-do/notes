@@ -1,0 +1,459 @@
+# Human Worker Execution Engine Implementation
+
+**Date:** 2025-10-03
+**Component:** workers/human - Durable Objects Execution Engine
+**Status:** ✅ Complete
+
+## Overview
+
+Implemented a comprehensive Durable Objects-based execution engine for managing human-in-the-loop function execution. The system provides robust state management, timeout handling, retry logic, and full audit trails for asynchronous human task execution.
+
+## Implementation Summary
+
+### 1. Execution Engine (execution-engine.ts)
+
+**Location:** `/Users/nathanclevenger/Projects/.do/workers/human/src/execution-engine.ts`
+
+**Key Features:**
+- **Durable Object Class:** `HumanFunctionExecution` extends `DurableObject`
+- **State Persistence:** All execution state stored in Durable Objects Storage
+- **Workers Alarms API:** Automatic timeout and retry scheduling
+- **Lifecycle Management:** Complete execution lifecycle from creation to completion
+
+**Core Methods:**
+
+1. **execute()** - Start new execution
+   - Generates unique execution ID
+   - Validates input against schema
+   - Initializes state with status 'pending'
+   - Schedules timeout alarm
+   - Routes to configured channels
+   - Returns execution ID
+
+2. **respond()** - Record human response
+   - Validates output against schema
+   - Updates status to 'completed'
+   - Cancels timeout alarm
+   - Calls `onComplete` hook if defined
+   - Broadcasts completion via WebSocket
+
+3. **timeout()** - Handle execution timeout
+   - Called automatically by Workers Alarms
+   - Updates status to 'timeout'
+   - Executes `onTimeout` hook for fallback value
+   - Broadcasts timeout event
+
+4. **escalate()** - Escalate to backup assignee
+   - Reassigns to backup from assignees list
+   - Increments attempts counter
+   - Calls `onEscalate` hook
+   - Re-routes to new assignee
+
+5. **retry()** - Retry failed execution
+   - Checks retry limits (max 3 by default)
+   - Calculates exponential backoff delay
+   - Schedules retry alarm
+   - Adds retry event to audit trail
+
+6. **cancel()** - Cancel pending execution
+   - Updates status to 'cancelled'
+   - Cancels timeout alarm
+   - Calls `onCancel` hook
+   - Returns success status
+
+7. **getStatus()** - Get current state
+   - Returns full execution record
+   - Includes all timestamps and metadata
+
+8. **getHistory()** - Get audit trail
+   - Returns array of all events
+   - Each event has: timestamp, type, actor, data, message
+
+9. **connectWebSocket()** - Real-time updates
+   - Adds WebSocket connection
+   - Sends current state immediately
+   - Handles disconnects automatically
+
+10. **alarm()** - Workers Alarms handler
+    - Automatically called on scheduled alarms
+    - Determines alarm type (timeout vs retry)
+    - Executes appropriate handler
+
+### 2. State Machine
+
+**Execution States:**
+```
+pending → running → completed
+    ↓         ↓
+timeout   escalated
+    ↓         ↓
+ failed   cancelled
+```
+
+**State Transitions:**
+- `pending` → `running`: When assigned and started
+- `running` → `completed`: When response received
+- `running` → `timeout`: When timeout alarm triggers
+- `timeout` → `completed`: When fallback value provided
+- `pending` → `escalated`: When escalated to backup
+- Any → `cancelled`: When manually cancelled
+- Any → `failed`: When error occurs
+
+### 3. Audit Trail System
+
+**Event Types:**
+- `created` - Execution initialized
+- `assigned` - Assigned to user/group
+- `started` - Processing began
+- `responded` - Response received
+- `completed` - Successfully finished
+- `timeout` - Timed out
+- `retry` - Retry attempted
+- `escalated` - Escalated to backup
+- `failed` - Error occurred
+- `cancelled` - Manually cancelled
+
+**Audit Event Structure:**
+```typescript
+interface AuditEvent {
+  timestamp: string
+  type: EventType
+  actor?: string // User ID or 'system'
+  data?: Record<string, any>
+  message?: string
+}
+```
+
+### 4. Retry Logic with Exponential Backoff
+
+**Configuration:**
+```typescript
+{
+  maxRetries: 3,          // Default, higher priority gets more
+  retryDelayMs: 1000,     // Base delay (1 second)
+  retryBackoff: 'exponential' // or 'linear'
+}
+```
+
+**Exponential Backoff Formula:**
+```
+delay = baseDelay * 2^attempts
+```
+
+**Example Delays:**
+- Attempt 1: 1 second
+- Attempt 2: 2 seconds
+- Attempt 3: 4 seconds
+- Attempt 4: 8 seconds
+
+### 5. Timeout Handling with Workers Alarms
+
+**How It Works:**
+1. When execution created, timeout alarm scheduled
+2. Alarm time = current time + timeout duration
+3. Workers Alarms API calls `alarm()` method automatically
+4. `alarm()` checks if timeout reached
+5. If yes, calls `timeout()` method
+6. Timeout handler executes fallback logic
+
+**Alarm State Persistence:**
+```typescript
+interface AlarmState {
+  type: 'timeout' | 'retry'
+  executionId: string
+  scheduledFor: string
+}
+```
+
+### 6. WebSocket Real-Time Updates
+
+**Broadcast Events:**
+- `execution_created` - New execution started
+- `execution_assigned` - Assigned to user
+- `execution_completed` - Response received
+- `execution_failed` - Error occurred
+- `execution_timeout` - Timed out
+
+**Connection Management:**
+- Connections stored in `Set<WebSocket>`
+- Automatic cleanup on disconnect
+- State snapshot sent on connect
+
+### 7. Integration Points
+
+**Service Bindings:**
+- `DB` - Database service for persistence
+- `EMAIL` - Email notifications
+- `QUEUE` - Async job processing
+- `SCHEDULE` - Cron job scheduling
+
+**Channel Routing:**
+- Web UI
+- Slack
+- Email
+- SMS
+- Webhooks
+
+### 8. Test Coverage
+
+**Location:** `/Users/nathanclevenger/Projects/.do/workers/human/tests/execution-engine.test.ts`
+
+**Test Suites:**
+1. `execute()` - 5 tests
+2. `respond()` - 6 tests
+3. `timeout()` - 4 tests
+4. `escalate()` - 5 tests
+5. `retry()` - 5 tests
+6. `cancel()` - 5 tests
+7. `getStatus()` - 1 test
+8. `getHistory()` - 1 test
+9. `state persistence` - 1 test
+10. `alarm()` - 1 test
+
+**Total:** 34 comprehensive tests
+
+**Mock Infrastructure:**
+- `MockStorage` - Durable Objects Storage
+- `MockDurableObjectState` - DO state
+- `MockWebSocket` - WebSocket connections
+
+### 9. Configuration Files
+
+**wrangler.jsonc:**
+```jsonc
+{
+  "name": "human",
+  "main": "src/index.ts",
+  "durable_objects": {
+    "bindings": [{
+      "name": "HUMAN_EXECUTION",
+      "class_name": "HumanFunctionExecution"
+    }]
+  },
+  "services": [
+    { "binding": "DB", "service": "db" },
+    { "binding": "EMAIL", "service": "email" },
+    { "binding": "QUEUE", "service": "queue" },
+    { "binding": "SCHEDULE", "service": "schedule" }
+  ]
+}
+```
+
+**package.json:**
+- Dependencies: zod, react, hono
+- DevDependencies: vitest, wrangler, @cloudflare/workers-types
+- Scripts: dev, deploy, test, typecheck
+
+## State Machine Diagram
+
+```
+                    ┌─────────────┐
+                    │   PENDING   │
+                    └──────┬──────┘
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+              ▼            ▼            ▼
+        ┌──────────┐ ┌──────────┐ ┌──────────┐
+        │ ESCALATE │ │  RUNNING │ │  CANCEL  │
+        └────┬─────┘ └────┬─────┘ └────┬─────┘
+             │            │            │
+             │  ┌─────────┼─────────┐  │
+             │  │         │         │  │
+             ▼  ▼         ▼         ▼  ▼
+        ┌──────────┐ ┌──────────┐ ┌──────────┐
+        │  RETRY   │ │COMPLETED │ │ TIMEOUT  │
+        └────┬─────┘ └──────────┘ └────┬─────┘
+             │                          │
+             │      ┌───────────────────┘
+             │      │
+             ▼      ▼
+        ┌──────────────┐
+        │   FALLBACK   │
+        │  (onTimeout) │
+        └──────────────┘
+```
+
+## Key Methods Signature
+
+```typescript
+class HumanFunctionExecution extends DurableObject {
+  // Core execution lifecycle
+  async execute(
+    functionDef: HumanFunction,
+    input: any,
+    context: ExecutionContext
+  ): Promise<string>
+
+  async respond(
+    output: any,
+    respondedBy?: string
+  ): Promise<boolean>
+
+  async timeout(): Promise<void>
+
+  async escalate(
+    reason: string,
+    escalateTo?: string
+  ): Promise<boolean>
+
+  async retry(): Promise<boolean>
+
+  async cancel(reason: string): Promise<boolean>
+
+  // State queries
+  async getStatus(): Promise<ExecutionRecord>
+  async getHistory(): Promise<AuditEvent[]>
+
+  // Real-time updates
+  async connectWebSocket(ws: WebSocket): Promise<void>
+
+  // Workers Alarms API
+  async alarm(): Promise<void>
+}
+```
+
+## Example Usage
+
+### 1. Create Execution
+
+```typescript
+const execution = env.HUMAN_EXECUTION.get(
+  env.HUMAN_EXECUTION.idFromName('exec-123')
+)
+
+const executionId = await execution.execute(
+  humanFunction,
+  { message: 'Hello' },
+  {
+    channel: 'web',
+    assignee: 'user@example.com',
+    timeout: 86400000, // 24 hours
+    metadata: { requestId: 'req-456' }
+  }
+)
+```
+
+### 2. Record Response
+
+```typescript
+const success = await execution.respond(
+  { response: 'Hi there!' },
+  'user@example.com'
+)
+```
+
+### 3. Handle Timeout
+
+```typescript
+// Automatically called by Workers Alarms
+// Or manually trigger:
+await execution.timeout()
+```
+
+### 4. Escalate
+
+```typescript
+const escalated = await execution.escalate(
+  'No response from primary assignee',
+  'backup@example.com'
+)
+```
+
+### 5. Query Status
+
+```typescript
+const status = await execution.getStatus()
+console.log({
+  id: status.executionId,
+  state: status.status,
+  input: status.input,
+  output: status.output,
+  assignee: status.assignee
+})
+```
+
+## Architecture Benefits
+
+1. **State Persistence** - Survives Worker restarts
+2. **Automatic Timeouts** - No polling required
+3. **Type Safety** - Full TypeScript support
+4. **Isolation** - Each execution in separate DO
+5. **Concurrency** - Built-in per-DO locking
+6. **Audit Trail** - Complete history tracking
+7. **Real-Time Updates** - WebSocket support
+8. **Retry Logic** - Exponential backoff
+9. **Lifecycle Hooks** - Custom behavior
+10. **Channel Routing** - Multi-channel support
+
+## Integration with Existing Human Service
+
+The execution engine integrates with the existing `HumanService` in `src/index.ts`:
+
+**Existing Service (index.ts):**
+- Simple task management
+- Database storage via `DB` service
+- HTTP API endpoints
+- Task creation, listing, responding
+
+**New Execution Engine (execution-engine.ts):**
+- Durable Objects state management
+- Workers Alarms for timeouts
+- Retry logic with backoff
+- Full audit trail
+- WebSocket real-time updates
+- Lifecycle hooks
+
+**Integration Strategy:**
+1. Use `HumanService` for simple tasks
+2. Use `HumanFunctionExecution` DO for complex workflows
+3. Bridge via task ID references
+4. Share types and schemas
+
+## Next Steps
+
+1. **Integration Testing**
+   - Test DO creation and state persistence
+   - Test alarm triggering
+   - Test WebSocket connections
+
+2. **Channel Implementation**
+   - Email notifications via `EMAIL` service
+   - Slack integration
+   - Webhook callbacks
+   - UI task queue
+
+3. **Production Deployment**
+   - Deploy to Cloudflare Workers
+   - Configure DO namespaces
+   - Set up monitoring and alerts
+
+4. **Documentation**
+   - API documentation
+   - Usage examples
+   - Integration guide
+
+## Files Created
+
+1. ✅ `/workers/human/src/execution-engine.ts` (587 lines)
+2. ✅ `/workers/human/tests/execution-engine.test.ts` (599 lines)
+3. ✅ `/workers/human/wrangler.jsonc` (59 lines)
+4. ✅ `/workers/human/package.json` (40 lines - already existed)
+5. ✅ `/notes/2025-10-03-human-worker-execution-engine.md` (this file)
+
+## Technical Highlights
+
+- **Lines of Code:** ~1,200 (implementation + tests)
+- **Test Coverage:** 34 comprehensive tests
+- **Durable Objects:** Full DO implementation with alarms
+- **State Management:** Complete lifecycle coverage
+- **Retry Logic:** Exponential backoff with limits
+- **Audit Trail:** Every action logged
+- **WebSocket:** Real-time updates supported
+- **Type Safety:** Full TypeScript with Zod validation
+
+---
+
+**Status:** ✅ Implementation Complete
+**Next:** Integration testing and channel implementation
+**Implemented By:** Claude Code AI Assistant

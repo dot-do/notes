@@ -1,0 +1,736 @@
+# WS-103: Search Service Extraction - Analysis Report
+
+**Backend Engineer F** | **Date**: 2025-10-02
+**Task**: Extract search service from api.services monolith
+**Status**: BLOCKED - Awaiting WS-003 Gateway Completion
+
+---
+
+## Executive Summary
+
+The search service in api.services is a **comprehensive, production-ready implementation** of full-text, vector, and hybrid search with advanced RAG capabilities. The codebase totals **2,621 lines** across 9 TypeScript files and represents a sophisticated search infrastructure.
+
+**Key Finding**: This is NOT a simple extraction task. The search service implements:
+- PostgreSQL full-text search with tsvector
+- pgvector for semantic similarity search
+- Hybrid search with RRF (Reciprocal Rank Fusion)
+- Advanced RAG with query expansion, reranking, and MMR diversity
+- Multi-model embedding support (5 different models mentioned in architecture)
+- Chunking strategies for long documents
+- Self-RAG with reflection mechanism
+
+---
+
+## Current Implementation Analysis
+
+### File Structure & Complexity
+
+```
+search/
+├── api.ts          (451 lines) - HTTP handlers and routing
+├── fulltext.ts     (241 lines) - PostgreSQL FTS implementation
+├── vector.ts       (306 lines) - pgvector similarity search
+├── embeddings.ts   (337 lines) - Workers AI embedding generation
+├── rag.ts          (461 lines) - Advanced RAG implementation
+├── reranking.ts    (297 lines) - RRF, MMR, and fusion algorithms
+├── chunking.ts     (205 lines) - Document chunking strategies
+├── embed-multi.ts  (273 lines) - Multi-model embedding support
+└── index.ts        (50 lines)  - Public exports
+───────────────────────────────────
+Total: 2,621 lines
+```
+
+### Core Capabilities
+
+#### 1. **Full-Text Search** (fulltext.ts)
+```typescript
+// PostgreSQL tsvector with ts_rank scoring
+- fullTextSearch() - Basic FTS with sanitization
+- advancedFullTextSearch() - Phrase search, boolean operators
+- searchJsonField() - Search specific JSON data fields
+- searchSuggestions() - Prefix-based autocomplete
+```
+
+**Features**:
+- Query sanitization for tsquery injection prevention
+- ts_rank and ts_rank_cd scoring algorithms
+- Phrase and boolean operator support
+- JSON field targeting
+- Pagination and filtering by namespace/type
+
+#### 2. **Vector Search** (vector.ts)
+```typescript
+// pgvector cosine similarity
+- vectorSearch() - Core semantic search with 768-dim embeddings
+- hybridSearch() - Combines vector + text with weighted scoring
+- findSimilar() - Find similar items by ID
+- findWithinThreshold() - Similarity threshold filtering
+- batchVectorSearch() - Parallel multi-query search
+- updateEmbedding() - Store embeddings in PostgreSQL
+- getThingsWithoutEmbeddings() - Backfill detection
+```
+
+**Features**:
+- pgvector extension with <=> cosine distance operator
+- 768-dimensional embeddings (Workers AI)
+- Configurable similarity thresholds (default 0.5)
+- Batch operations for efficiency
+- Missing embedding detection
+
+#### 3. **Embedding Generation** (embeddings.ts)
+```typescript
+// Cloudflare Workers AI
+- generateEmbedding() - Single text → embedding
+- generateBatchEmbeddings() - Batch processing with fallback
+- generateEmbeddingText() - Extract meaningful text from things
+- embedThing() - Generate + store embedding
+- embedBatchThings() - Bulk embed with result tracking
+- backfillEmbeddings() - Systematic embedding backfill
+- cosineSimilarity() - Client-side similarity calculation
+```
+
+**Features**:
+- Workers AI @cf/google/embeddinggemma-300m model
+- 768-dimensional embeddings
+- Automatic text truncation (8000 chars)
+- Batch processing with individual fallback
+- Progress tracking for backfill operations
+- Intelligent text extraction from JSON data
+
+#### 4. **Advanced RAG** (rag.ts)
+```typescript
+// Retrieval-Augmented Generation
+- ragSearch() - Main RAG orchestration
+- executeFulltextSearch() - FTS adapter
+- executeVectorSearch() - Vector adapter
+- executeHybridSearch() - Hybrid adapter
+- queryExpansion() - AI-powered query enrichment
+- selectSearchStrategy() - Adaptive strategy selection
+- buildContext() - Token-aware context building
+- selfRAG() - Self-reflection for retrieval decisions
+```
+
+**Features**:
+- Multiple search strategies (fulltext, vector, hybrid, adaptive)
+- Query expansion using LLM (Llama 3.3 70B)
+- Adaptive strategy selection based on query characteristics
+- Context optimization with token limits
+- Self-RAG with reflection mechanism
+- Metadata filtering and relevance thresholds
+
+#### 5. **Reranking Algorithms** (reranking.ts)
+```typescript
+// Result fusion and reranking
+- reciprocalRankFusion() - RRF algorithm (k=60)
+- weightedScoreFusion() - Weighted combination
+- maximalMarginalRelevance() - MMR diversity
+- queryBasedReranking() - Feature-based boost (recency, popularity)
+- metadataFiltering() - Constraint-based filtering
+```
+
+**Features**:
+- RRF with configurable k constant
+- Weighted score fusion with normalization
+- MMR for diversity (lambda parameter)
+- Query feature boosting (exact match, recency, popularity)
+- Metadata constraint filtering
+
+#### 6. **HTTP API** (api.ts)
+```
+GET  /search?q=query&type=fulltext|vector|hybrid&ns=...&limit=...
+GET  /search/similar/{ns}/{id}?limit=10
+GET  /search/suggestions?q=prefix&limit=10
+POST /search/embed (body: { things: [...] })
+POST /search/embed/query (body: { text: "..." })
+GET  /search/missing-embeddings?ns=...&type=...&limit=100
+POST /search/backfill (body: { ns?, type?, batchSize?, maxBatches? })
+```
+
+**Features**:
+- RESTful API design
+- Comprehensive error handling
+- Pretty JSON responses
+- Query parameter validation
+- Namespace filtering
+- Domain namespace auto-application (middleware)
+
+---
+
+## Dependencies
+
+### Database (@db/)
+- **Schema**: `things` table with `embedding` column (vector type)
+- **Extensions**: pgvector for cosine distance operators
+- **Queries**: Direct Drizzle ORM with SQL template literals
+- **Connection**: NeonHttpDatabase for serverless PostgreSQL
+
+### AI (@ai/)
+- **Model**: @cf/google/embeddinggemma-300m (768 dimensions)
+- **Fallback Models**: Architecture mentions 5 models, but code uses one
+- **LLM**: Llama 3.3 70B Instruct for query expansion and self-RAG
+- **Binding**: Workers AI `Ai` interface
+
+### Gateway (@api/)
+- **Context**: Needs `db`, `ai`, `request`, `url`, `params`
+- **Middleware**: Domain namespace application
+- **Utils**: `createPrettyJsonResponse()` for formatting
+
+---
+
+## Architecture Strengths
+
+1. **Production-Ready Code Quality**
+   - Comprehensive error handling
+   - Input validation and sanitization
+   - Batch processing with fallback logic
+   - Type safety throughout
+
+2. **Performance Optimizations**
+   - Batch embedding generation
+   - Parallel vector search
+   - Token-aware context building
+   - Efficient PostgreSQL queries
+
+3. **Advanced Search Features**
+   - Hybrid search with configurable alpha
+   - RRF for result fusion
+   - MMR for diversity
+   - Adaptive strategy selection
+
+4. **Flexible API Design**
+   - Multiple search modes
+   - Granular control via query params
+   - Batch operations
+   - Backfill utilities
+
+---
+
+## Extraction Challenges
+
+### 1. **Database Dependency Complexity**
+The search service is **tightly coupled** to the PostgreSQL schema:
+- Direct imports from `../db/schema`
+- Assumes `things` table with specific columns
+- Requires pgvector extension
+- Needs embedding column setup
+
+**Impact**: Cannot extract until @db/ package is complete and deployed.
+
+### 2. **AI Service Integration**
+The search service requires:
+- Workers AI binding for embedding generation
+- LLM access for query expansion and self-RAG
+- Fallback logic for batch failures
+
+**Impact**: Should coordinate with WS-106 (@ai/) or mock AI service initially.
+
+### 3. **API Context Requirements**
+Every handler expects:
+```typescript
+interface SearchContext {
+  db: NeonHttpDatabase<Record<string, unknown>>
+  ai: Ai
+  request: Request
+  url: URL
+  params: URLSearchParams
+}
+```
+
+**Impact**: Need RPC interface or HTTP adapter pattern.
+
+### 4. **No Existing Tests**
+- No test files found in codebase
+- Complex algorithms need verification
+- RAG pipeline needs integration tests
+
+**Impact**: Must write comprehensive test suite from scratch.
+
+### 5. **Multi-Model Support**
+Architecture mentions 5 embedding models but code only uses one:
+```
+Architecture.md mentions:
+- @cf/baai/bge-base-en-v1.5
+- @cf/google/embeddinggemma-300m (current)
+- 3 other models (not specified)
+```
+
+**Impact**: May need multi-model adapter or clarification on requirements.
+
+---
+
+## Recommended Extraction Approach
+
+### Phase 1: Foundation (Week 1)
+**Prerequisites**: WS-001 (@db/) must be complete
+
+1. **Create Service Structure**
+   ```
+   workers/search/
+   ├── src/
+   │   ├── index.ts              # WorkerEntrypoint + RPC
+   │   ├── http.ts               # HTTP interface
+   │   ├── fulltext.ts           # PostgreSQL FTS
+   │   ├── vector.ts             # pgvector search
+   │   ├── embeddings.ts         # Workers AI
+   │   ├── rag.ts                # RAG orchestration
+   │   ├── reranking.ts          # Fusion algorithms
+   │   ├── chunking.ts           # Document chunking
+   │   ├── mcp.ts                # MCP tools
+   │   └── types.ts              # Shared types
+   ├── tests/
+   │   ├── fulltext.test.ts
+   │   ├── vector.test.ts
+   │   ├── embeddings.test.ts
+   │   ├── rag.test.ts
+   │   └── integration.test.ts
+   ├── package.json
+   ├── wrangler.toml
+   ├── tsconfig.json
+   └── vitest.config.ts
+   ```
+
+2. **Copy Core Files**
+   - Copy all 9 search files from api.services
+   - Update imports to use @db/ package
+   - Add type definitions
+
+3. **Create RPC Interface**
+   ```typescript
+   export class SearchService extends WorkerEntrypoint<Env> {
+     async fullTextSearch(query: string, options?: SearchOptions) {}
+     async vectorSearch(embedding: number[], options?: SearchOptions) {}
+     async hybridSearch(query: string, embedding: number[], options?: HybridSearchOptions) {}
+     async semanticSearch(query: string, options?: SearchOptions) {}
+     async ragSearch(query: string, options?: RAGSearchOptions) {}
+     async embedThing(thing: Thing) {}
+     async backfillEmbeddings(options?: BackfillOptions) {}
+   }
+   ```
+
+### Phase 2: Testing (Week 2)
+**Focus**: Comprehensive test coverage
+
+1. **Unit Tests**
+   - Test each search function independently
+   - Mock database responses
+   - Mock AI service responses
+   - Test edge cases and error handling
+
+2. **Integration Tests**
+   - Test full RAG pipeline
+   - Test reranking algorithms
+   - Test embedding generation
+   - Test backfill operations
+
+3. **Performance Tests**
+   - Query latency benchmarks
+   - Batch processing efficiency
+   - Memory usage profiling
+   - Database query optimization
+
+**Target**: 80%+ test coverage
+
+### Phase 3: HTTP Interface (Week 3)
+**Focus**: REST API and routing
+
+1. **HTTP Handlers** (workers/search/src/http.ts)
+   - Adapt existing handlers from api.ts
+   - Add authentication middleware
+   - Implement rate limiting
+   - Add request logging
+
+2. **Routes**
+   - GET /search (main search endpoint)
+   - GET /search/similar/:ns/:id
+   - GET /search/suggestions
+   - POST /search/embed
+   - POST /search/embed/query
+   - GET /search/missing-embeddings
+   - POST /search/backfill
+
+3. **Gateway Integration**
+   - Register routes in WS-003 gateway
+   - Test routing from gateway
+   - Verify authentication flow
+
+### Phase 4: MCP Tools (Week 4)
+**Focus**: LLM integration
+
+1. **MCP Tool Implementations** (workers/search/src/mcp.ts)
+   ```typescript
+   // Tool: search_things
+   // Description: Semantic search across all entities
+   // Parameters: query, namespace, limit
+
+   // Tool: find_similar
+   // Description: Find similar entities by ID
+   // Parameters: ns, id, limit
+
+   // Tool: rag_query
+   // Description: RAG-powered question answering
+   // Parameters: question, options
+   ```
+
+2. **Tool Registration**
+   - Integrate with MCP server
+   - Test with Claude/ChatGPT
+   - Document tool usage
+
+### Phase 5: Optimization (Week 5)
+**Focus**: Performance and scalability
+
+1. **Query Optimization**
+   - Add database indexes (if not in @db/)
+   - Optimize hybrid search CTEs
+   - Profile slow queries
+   - Add query caching
+
+2. **Embedding Efficiency**
+   - Implement batch size tuning
+   - Add embedding cache (KV?)
+   - Optimize backfill strategy
+
+3. **Monitoring**
+   - Add performance metrics
+   - Add error tracking
+   - Add query analytics
+
+---
+
+## API Design: RPC vs HTTP
+
+### Option A: RPC-First (Recommended)
+**Pros**:
+- Type-safe calls from gateway
+- Better performance (no HTTP overhead)
+- Easier to test
+- Consistent with other services
+
+**Cons**:
+- Gateway becomes single point of failure
+- More complex deployment coordination
+
+### Option B: HTTP-First
+**Pros**:
+- Independent deployment
+- Can call directly without gateway
+- Familiar REST patterns
+
+**Cons**:
+- HTTP overhead for every call
+- No type safety across services
+- Must duplicate auth logic
+
+**Recommendation**: Use **RPC-First with HTTP fallback**
+- Primary interface is RPC (WorkerEntrypoint)
+- HTTP interface available for direct access
+- Gateway routes HTTP to RPC
+
+---
+
+## Performance Considerations
+
+### Query Latency Targets
+- **Full-text search**: <50ms (p95)
+- **Vector search**: <100ms (p95)
+- **Hybrid search**: <150ms (p95)
+- **RAG search**: <500ms (p95) - includes LLM call
+
+### Optimization Strategies
+
+1. **Database Indexes**
+   ```sql
+   -- Full-text search
+   CREATE INDEX things_fts_idx ON things USING GIN (
+     to_tsvector('english', id || ' ' || type || ' ' || data::text)
+   );
+
+   -- Vector search
+   CREATE INDEX things_embedding_idx ON things USING ivfflat (embedding vector_cosine_ops)
+   WITH (lists = 100);
+
+   -- Filters
+   CREATE INDEX things_ns_type_idx ON things (ns, type);
+   ```
+
+2. **Query Caching**
+   - Cache frequent queries in KV
+   - TTL based on data volatility
+   - Invalidate on data updates
+
+3. **Batch Operations**
+   - Process embeddings in batches of 10-50
+   - Parallel vector searches
+   - Connection pooling (if using Hyperdrive)
+
+---
+
+## Test Strategy
+
+### Unit Tests (60+ tests)
+```typescript
+// fulltext.test.ts
+describe('fullTextSearch', () => {
+  test('basic search returns results', async () => {})
+  test('sanitizes SQL injection attempts', async () => {})
+  test('filters by namespace', async () => {})
+  test('filters by type', async () => {})
+  test('paginates correctly', async () => {})
+  test('returns empty array for no results', async () => {})
+})
+
+// vector.test.ts
+describe('vectorSearch', () => {
+  test('finds similar items by embedding', async () => {})
+  test('respects similarity threshold', async () => {})
+  test('excludes self in findSimilar', async () => {})
+  test('validates embedding dimensions', async () => {})
+  test('handles missing embeddings', async () => {})
+})
+
+// embeddings.test.ts
+describe('generateEmbedding', () => {
+  test('generates 768-dim embedding', async () => {})
+  test('truncates long text', async () => {})
+  test('throws on empty text', async () => {})
+  test('batch generation with fallback', async () => {})
+})
+
+// rag.test.ts
+describe('ragSearch', () => {
+  test('executes fulltext strategy', async () => {})
+  test('executes vector strategy', async () => {})
+  test('executes hybrid strategy', async () => {})
+  test('adaptive strategy selection', async () => {})
+  test('query expansion works', async () => {})
+  test('reranking applies correctly', async () => {})
+})
+
+// reranking.test.ts
+describe('reciprocalRankFusion', () => {
+  test('combines multiple result sets', async () => {})
+  test('handles empty sets', async () => {})
+  test('respects k parameter', async () => {})
+})
+```
+
+### Integration Tests (20+ tests)
+```typescript
+// integration.test.ts
+describe('Search Pipeline', () => {
+  test('end-to-end semantic search', async () => {})
+  test('RAG with query expansion', async () => {})
+  test('backfill embeddings workflow', async () => {})
+  test('hybrid search with reranking', async () => {})
+})
+```
+
+### Performance Tests (10+ tests)
+```typescript
+// performance.test.ts
+describe('Performance', () => {
+  test('fulltext search <50ms p95', async () => {})
+  test('vector search <100ms p95', async () => {})
+  test('batch embeddings 10 items <500ms', async () => {})
+})
+```
+
+---
+
+## Deployment Checklist
+
+### Prerequisites
+- [ ] WS-001 (@db/) deployed to staging
+- [ ] WS-003 (@api/) gateway deployed to staging
+- [ ] WS-106 (@ai/) deployed OR mocked
+
+### Configuration
+- [ ] wrangler.toml configured
+- [ ] Database binding set up
+- [ ] Workers AI binding configured
+- [ ] Environment variables set
+- [ ] Secrets added (if any)
+
+### Testing
+- [ ] All unit tests passing (80%+ coverage)
+- [ ] All integration tests passing
+- [ ] Performance benchmarks met
+- [ ] Manual testing completed
+
+### Deployment
+- [ ] Deploy to staging
+- [ ] Smoke tests on staging
+- [ ] Gateway routes configured
+- [ ] MCP tools registered
+- [ ] Load testing completed
+- [ ] Deploy to production
+- [ ] Monitor for 24 hours
+
+---
+
+## Migration Strategy
+
+### Step 1: Create Service Shell
+```bash
+cd /Users/nathanclevenger/Projects/.do/workers
+mkdir -p search/src search/tests
+cd search
+
+# Initialize package
+pnpm init
+
+# Add dependencies
+pnpm add drizzle-orm @neondatabase/serverless
+pnpm add -D @cloudflare/workers-types vitest wrangler typescript
+```
+
+### Step 2: Copy Files
+```bash
+# Copy from api.services
+cp ../../api.services/search/*.ts ./src/
+```
+
+### Step 3: Update Imports
+```typescript
+// Before
+import { things } from '../db/schema'
+
+// After
+import { things } from '@db/schema'
+```
+
+### Step 4: Create RPC Interface
+```typescript
+// src/index.ts
+export class SearchService extends WorkerEntrypoint<Env> {
+  async fullTextSearch(query: string, options?: SearchOptions) {
+    const db = this.env.DB
+    return fullTextSearch(db, { query, ...options })
+  }
+  // ... other methods
+}
+```
+
+### Step 5: Write Tests
+```bash
+# Create test files
+touch tests/fulltext.test.ts
+touch tests/vector.test.ts
+# ... etc
+```
+
+### Step 6: Deploy
+```bash
+pnpm run test
+pnpm run typecheck
+pnpm run deploy
+```
+
+---
+
+## Risks & Mitigations
+
+### Risk 1: Database Schema Mismatch
+**Risk**: @db/ schema changes break search queries
+**Mitigation**:
+- Pin @db/ version in package.json
+- Integration tests catch schema changes
+- Add schema validation on startup
+
+### Risk 2: Embedding Model Changes
+**Risk**: Switching models requires re-embedding all data
+**Mitigation**:
+- Support multiple embedding columns (embedding_v1, embedding_v2)
+- Gradual migration with fallback
+- Background reprocessing
+
+### Risk 3: Performance Degradation
+**Risk**: Separating services adds latency
+**Mitigation**:
+- Use RPC instead of HTTP
+- Add caching layer
+- Optimize queries with indexes
+- Monitor and alert on latency
+
+### Risk 4: Complex RAG Pipeline
+**Risk**: RAG pipeline is complex and hard to debug
+**Mitigation**:
+- Comprehensive logging
+- Step-by-step tracing
+- Unit test each component
+- Separate concerns (search, rerank, context)
+
+---
+
+## Dependencies on Other Work Streams
+
+### Critical Dependencies (Blockers)
+- **WS-001 (@db/)**: MUST be complete before extraction
+  - Need `things` table schema
+  - Need pgvector extension
+  - Need database connection
+
+- **WS-003 (@api/)**: MUST be complete for gateway routing
+  - Need RPC registration
+  - Need HTTP routing
+  - Need authentication flow
+
+### Optional Dependencies
+- **WS-106 (@ai/)**: Can mock initially
+  - Embedding generation
+  - Query expansion LLM
+  - Self-RAG reflection
+
+---
+
+## Open Questions
+
+1. **Multi-Model Support**: Architecture mentions 5 models, code uses 1. Clarify?
+2. **Caching Strategy**: Should we cache embeddings in KV? Query results?
+3. **Rate Limiting**: How to handle expensive RAG queries? Per-user limits?
+4. **Monitoring**: What metrics are most important? Query latency? Embedding backlog?
+5. **Backfill Strategy**: How to handle embedding backfill at scale? Queue-based?
+6. **Schema Evolution**: How to handle embedding model upgrades? Dual-column approach?
+7. **Gateway Timeout**: RAG queries can take 500ms+. Gateway timeout limits?
+
+---
+
+## Recommendations
+
+### Immediate (This Sprint)
+1. **Wait for WS-001 and WS-003**: Do not start extraction until dependencies are ready
+2. **Review Architecture**: Clarify multi-model support requirements
+3. **Plan Testing Strategy**: Define test coverage targets and performance benchmarks
+
+### Short-Term (Next Sprint)
+1. **Create Service Shell**: Initialize workers/search/ with package.json and wrangler.toml
+2. **Copy Core Logic**: Migrate search files with updated imports
+3. **Write Unit Tests**: Achieve 80%+ coverage before integration
+
+### Long-Term (Future Sprints)
+1. **Optimize Performance**: Add indexes, caching, and query optimization
+2. **Scale Embedding Generation**: Implement queue-based backfill
+3. **Add Monitoring**: Track query latency, error rates, and backlog size
+4. **Multi-Model Support**: Implement embedding model versioning if needed
+
+---
+
+## Conclusion
+
+The search service is a **sophisticated, production-ready implementation** that requires careful extraction. The code quality is high, but the complexity is significant. Key success factors:
+
+1. **Complete @db/ first**: Cannot proceed without database layer
+2. **Comprehensive testing**: Must write extensive tests (none exist currently)
+3. **Performance focus**: Meet <50ms p95 query latency targets
+4. **RPC-first design**: Use WorkerEntrypoint for type-safe service calls
+5. **Monitoring**: Track performance metrics from day one
+
+**Estimated Effort**: 5 weeks for full extraction, testing, and deployment
+**Complexity**: High (Advanced RAG, reranking, multi-strategy search)
+**Risk**: Medium (Blocked on dependencies, complex algorithms)
+
+---
+
+**Report Generated By**: Backend Engineer F
+**Date**: 2025-10-02
+**Status**: Analysis complete, awaiting WS-001 and WS-003 completion

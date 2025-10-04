@@ -1,0 +1,900 @@
+# Email Pattern Data Sources Research
+**Date:** 2025-10-03
+**Purpose:** Comprehensive research on email pattern data sources, APIs, and alternative approaches
+
+## Executive Summary
+
+This research covers commercial APIs (RocketReach, ZoomInfo, Hunter.io, Apollo.io, Clearbit, FullContact, Snov.io), open-source approaches, scraping strategies, and email verification services. Key findings show that most commercial APIs use credit-based pricing models ($39-50K+/year), provide confidence scores, and offer both enrichment and verification capabilities.
+
+---
+
+## 1. RocketReach
+
+### Overview
+- **Purpose:** Professional contact lookup API for emails, phone numbers, and social profiles
+- **Database Size:** 700M+ professional profiles
+- **Match Rates:** High match rates with confidence scoring
+
+### API Capabilities
+
+**Endpoints:**
+- Person Lookup API - Find email addresses from name + company domain
+- Email Finder API - Verified professional emails with confidence scores
+- Webhook support for person lookups (no polling required)
+
+**Data Quality:**
+- Every email includes deliverability verification
+- Confidence scores (0-100) for each result
+- Real-time validation to reduce bounces
+- Sender reputation protection
+
+**Rate Limits:**
+- Increased rate limits for Pro and Ultimate self-service plans
+- Usage reporting available in account endpoint
+
+### Pricing (2025)
+
+**Individual Plans (Annual):**
+- **Essentials:** $576/year (email only), add phone numbers for $63/month
+- **Pro:** $1,188/year
+- **Ultimate:** $2,988/year
+
+**Team Plans:**
+- **Team Ultimate:** ~$207/user/month ($2,480/user annually)
+  - 10,000 annual lookups per user
+  - API access
+  - Advanced integrations
+
+**API Model:**
+- Pay-as-you-go for verified contact details
+- Pricing scales with business needs
+- Based on your RocketReach plan tier
+
+### Documentation
+- **Main Docs:** https://rocketreach.co/api/docs/
+- **Features:** "Try it" functionality for each endpoint
+- **Updated:** Refreshed documentation with better UX (September 2025)
+
+### Pros/Cons
+
+**Pros:**
+- High accuracy with confidence scoring
+- Webhook support (no polling)
+- Deliverability verification included
+- Flexible pay-as-you-go model
+- Good documentation with testing interface
+
+**Cons:**
+- Expensive for high-volume use
+- Requires paid plan for API access
+- Credit consumption on verification
+
+---
+
+## 2. ZoomInfo
+
+### Overview
+- **Purpose:** Enterprise B2B contact and company data platform
+- **Market Position:** High-end enterprise solution
+- **Database Coverage:** Extensive B2B contacts globally
+
+### API Capabilities
+
+**Enterprise API Features:**
+- Company and contact data enrichment
+- Technology usage data (technographics)
+- Corporate hierarchies and org charts
+- Funding details and news alerts
+- Professional email addresses
+- Contact and company data enrichment
+
+**Enrichment Methods:**
+- Query by email, name + company, domain
+- Bulk enrichment (up to 25 records per call)
+- CRM/Marketing Automation integration
+
+**Rate Limits:**
+- Standard API: 1,500 requests per minute
+- 100x requests per credit (1M credits = 100M API requests)
+
+### Pricing (2025)
+
+**Enterprise Tiers:**
+- **Enrichment-only API:** ~$5,000/year minimum
+- **Full API (prospecting + lead gen):** ~$50,000/year minimum
+- Custom pricing based on volume and features
+
+**Credit System:**
+- 1 credit per new enriched record
+- Free re-enrichment of same record for 12 months
+- Request limit: 100x per credit
+
+**Access Requirements:**
+- Enterprise tier required
+- No public pricing display
+- Sales consultation needed
+
+### Documentation
+- **Main Docs:** https://api-docs.zoominfo.com/
+- **Getting Started:** https://tech-docs-library.zoominfo.com/enterprise-api-getting-started-guide.pdf
+
+### Pros/Cons
+
+**Pros:**
+- Most comprehensive B2B data
+- Technographics and funding data
+- High rate limits (1,500 req/min)
+- Bulk enrichment capabilities
+- 12-month free re-enrichment
+
+**Cons:**
+- Very expensive ($50K+ for full access)
+- Enterprise-only (no self-serve)
+- No transparent pricing
+- Requires sales consultation
+- Overkill for small projects
+
+---
+
+## 3. Hunter.io
+
+### Overview
+- **Purpose:** Email finder and verification API
+- **Market Position:** Developer-friendly, affordable
+- **Accessibility:** Free tier available
+
+### API Capabilities
+
+**Email Finder API:**
+- Find email from domain + first name + last name
+- Returns confidence score (0-100)
+- Email pattern detection for domains
+- Verification status (valid, accept_all, unknown)
+- Recent verification data included
+
+**Email Verifier API:**
+- Standalone email validation
+- Deliverability status
+- Confidence scoring
+- SMTP verification
+
+**Rate Limits:**
+- Email Finder: 15 req/sec, 500 req/min
+- Email Verifier: 10 req/sec, 300 req/min
+
+**API Endpoint Example:**
+```bash
+GET https://api.hunter.io/v2/email-finder?domain=reddit.com&first_name=Alexis&last_name=Ohanian&api_key=API_KEY
+```
+
+### Pricing (2025)
+
+**No Premium Required:**
+- API access doesn't require premium Hunter plan
+- Fast response times, ~100% uptime
+
+**Credit-Based Pricing:**
+- Free tier: 100 searches/month
+- Paid plans start at lower cost than competitors
+- (Exact pricing not disclosed in search results)
+
+### Documentation
+- **Email Finder:** https://hunter.io/api/email-finder
+- **Email Verifier:** https://hunter.io/api/email-verifier
+- **API Reference V2:** https://hunter.io/api-documentation/v2
+
+### Pros/Cons
+
+**Pros:**
+- Developer-friendly API
+- Free tier available (100 searches/month)
+- No premium plan required
+- Excellent uptime (~100%)
+- Clear, well-documented API
+- Affordable for startups
+
+**Cons:**
+- Smaller database than enterprise solutions
+- Lower rate limits than ZoomInfo
+- May have lower match rates
+
+---
+
+## 4. Apollo.io
+
+### Overview
+- **Purpose:** Sales intelligence platform with email enrichment
+- **Market Position:** Mid-market sales teams
+- **Integration:** Built for CRM/MA integration
+
+### API Capabilities
+
+**Enrichment Endpoints:**
+- **People Enrichment:** Single person lookup
+- **Bulk People Enrichment:** Up to 10 people per call
+
+**Enrichment Methods:**
+- Email-based enrichment
+- Name + company domain
+- Multiple identification parameters
+
+**Personal Data:**
+- Default: Business emails only
+- Optional: Personal emails (via reveal_personal_emails param)
+- Optional: Phone numbers (via reveal_phone_number param)
+
+**Data Quality:**
+- More input parameters = higher match accuracy
+
+### Pricing (2025)
+
+**Plan Requirements:**
+- NOT available on free plans
+- API access requires Custom/Organization plans
+
+**Credit System:**
+- 1 credit per business email found
+- 8 credits per mobile number
+- Export credits for CSV/CRM/API sync
+
+**API Pricing:**
+- Custom pricing based on usage volume
+- Enterprise tier for programmatic access
+
+### Documentation
+- **People Enrichment:** https://docs.apollo.io/reference/people-enrichment
+- **Bulk Enrichment:** https://docs.apollo.io/reference/bulk-people-enrichment
+- **API Pricing:** https://docs.apollo.io/docs/api-pricing
+
+### Pros/Cons
+
+**Pros:**
+- Bulk enrichment (10 records/call)
+- CRM integration focus
+- Personal email/phone reveal options
+- Sales team features
+
+**Cons:**
+- No free API access
+- Expensive credit system (8 credits/phone)
+- Requires enterprise tier
+- Export credits add up quickly
+
+---
+
+## 5. Clearbit (Now Part of HubSpot)
+
+### Overview
+- **Purpose:** B2B data enrichment platform
+- **Status:** Acquired by HubSpot (December 2025)
+- **Market Position:** "First HubSpot Native Data Provider"
+
+### API Capabilities
+
+**Available APIs:**
+- **Person API:** Lookup by email address
+- **Company API:** Lookup by domain name
+- **Enrichment API:** Combined person + company data
+- **Risk API:** Fraud/spam detection
+
+**Data Sources:**
+- 250+ public and private sources
+- Refreshed every 30 days
+
+**Data Fields:**
+- **Company:** Name, domain, technographics, sector, industry, location, revenue, employee count
+- **Person:** Name, work email, location, title, role, seniority, LinkedIn handle
+
+### Pricing (2025)
+
+**Starting Price:**
+- $99/month for 275 data enrichment API requests
+- High usage can result in costly overages
+- Usage-based pricing (not transparent)
+
+**Recent Changes:**
+- Public Logo API sunsets December 1, 2025
+- Logo access moving to authenticated APIs only
+- Integration with HubSpot ecosystem
+
+### Documentation
+- **Main Docs:** https://clearbit.com/docs
+- **API Reference:** Available for authenticated users
+
+### Pros/Cons
+
+**Pros:**
+- Deep data (250+ sources)
+- 30-day refresh cycle
+- Technographics included
+- HubSpot integration
+
+**Cons:**
+- Expensive overages
+- Public Logo API shutting down
+- Uncertain future (post-acquisition)
+- Usage-based pricing complexity
+
+---
+
+## 6. FullContact
+
+### Overview
+- **Purpose:** Identity resolution and data enrichment
+- **Market Position:** Enterprise identity graphs
+- **Focus:** Customer data enrichment
+
+### API Capabilities
+
+**Enrichment Features:**
+- Contact enrichment from partial data
+- Social profiles resolution
+- Real-time data processing
+- Enterprise-grade compliance tools
+
+### Pricing (2025)
+
+**Pricing Tiers:**
+- **Free Tier:** 100 enrichments
+- **Essentials:** $99/month, 1,000 credits
+- **Growth:** $299/month, 5,000 credits
+- **Pro:** $499/month, 10,000 credits
+- **Enterprise:** Custom pricing
+
+**Pricing Model:**
+- Based on number of records processed
+- Bulk purchase discounts available
+- Add-ons for premium features
+
+**Additional Costs:**
+- Implementation fees
+- Premium phone searches
+- Bulk data processing
+- Enterprise-grade features
+
+### Documentation
+- **Developer Portal:** https://www.fullcontact.com/developer-portal/
+
+### Pros/Cons
+
+**Pros:**
+- Free tier (100 enrichments)
+- Identity resolution features
+- Compliance tools
+- Real-time processing
+
+**Cons:**
+- Expensive at scale
+- Add-on costs add up
+- Less focused on B2B email patterns
+
+---
+
+## 7. Snov.io
+
+### Overview
+- **Purpose:** B2B sales automation with email finder
+- **Market Position:** Affordable for small teams
+- **Features:** Email finding, verification, outreach
+
+### API Capabilities
+
+**API Methods:**
+- Email Finder API
+- Email Verifier API
+- Email Sender API
+
+**Credit System:**
+- Credits distributed between Finder and Verifier
+- Credits are payment units for services
+
+**Rate Limits:**
+- 60 requests per minute
+
+### Pricing (2025)
+
+**Plan Pricing:**
+- **Trial:** 150 credits (or 50 free monthly credits)
+- **Starter:** $30-39/month, 1,000 credits (1 user)
+- **Pro:** $99/month, 3,000 credits (3 users)
+
+**API Access:**
+- NOT available on free trial
+- Premium features: integrations, bulk operations, API/webhooks
+- Request test access via personal demo
+
+### Documentation
+- **API Docs:** https://snov.io/api
+- **Email Finder API:** https://snov.io/email-finder-api
+
+### Pros/Cons
+
+**Pros:**
+- Most affordable option ($30/month)
+- Combined finder + verifier + sender
+- Good for small teams
+- Trial available
+
+**Cons:**
+- Lower API rate limits (60 req/min)
+- No free API access
+- Credits burn quickly on small plans
+- Less comprehensive data
+
+---
+
+## 8. Alternative Data Sources
+
+### Hunter.io Domain Search
+- **Method:** Find email patterns for entire company domain
+- **Output:** Common patterns like {first}.{last}@domain.com
+- **Use Case:** Infer patterns from known emails at company
+
+### GitHub Commits
+- **Method:** Scrape public commits for email addresses
+- **Scale:** ~120,000 emails/day (API rate limits)
+- **Technique:** Add ".patch" to commit URL or use GitHub API
+- **Privacy:** Gray area ethically
+
+**Scraping Tools:**
+- https://github.com/nealav/github-scraper
+- https://github.com/nelsonfigueroa/github-email-scraper
+
+### LinkedIn Scraping
+- **Legal Status:** Against ToS, but legal for public data
+- **Methods:**
+  - Built-in export (50 profiles/day limit)
+  - Email pattern inference from company
+- **Compliance:** Must follow GDPR/CAN-SPAM
+- **Risk:** Account suspension
+
+### Open Datasets
+- **Enron Email Dataset:** 500K messages, 150 users
+  - https://www.cs.cmu.edu/~enron/
+- **GitHub - fnando/email_data:** Disposable emails, free email services
+  - https://github.com/fnando/email_data
+- **GitHub - Mithileysh/Email-Datasets:** Enron + Hillary Clinton
+  - https://github.com/Mithileysh/Email-Datasets
+
+---
+
+## 9. Email Pattern Formats
+
+### Most Common Patterns (in order of frequency)
+
+1. **first.last@domain.com** - Most standard format globally
+   - Example: john.smith@company.com
+   - Pros: Clear, unambiguous, professional
+   - Cons: Longest format
+
+2. **flast@domain.com** - First initial + last name
+   - Example: jsmith@company.com
+   - Pros: Shorter, still clear
+   - Cons: Duplicates for common names
+
+3. **first@domain.com** - First name only
+   - Example: john@company.com
+   - Pros: Personal, memorable
+   - Cons: Only works for unique first names
+
+4. **firstlast@domain.com** - Combined without separator
+   - Example: johnsmith@company.com
+   - Pros: Clean, simple
+   - Cons: Harder to read
+
+5. **first_last@domain.com** - Underscore separator
+   - Example: john_smith@company.com
+   - Pros: Alternative to period
+   - Cons: Less common
+
+6. **first-last@domain.com** - Hyphen separator
+   - Example: john-smith@company.com
+   - Pros: Another separator option
+   - Cons: Rare in business
+
+### Pattern Inference Strategy
+
+**Method:**
+1. Find 2-3 known emails at target company
+2. Identify common pattern
+3. Generate variations for target person
+4. Test with verification API
+5. Use highest confidence result
+
+**Common Pattern Variations:**
+```javascript
+const patterns = [
+  '{first}.{last}@{domain}',
+  '{f}{last}@{domain}',
+  '{first}@{domain}',
+  '{first}{last}@{domain}',
+  '{first}_{last}@{domain}',
+  '{first}-{last}@{domain}',
+  '{last}.{first}@{domain}',
+  '{last}{f}@{domain}',
+]
+```
+
+---
+
+## 10. Email Verification APIs
+
+### Why Verification Matters
+- Reduce bounce rates (>5% damages sender reputation)
+- Avoid spam traps and disposable emails
+- Validate syntax, DNS, and SMTP
+- Detect catch-all domains
+
+### Verification Process
+
+**3-Step Validation:**
+1. **Syntax Validation:** RFC 5322 compliance, typo detection
+2. **MX Record Verification:** DNS records exist for domain
+3. **SMTP Server Verification:** Mailbox exists and accepts mail
+
+### Top Verification APIs
+
+**Emailable** - Top choice per Resend
+- Focus on accuracy
+- Modern API
+
+**Bouncer** - Best uptime/accuracy
+- 100% uptime guarantee
+- <2% unknown results
+- 99% accuracy guarantee
+- Bias against false negatives (conservative)
+
+**MillionVerifier** - Best for general validation
+- Cost-effective
+- Accurate
+- Simple integration
+
+**Instantly** - Best for catch-all verification
+- Specialized in catch-all domains
+- Outreach-focused
+
+**SendGrid** - Enterprise option
+- Doesn't use broken SMTP-handshake
+- Avoids spammer-associated tactics
+- Trusted infrastructure
+
+### Other Notable Services
+- ZeroBounce
+- Hunter (also does verification)
+- AbstractAPI
+- DeBounce
+- Mailgun
+
+### Key Comparison Factors
+- **Accuracy rates** and unknown percentages
+- **SMTP validation** methods
+- **Catch-all handling** (difficult to verify)
+- **Disposable email** detection
+- **Bounce rate** guarantees
+- **Pricing models** (per-validation vs. subscription)
+- **Integration options** (real-time vs. bulk)
+
+---
+
+## 11. Scraping Approaches
+
+### Legal Considerations
+- **Public Data:** Generally legal to scrape publicly available data
+- **ToS Violations:** Most platforms prohibit scraping in ToS
+- **Risk:** Account suspension, legal action
+- **Compliance:** Must follow GDPR, CAN-SPAM, CCPA
+
+### GitHub Email Scraping
+
+**Method 1: Commit Patch Files**
+```bash
+# Add .patch to any commit URL
+https://github.com/owner/repo/commit/abc123.patch
+```
+
+**Method 2: GitHub API**
+- Access public events and commits
+- API rate limiting: ~12M users/day, ~120K emails/day
+- Tools available on GitHub
+
+**Privacy Concerns:**
+- Startups harvest emails for marketing
+- Connects code to job profiles
+- Talent sourcing with automated emails
+- Ethical gray area
+
+### LinkedIn Email Pattern Inference
+
+**Compliant Methods:**
+- Export contacts (50/day limit)
+- Infer patterns from known employees
+- Use official Sales Navigator API
+
+**Against ToS:**
+- Automated scraping
+- Profile harvesting
+- Email extraction tools
+
+**Best Practice:**
+- Only use public data
+- Follow GDPR consent requirements
+- Respect CAN-SPAM unsubscribe
+- Have legitimate business reason
+
+### Company Website Scraping
+- Parse "About Us" and "Team" pages
+- Extract email patterns from contact addresses
+- Requires ethical use and compliance
+
+---
+
+## 12. Recommended Approach
+
+### For Startups/Small Projects
+**Tier 1: Hunter.io**
+- Start with free tier (100/month)
+- Affordable paid plans
+- Good documentation
+- Email finder + verifier in one
+
+**Tier 2: Snov.io**
+- $30/month for 1,000 credits
+- Includes outreach features
+- Good for early sales teams
+
+### For Mid-Market
+**Apollo.io or RocketReach**
+- Apollo: $1,188-2,988/year
+- RocketReach: Better for pure contact data
+- Both have good CRM integrations
+
+### For Enterprise
+**ZoomInfo**
+- Most comprehensive data
+- Best for large sales teams
+- Expensive but highest quality
+- Technographics and funding data
+
+### Hybrid Approach
+
+**Strategy:**
+1. Use free tier email finders (Hunter.io)
+2. Verify with Bouncer or MillionVerifier
+3. Supplement with GitHub/LinkedIn pattern inference
+4. Build internal database of patterns
+5. Upgrade to paid when free limits hit
+
+### DIY Email Pattern Database
+
+**Build Your Own:**
+1. Scrape open datasets (Enron, etc.)
+2. Extract patterns from GitHub commits
+3. Infer from company websites
+4. Validate with free verification APIs
+5. Store in local database
+
+**Pattern Inference Algorithm:**
+```javascript
+// Pseudocode
+function inferEmailPattern(firstName, lastName, domain, knownEmails) {
+  // 1. Find known employees at company
+  const companyEmails = knownEmails.filter(e => e.domain === domain)
+
+  // 2. Detect pattern
+  const pattern = detectPattern(companyEmails)
+
+  // 3. Generate email
+  const email = applyPattern(pattern, firstName, lastName, domain)
+
+  // 4. Verify
+  const verification = await verifyEmail(email)
+
+  // 5. Return with confidence score
+  return { email, confidence: verification.score, pattern }
+}
+```
+
+---
+
+## 13. Cost Comparison Summary
+
+### Monthly Cost Comparison (1,000 lookups/month)
+
+| Service | Monthly Cost | Features | Best For |
+|---------|-------------|----------|----------|
+| **Hunter.io** | Free-$49 | Email finder + verifier | Startups |
+| **Snov.io** | $30-39 | Finder + verifier + outreach | Small teams |
+| **FullContact** | $99 | Identity enrichment | Customer data |
+| **Apollo.io** | $99+ | Sales intelligence | Mid-market sales |
+| **RocketReach** | $99+ | Professional contacts | Recruiters |
+| **Clearbit** | $99+ | B2B enrichment | Marketing teams |
+| **ZoomInfo** | $5,000+ | Enterprise B2B data | Large enterprises |
+
+### Credit Cost Comparison
+
+| Service | Cost per Email | Cost per 1,000 |
+|---------|---------------|----------------|
+| Hunter.io | ~$0.10-0.50 | $100-500 |
+| Snov.io | ~$0.03-0.04 | $30-40 |
+| Apollo.io | ~$0.10+ | $100+ |
+| RocketReach | ~$0.10-0.30 | $100-300 |
+| ZoomInfo | ~$0.50-1.00 | $500-1,000 |
+
+---
+
+## 14. Technical Implementation
+
+### API Integration Pattern
+
+```typescript
+// Example: Hunter.io Email Finder
+interface EmailFinderResult {
+  email: string
+  score: number // 0-100
+  verification: {
+    status: 'valid' | 'accept_all' | 'unknown'
+    date: string
+  }
+  sources: Array<{
+    domain: string
+    uri: string
+    extracted_on: string
+  }>
+}
+
+async function findEmail(
+  firstName: string,
+  lastName: string,
+  domain: string
+): Promise<EmailFinderResult> {
+  const response = await fetch(
+    `https://api.hunter.io/v2/email-finder?` +
+    `domain=${domain}&` +
+    `first_name=${firstName}&` +
+    `last_name=${lastName}&` +
+    `api_key=${process.env.HUNTER_API_KEY}`
+  )
+
+  const data = await response.json()
+  return data.data
+}
+```
+
+### Multi-Provider Fallback
+
+```typescript
+// Try multiple providers in order
+const providers = [
+  { name: 'hunter', cost: 0.1, call: hunterFindEmail },
+  { name: 'snov', cost: 0.03, call: snovFindEmail },
+  { name: 'apollo', cost: 0.15, call: apolloEnrich },
+]
+
+async function findEmailWithFallback(person, company) {
+  for (const provider of providers) {
+    try {
+      const result = await provider.call(person, company)
+      if (result.confidence > 80) {
+        return { ...result, provider: provider.name, cost: provider.cost }
+      }
+    } catch (error) {
+      console.warn(`${provider.name} failed:`, error)
+      continue
+    }
+  }
+
+  throw new Error('All providers failed')
+}
+```
+
+### Pattern-Based Generation
+
+```typescript
+// Generate email variations
+function generateEmailVariations(
+  firstName: string,
+  lastName: string,
+  domain: string
+): string[] {
+  const f = firstName.toLowerCase()
+  const l = lastName.toLowerCase()
+  const fi = f[0]
+  const li = l[0]
+
+  return [
+    `${f}.${l}@${domain}`,
+    `${fi}${l}@${domain}`,
+    `${f}@${domain}`,
+    `${f}${l}@${domain}`,
+    `${f}_${l}@${domain}`,
+    `${f}-${l}@${domain}`,
+    `${l}.${f}@${domain}`,
+    `${l}${fi}@${domain}`,
+  ]
+}
+
+// Verify all variations
+async function findEmailByPattern(person, company) {
+  const variations = generateEmailVariations(
+    person.firstName,
+    person.lastName,
+    company.domain
+  )
+
+  const results = await Promise.all(
+    variations.map(email => verifyEmail(email))
+  )
+
+  // Return highest confidence
+  return results.reduce((best, current) =>
+    current.confidence > best.confidence ? current : best
+  )
+}
+```
+
+---
+
+## 15. Key Takeaways
+
+### For Immediate Implementation:
+1. **Start with Hunter.io** free tier (100/month)
+2. **Add Bouncer** for verification ($0.002/email)
+3. **Build pattern database** from open sources
+4. **Upgrade** when limits hit
+
+### For Production Scale:
+1. **Multi-provider approach** with fallbacks
+2. **Cache results** to avoid duplicate API calls
+3. **Verify before sending** to protect reputation
+4. **Monitor costs** and optimize provider mix
+
+### For Enterprise:
+1. **ZoomInfo** for comprehensive data
+2. **Hunter.io** for supplemental finding
+3. **Bouncer** for verification
+4. **Build internal database** of patterns
+
+### Legal/Ethical:
+1. **Only use public data** or authorized APIs
+2. **Follow GDPR/CAN-SPAM** compliance
+3. **Respect ToS** or accept suspension risk
+4. **Have legitimate business purpose**
+
+### Data Quality:
+1. **Confidence scores matter** - aim for >80
+2. **Verify before sending** emails
+3. **Update regularly** - emails change
+4. **Track bounces** and remove bad data
+
+---
+
+## 16. Resources
+
+### Official Documentation
+- Hunter.io: https://hunter.io/api-documentation/v2
+- RocketReach: https://rocketreach.co/api/docs/
+- ZoomInfo: https://api-docs.zoominfo.com/
+- Apollo.io: https://docs.apollo.io/
+- Clearbit: https://clearbit.com/docs
+- Snov.io: https://snov.io/api
+
+### Open Datasets
+- Enron Emails: https://www.cs.cmu.edu/~enron/
+- Email Data (GitHub): https://github.com/fnando/email_data
+- Email Datasets: https://github.com/Mithileysh/Email-Datasets
+
+### Scraping Tools
+- GitHub Email Scraper: https://github.com/nelsonfigueroa/github-email-scraper
+- GitHub Scraper: https://github.com/nealav/github-scraper
+
+### Verification Services
+- Bouncer: https://www.usebouncer.com
+- MillionVerifier: https://www.millionverifier.com
+- ZeroBounce: https://www.zerobounce.net
+- Emailable: https://emailable.com
+
+---
+
+**Last Updated:** 2025-10-03
+**Research By:** Claude Code
+**Status:** Complete - Ready for implementation decisions

@@ -1,0 +1,483 @@
+---
+title: Domain Analysis Report (Code Only)
+date: 2025-10-04T12:17:53.910Z
+tags: [domains, infrastructure, analysis]
+---
+
+# Domain Analysis Report (Code Only)
+
+**Generated:** 2025-10-04T12:17:53.910Z
+**Analysis:** Domains found in codebase only (no live API checks yet)
+
+## Summary
+
+- **Total Unique Domains:** 166
+- **In Both Sources:** 7
+- **API Routing Only:** 61
+- **Site Config Only:** 98
+
+### By TLD
+
+- **.do:** 156 domains
+- **.services:** 8 domains
+- **.mw:** 1 domains
+- **.ai:** 1 domains
+
+### By Service (API Routing)
+
+- **agents:** 3 domains
+- **ai:** 3 domains
+- **auth:** 3 domains
+- **stripe:** 3 domains
+- **code-exec:** 3 domains
+- **db:** 3 domains
+- **docs:** 3 domains
+- **functions:** 3 domains
+- **workflows:** 3 domains
+- **api-gateway:** 2 domains
+- **claude-code:** 2 domains
+- **containers:** 2 domains
+- **crawl:** 2 domains
+- **domains:** 2 domains
+- **eval:** 2 domains
+- **events:** 2 domains
+- **search:** 2 domains
+- **github:** 2 domains
+- **graphs:** 2 domains
+- **load:** 2 domains
+- **markdown:** 2 domains
+- **marketplace:** 2 domains
+- **mcp:** 2 domains
+- **queue:** 2 domains
+- **sandboxes:** 2 domains
+- **workos:** 2 domains
+- **utils:** 2 domains
+- **vapi:** 2 domains
+- **ast:** 1 domains
+- **batch:** 1 domains
+- **slack:** 1 domains
+
+## Domains in Both Sources
+
+These 7 domains are defined in both locations:
+
+- **agents.do** → `agents`
+- **events.do** → `events`
+- **functions.do** → `functions`
+- **graph.do** → `graphs`
+- **mcp.do** → `mcp`
+- **queue.do** → `queue`
+- **workflows.do** → `workflows`
+
+## API Routing Only (61)
+
+These domains are ONLY in `api/src/routing/domains.ts`:
+
+- **agent.do** → `agents`
+- **agents.api.services** → `agents`
+- **ai.api.services** → `ai`
+- **ai.do** → `ai`
+- **api.do** → `api-gateway`
+- **api.services** → `api-gateway`
+- **ast.do** → `ast`
+- **auth.api.services** → `auth`
+- **auth.do** → `auth`
+- **batch.do** → `batch`
+- **billing.do** → `stripe`
+- **claude-code.do** → `claude-code`
+- **claude.do** → `claude-code`
+- **code.do** → `code-exec`
+- **container.do** → `containers`
+- **containers.do** → `containers`
+- **crawl.do** → `crawl`
+- **database.api.services** → `db`
+- **db.apis.do** → `db`
+- **db.mw** → `db`
+- **doc.do** → `docs`
+- **docs.do** → `docs`
+- **documentation.do** → `docs`
+- **domain.do** → `domains`
+- **domains.do** → `domains`
+- **eval.do** → `eval`
+- **evaluate.do** → `eval`
+- **event.do** → `events`
+- **exec.do** → `code-exec`
+- **find.do** → `search`
+- **fn.do** → `functions`
+- **functions.api.services** → `functions`
+- **generate.do** → `ai`
+- **git.do** → `github`
+- **github.do** → `github`
+- **graphs.do** → `graphs`
+- **load.do** → `load`
+- **loadtest.do** → `load`
+- **login.do** → `auth`
+- **markdown.do** → `markdown`
+- **marketplace.do** → `marketplace`
+- **mcp.api.services** → `mcp`
+- **md.do** → `markdown`
+- **payments.do** → `stripe`
+- **q.do** → `queue`
+- **run.do** → `code-exec`
+- **sandbox.do** → `sandboxes`
+- **sandboxes.do** → `sandboxes`
+- **scrape.do** → `crawl`
+- **search.do** → `search`
+- **slack.do** → `slack`
+- **sso.do** → `workos`
+- **store.do** → `marketplace`
+- **stripe.do** → `stripe`
+- **util.do** → `utils`
+- **utils.do** → `utils`
+- **vapi.do** → `vapi`
+- **voice.do** → `vapi`
+- **workflow.do** → `workflows`
+- **workflows.api.services** → `workflows`
+- **workos.do** → `workos`
+
+## Site Config Only (98)
+
+These domains are ONLY in `site/apps/do.industries/domains.config.ts`:
+
+- **action.do**
+- **actions.do**
+- **agi.do**
+- **amy.do**
+- **analytics.do**
+- **apis.do**
+- **ari.do**
+- **barcode.do**
+- **bdr.do**
+- **benchmarks.do**
+- **blogs.do**
+- **bots.do**
+- **browse.do**
+- **browser.do**
+- **browsers.do**
+- **careers.do**
+- **cfo.do**
+- **clickhouse.do**
+- **cmo.do**
+- **colo.do**
+- **coo.do**
+- **cpo.do**
+- **cro.do**
+- **cto.do**
+- **ctx.do**
+- **dara.do**
+- **dash.do**
+- **dashboard.do**
+- **database.do**
+- **databases.do**
+- **dealers.do**
+- **do.com.ai**
+- **emails.do**
+- **embeddings.do**
+- **esbuild.do**
+- **evals.do**
+- **experiments.do**
+- **extract.do**
+- **function.do**
+- **gcp.do**
+- **gpt.do**
+- **humans.do**
+- **integrations.do**
+- **issues.do**
+- **ivy.do**
+- **kpis.do**
+- **lena.do**
+- **lexi.do**
+- **lists.do**
+- **llm.do**
+- **llms.do**
+- **lodash.do**
+- **mdx.do**
+- **models.do**
+- **nat.do**
+- **nats.do**
+- **nouns.do**
+- **oauth.do**
+- **objects.do**
+- **okrs.do**
+- **payload.do**
+- **pdm.do**
+- **perf.do**
+- **photos.do**
+- **pkg.do**
+- **programmers.do**
+- **prxy.do**
+- **qrcode.do**
+- **repo.do**
+- **requests.do**
+- **research.do**
+- **responses.do**
+- **scraper.do**
+- **sdk.do**
+- **sdr.do**
+- **searches.do**
+- **services.do**
+- **sites.do**
+- **speak.do**
+- **state.do**
+- **studio.do**
+- **svc.do**
+- **swe.do**
+- **tasks.do**
+- **tom.do**
+- **trace.do**
+- **traces.do**
+- **trigger.do**
+- **triggers.do**
+- **vectors.do**
+- **vehicle.do**
+- **vera.do**
+- **verbs.do**
+- **waitlist.do**
+- **webhook.do**
+- **webhooks.do**
+- **worker.do**
+- **workers.do**
+
+## Recommendations
+
+### 1. Unify Domain Configuration
+
+Currently domains are split across two files with different purposes:
+- **API Routing** (`api/src/routing/domains.ts`) - Maps domains to worker services
+- **Site Config** (`site/apps/do.industries/domains.config.ts`) - Domain metadata for marketing site
+
+**Action:** Create single source of truth in `sites/[tld]/[domain]/` structure
+
+### 2. Domains Missing from API Routing
+
+The 98 domains in site config but not in API routing need review:
+- Should they route through the API worker?
+- Or stay on their current platform (Vercel/Cloudflare Pages)?
+- Or be deprecated?
+
+### 3. Domains in API Routing but Not Site
+
+The 61 domains in API routing but not documented in site config:
+- Add to site config for documentation
+- Or remove if no longer needed
+
+### 4. Next Steps
+
+1. **Fetch live domains from Cloudflare/Vercel APIs**
+   - Set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+   - Set `VERCEL_TOKEN`
+   - Run full inventory with health checks
+
+2. **Check domain health**
+   - Nameserver configuration
+   - HTTP response codes
+   - SSL certificates
+
+3. **Create `sites/` structure**
+   ```
+   sites/
+   ├── do/
+   │   ├── agents/
+   │   ├── workflows/
+   │   └── ...
+   ├── mw/
+   │   ├── db/
+   │   └── api/
+   └── services/
+       └── api/
+   ```
+
+4. **Migrate to unified routing**
+   - Start with healthy domains
+   - Test routing logic
+   - Document migration process
+
+## All Domains by TLD
+
+
+### .ai (1)
+
+- do.com.ai
+
+
+### .do (156)
+
+- action.do
+- actions.do
+- agent.do → `agents`
+- agents.do → `agents`
+- agi.do
+- ai.do → `ai`
+- amy.do
+- analytics.do
+- api.do → `api-gateway`
+- apis.do
+- ari.do
+- ast.do → `ast`
+- auth.do → `auth`
+- barcode.do
+- batch.do → `batch`
+- bdr.do
+- benchmarks.do
+- billing.do → `stripe`
+- blogs.do
+- bots.do
+- browse.do
+- browser.do
+- browsers.do
+- careers.do
+- cfo.do
+- claude-code.do → `claude-code`
+- claude.do → `claude-code`
+- clickhouse.do
+- cmo.do
+- code.do → `code-exec`
+- colo.do
+- container.do → `containers`
+- containers.do → `containers`
+- coo.do
+- cpo.do
+- crawl.do → `crawl`
+- cro.do
+- cto.do
+- ctx.do
+- dara.do
+- dash.do
+- dashboard.do
+- database.do
+- databases.do
+- db.apis.do → `db`
+- dealers.do
+- doc.do → `docs`
+- docs.do → `docs`
+- documentation.do → `docs`
+- domain.do → `domains`
+- domains.do → `domains`
+- emails.do
+- embeddings.do
+- esbuild.do
+- eval.do → `eval`
+- evals.do
+- evaluate.do → `eval`
+- event.do → `events`
+- events.do → `events`
+- exec.do → `code-exec`
+- experiments.do
+- extract.do
+- find.do → `search`
+- fn.do → `functions`
+- function.do
+- functions.do → `functions`
+- gcp.do
+- generate.do → `ai`
+- git.do → `github`
+- github.do → `github`
+- gpt.do
+- graph.do → `graphs`
+- graphs.do → `graphs`
+- humans.do
+- integrations.do
+- issues.do
+- ivy.do
+- kpis.do
+- lena.do
+- lexi.do
+- lists.do
+- llm.do
+- llms.do
+- load.do → `load`
+- loadtest.do → `load`
+- lodash.do
+- login.do → `auth`
+- markdown.do → `markdown`
+- marketplace.do → `marketplace`
+- mcp.do → `mcp`
+- md.do → `markdown`
+- mdx.do
+- models.do
+- nat.do
+- nats.do
+- nouns.do
+- oauth.do
+- objects.do
+- okrs.do
+- payload.do
+- payments.do → `stripe`
+- pdm.do
+- perf.do
+- photos.do
+- pkg.do
+- programmers.do
+- prxy.do
+- q.do → `queue`
+- qrcode.do
+- queue.do → `queue`
+- repo.do
+- requests.do
+- research.do
+- responses.do
+- run.do → `code-exec`
+- sandbox.do → `sandboxes`
+- sandboxes.do → `sandboxes`
+- scrape.do → `crawl`
+- scraper.do
+- sdk.do
+- sdr.do
+- search.do → `search`
+- searches.do
+- services.do
+- sites.do
+- slack.do → `slack`
+- speak.do
+- sso.do → `workos`
+- state.do
+- store.do → `marketplace`
+- stripe.do → `stripe`
+- studio.do
+- svc.do
+- swe.do
+- tasks.do
+- tom.do
+- trace.do
+- traces.do
+- trigger.do
+- triggers.do
+- util.do → `utils`
+- utils.do → `utils`
+- vapi.do → `vapi`
+- vectors.do
+- vehicle.do
+- vera.do
+- verbs.do
+- voice.do → `vapi`
+- waitlist.do
+- webhook.do
+- webhooks.do
+- worker.do
+- workers.do
+- workflow.do → `workflows`
+- workflows.do → `workflows`
+- workos.do → `workos`
+
+
+### .mw (1)
+
+- db.mw → `db`
+
+
+### .services (8)
+
+- agents.api.services → `agents`
+- ai.api.services → `ai`
+- api.services → `api-gateway`
+- auth.api.services → `auth`
+- database.api.services → `db`
+- functions.api.services → `functions`
+- mcp.api.services → `mcp`
+- workflows.api.services → `workflows`
+
+
+---
+
+**Issue:** #2 - domains & route unification on `api` handler
+**Next:** Run `bun scripts/domain-inventory.ts` with API credentials for full health check
