@@ -172,22 +172,63 @@ do worker
     └── For code execution feature
 ```
 
+## ctx.exports Integration (Follow-up Enhancement)
+
+After confirming Worker Loader beta access, enhanced the implementation to use Cloudflare's `enable_ctx_exports` flag:
+
+**What is ctx.exports?**
+- Automatic loopback bindings for WorkerEntrypoints defined in the same worker
+- No need to configure explicit service bindings for self-reference
+- Part of Worker Loader beta feature set
+
+**Implementation:**
+```typescript
+// executor.ts - Enhanced to accept ExecutionContext
+export async function executeCode(
+  request: ExecuteCodeRequest,
+  env: Env,
+  context?: ServiceContext,
+  ctx?: ExecutionContext  // ← New parameter
+): Promise<ExecuteCodeResponse>
+
+// Prefer ctx.exports for DO binding
+DO: (ctx?.exports as any)?.DO || env.DO || stub
+```
+
+**Fallback Strategy:**
+1. **First:** Try `ctx.exports.DO` (automatic via enable_ctx_exports)
+2. **Second:** Try `env.DO` (explicit service binding if configured)
+3. **Last:** Return 503 stub
+
+**Benefits:**
+- ✅ Cleaner wrangler.jsonc (one less binding)
+- ✅ Automatic self-reference without configuration
+- ✅ Leverages Cloudflare's recommended pattern
+- ✅ More maintainable architecture
+
+**Commits:**
+- `2ec07f2` - Fixed Worker Loader API usage (removed incorrect await)
+- `e159af7` - Added ctx.exports integration for automatic bindings
+
 ## Next Steps
 
-### Immediate
+### Immediate ✅
 - [x] Fix Worker Loader API usage
 - [x] Add missing dependencies
 - [x] Verify all tests pass
 - [x] Commit and document changes
+- [x] Confirm beta access available
+- [x] Integrate ctx.exports API
+- [x] All 20 tests passing
 
 ### Short-term
-- [ ] Apply for Worker Loader beta access
-- [ ] Test code execution in local development
+- [ ] Test code execution in local development with `pnpm dev`
 - [ ] Create comprehensive local dev testing guide
-- [ ] Document fallback behavior without Worker Loader
+- [ ] Test ctx.exports.DO binding in practice
+- [ ] Performance benchmarking
 
 ### Production
-- [ ] Await beta access approval
+- [x] Beta access confirmed available
 - [ ] Deploy with Worker Loader enabled
 - [ ] Monitor code execution performance
 - [ ] Set up observability for dynamic workers
