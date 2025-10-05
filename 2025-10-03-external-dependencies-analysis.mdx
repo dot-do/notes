@@ -1,0 +1,356 @@
+---
+$type: Analysis
+$id: analysis/external-dependencies-2025-10-03
+title: External Dependencies Analysis
+date: 2025-10-03
+repository: api.services
+status: Legacy monolith being decomposed into microservices
+summary:
+  total_external_dependencies: 19
+  already_implemented_internally: 8
+  migration_needed: 11
+  critical_paid_services: 7
+  can_build_internally: 4
+  free_tier_available: 6
+---
+
+# External Dependencies Analysis
+
+Analysis of external service dependencies in the api.services repository as of October 3, 2025.
+
+## Summary
+
+- **Total External Dependencies**: 19
+- **Already Implemented Internally**: 8
+- **Migration Needed**: 11
+- **Critical Paid Services**: 7
+- **Can Build Internally**: 4
+- **Free Tier Available**: 6
+
+## External Dependencies
+
+### 1. Stripe (Payment Processing)
+
+**Type**: Payment
+**Current Usage**: Marketplace payouts, subscription billing, Stripe Connect
+**Files**:
+- api/routes/marketplace.ts
+- api/routes/pricing.ts
+- scripts/setup-stripe-products.ts
+- api/routes/webhooks.ts (webhook handler)
+
+**Internal Equivalent**: workers/webhooks (webhook handling only)
+**Migration Needed**: No
+**Build Option**: Paid API
+**Priority**: Critical
+**Estimated Effort**: 0 days (keep using Stripe)
+**Cost**: 2.9% + 30¢ per transaction + $2/mo per active subscription
+**Notes**: Essential for payments. Stripe Connect required for marketplace. No viable alternative.
+
+### 2. Resend (Email Delivery)
+
+**Type**: Email
+**Current Usage**: Transactional emails, marketing emails
+**Files**:
+- api/routes/email.ts
+- workers/email (RPC service)
+
+**Internal Equivalent**: workers/email
+**Migration Needed**: No
+**Build Option**: Paid API
+**Priority**: Critical
+**Estimated Effort**: 0 days (already using)
+**Cost**: Free tier (3,000 emails/month), then $20/mo for 50,000
+**Notes**: Already using Resend in workers/email. No migration needed.
+
+### 3. WorkOS (Authentication)
+
+**Type**: Authentication
+**Current Usage**: OAuth, SSO, magic links, directory sync
+**Files**:
+- api/routes/auth.ts
+- workers/auth (RPC service)
+
+**Internal Equivalent**: workers/auth
+**Migration Needed**: No
+**Build Option**: Paid API
+**Priority**: Critical
+**Estimated Effort**: 0 days (already using)
+**Cost**: Free tier (1,000 MAU), then $0.05/MAU
+**Notes**: Essential for enterprise SSO. Already using WorkOS in workers/auth.
+
+### 4. GitHub (Code Repository & OAuth)
+
+**Type**: Code hosting + OAuth
+**Current Usage**: Repository hosting, webhooks, OAuth
+**Files**:
+- api/routes/github.ts
+- api/routes/webhooks/github.ts
+- workers/webhooks (webhook handling)
+
+**Internal Equivalent**: Partial (webhooks only)
+**Migration Needed**: No
+**Build Option**: Hosted service
+**Priority**: Critical
+**Estimated Effort**: N/A (essential)
+**Cost**: Free for public repos, $4/user/month for private
+**Notes**: Essential for version control. Cannot replace.
+
+### 5. OpenAI (AI Models)
+
+**Type**: AI/ML
+**Current Usage**: GPT-4, GPT-3.5, embeddings, function calling
+**Files**:
+- api/routes/ai.ts
+- agent/ (AI code generation)
+
+**Internal Equivalent**: Partial (Workers AI for some models)
+**Migration Needed**: Partial
+**Build Option**: Mix (Workers AI + OpenAI)
+**Priority**: High
+**Estimated Effort**: 14-30 days (gradual migration)
+**Cost**: Pay-per-token (varies by model)
+**Notes**: Workers AI offers some models. Keep OpenAI for advanced models (GPT-4, function calling).
+
+### 6. Anthropic (Claude Models)
+
+**Type**: AI/ML
+**Current Usage**: Claude 3.5 Sonnet, Claude 3 Opus
+**Files**:
+- api/routes/ai.ts
+- agent/ (AI code generation)
+
+**Internal Equivalent**: Partial (Workers AI)
+**Migration Needed**: Partial
+**Build Option**: Mix (Workers AI + Anthropic)
+**Priority**: High
+**Estimated Effort**: 14-30 days (gradual migration)
+**Cost**: Pay-per-token (varies by model)
+**Notes**: Essential for high-quality AI. Keep for advanced use cases.
+
+### 7. Google Gemini (AI Models)
+
+**Type**: AI/ML
+**Current Usage**: Gemini 1.5 Pro, multimodal
+**Files**:
+- api/routes/ai.ts
+
+**Internal Equivalent**: No
+**Migration Needed**: No
+**Build Option**: Paid API
+**Priority**: Medium
+**Estimated Effort**: 0 days (optional)
+**Cost**: Pay-per-token
+**Notes**: Optional. Used for specific multimodal tasks.
+
+### 8. Replicate (ML Models)
+
+**Type**: AI/ML
+**Current Usage**: Image generation, video, audio models
+**Files**:
+- api/routes/replicate.ts
+
+**Internal Equivalent**: Partial (Workers AI)
+**Migration Needed**: Partial
+**Build Option**: Mix (Workers AI + Replicate)
+**Priority**: Low
+**Estimated Effort**: 7-14 days
+**Cost**: Pay-per-run (varies by model)
+**Notes**: Workers AI offers some image models. Keep Replicate for specialized models.
+
+### 9. Zapier (Integration Platform)
+
+**Type**: Integration
+**Current Usage**: App integrations, automation workflows
+**Files**:
+- api/routes/integrations/zapier.ts
+
+**Internal Equivalent**: Can build internally
+**Migration Needed**: Yes
+**Build Option**: Build custom integration service
+**Priority**: Low
+**Estimated Effort**: 30-60 days
+**Cost**: $19.99-$799/month depending on tasks
+**Notes**: Can build internal integration service. Low priority.
+
+### 10. Inngest (Workflow Orchestration)
+
+**Type**: Workflow
+**Current Usage**: Scheduled jobs, event-driven workflows
+**Files**:
+- api/workflows/
+
+**Internal Equivalent**: Partial (workers/schedule)
+**Migration Needed**: Yes
+**Build Option**: Use Cloudflare Queues + Durable Objects
+**Priority**: Medium
+**Estimated Effort**: 14-30 days
+**Cost**: Free tier (1,000 runs/month), then $20/mo
+**Notes**: Can migrate to Cloudflare Queues + Durable Objects for workflows.
+
+### 11. Upstash Redis
+
+**Type**: Caching/Queue
+**Current Usage**: Rate limiting, caching, pub/sub
+**Files**:
+- api/lib/cache.ts
+
+**Internal Equivalent**: Cloudflare KV + Durable Objects
+**Migration Needed**: Yes
+**Build Option**: Use Cloudflare KV (cache) + Queues (pub/sub)
+**Priority**: Medium
+**Estimated Effort**: 7-14 days
+**Cost**: Free tier (10,000 commands/day), then $0.20/100k
+**Notes**: Cloudflare KV for caching, Queues for pub/sub, Durable Objects for rate limiting.
+
+### 12. Supabase (Database + Auth)
+
+**Type**: Database + Auth
+**Current Usage**: PostgreSQL database (partial), auth (deprecated)
+**Files**:
+- (being migrated to Neon)
+
+**Internal Equivalent**: Neon PostgreSQL (database), WorkOS (auth)
+**Migration Needed**: In progress
+**Build Option**: Already migrating
+**Priority**: High
+**Estimated Effort**: 0 days (already migrating)
+**Cost**: Free tier or $25/mo
+**Notes**: Migrating database to Neon, auth to WorkOS. Almost complete.
+
+### 13. Vercel (Hosting)
+
+**Type**: Hosting
+**Current Usage**: Next.js app hosting, serverless functions
+**Files**:
+- app/ (Payload CMS)
+- docs/ (documentation site)
+
+**Internal Equivalent**: Cloudflare Pages
+**Migration Needed**: Partial
+**Build Option**: Use Cloudflare Pages
+**Priority**: Medium
+**Estimated Effort**: 7-14 days per site
+**Cost**: $20/user/month for Pro features
+**Notes**: Can migrate Next.js sites to Cloudflare Pages. Evaluate per site.
+
+### 14. Sentry (Error Tracking)
+
+**Type**: Monitoring
+**Current Usage**: Error tracking, performance monitoring
+**Files**:
+- (SDK initialized in app)
+
+**Internal Equivalent**: Cloudflare Workers Analytics + custom logging
+**Migration Needed**: Yes
+**Build Option**: Use Workers Analytics + D1/ClickHouse for logs
+**Priority**: Medium
+**Estimated Effort**: 7-14 days
+**Cost**: Free tier (5,000 errors/month), then $26/mo
+**Notes**: Workers Analytics for metrics, custom logging for errors.
+
+### 15. PostHog (Analytics)
+
+**Type**: Analytics
+**Current Usage**: Product analytics, feature flags, A/B testing
+**Files**:
+- (SDK initialized in app)
+
+**Internal Equivalent**: Can build internally
+**Migration Needed**: Yes
+**Build Option**: Use Workers Analytics + D1/ClickHouse
+**Priority**: Low
+**Estimated Effort**: 30-60 days
+**Cost**: Free tier (1M events/month), then $0.00045/event
+**Notes**: Workers Analytics for basic metrics, custom analytics for advanced features.
+
+### 16. Clerk (Authentication)
+
+**Type**: Authentication
+**Current Usage**: Being replaced by WorkOS
+**Files**:
+- (deprecated, being removed)
+
+**Internal Equivalent**: WorkOS
+**Migration Needed**: In progress
+**Build Option**: Already migrating to WorkOS
+**Priority**: High
+**Estimated Effort**: 0 days (already migrating)
+**Cost**: $25/mo (being removed)
+**Notes**: Migration to WorkOS almost complete.
+
+### 17. Neon PostgreSQL
+
+**Type**: Database
+**Current Usage**: Primary PostgreSQL database
+**Files**:
+- workers/db (database RPC service)
+
+**Internal Equivalent**: Cloudflare D1 or Hyperdrive
+**Migration Needed**: Maybe (evaluate per use case)
+**Build Option**: Keep Neon or migrate to D1
+**Priority**: Medium
+**Estimated Effort**: 14-30 days (if migrating)
+**Cost**: Free tier or $19-69/month
+**Notes**: Neon works well. D1 for simple tables, Hyperdrive for PostgreSQL proxy.
+
+### 18. ClickHouse
+
+**Type**: Analytics Database
+**Current Usage**: Analytics data, logs, metrics
+**Files**:
+- workers/clickhouse_proxy
+- data-ingestion
+
+**Internal Equivalent**: Workers Analytics + D1
+**Migration Needed**: Partial
+**Build Option**: Use Workers Analytics + D1 for simple cases
+**Priority**: Low
+**Estimated Effort**: 30-60 days (if needed)
+**Cost**: Pay-as-you-go (ClickHouse Cloud)
+**Notes**: ClickHouse excellent for analytics. Keep for now.
+
+### 19. Better Auth
+
+**Type**: Authentication Library
+**Current Usage**: Being replaced by WorkOS
+**Files**:
+- (deprecated)
+
+**Internal Equivalent**: WorkOS
+**Migration Needed**: In progress
+**Build Option**: Already migrating to WorkOS
+**Priority**: High
+**Estimated Effort**: 0 days (already migrating)
+**Cost**: $0 (open source)
+**Notes**: Migration to WorkOS complete.
+
+## Migration Priority
+
+### Immediate (Week 1-2)
+1. **None** - All critical migrations already in progress or complete
+
+### Short-term (Month 1)
+1. Upstash Redis → Cloudflare KV + Queues + Durable Objects
+2. Sentry → Workers Analytics + custom logging
+3. Evaluate Vercel → Cloudflare Pages (per site)
+
+### Medium-term (Month 2-3)
+1. Inngest → Cloudflare Queues + Durable Objects
+2. OpenAI/Anthropic → Partial migration to Workers AI
+3. Evaluate Neon → D1/Hyperdrive (per use case)
+
+### Long-term (Month 4-6)
+1. Zapier → Custom integration service
+2. PostHog → Custom analytics (Workers Analytics + D1)
+3. Replicate → Partial migration to Workers AI
+
+## Cost Optimization
+
+**Current Monthly Cost**: ~$500-1,000 (estimated)
+**Optimized Monthly Cost**: ~$100-300 (estimated)
+**Potential Savings**: ~$400-700/month
+
+## Conclusion
+
+Most critical external dependencies are essential (Stripe, Resend, WorkOS, GitHub) and should be kept. Focus on migrating caching (Upstash), monitoring (Sentry), and workflows (Inngest) to Cloudflare services in the short term.

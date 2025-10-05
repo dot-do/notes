@@ -1,0 +1,337 @@
+---
+$type: Analysis
+$id: analysis/infrastructure-dependencies-2025-10-03
+title: Infrastructure Dependencies Analysis
+date: 2025-10-03
+status: Analysis of infrastructure services and migration paths
+---
+
+# Infrastructure Dependencies Analysis
+
+Analysis of infrastructure service dependencies across all projects as of October 3, 2025.
+
+## Infrastructure Services
+
+### 1. Cloudflare Workers/Pages/D1/R2
+
+**Projects**:
+- app (Payload CMS)
+- agent (AI code generation)
+- workers/* (30+ microservices)
+- data-ingestion
+- docs
+
+**Status**: PRIMARY_INFRASTRUCTURE
+**Monthly Cost**: Pay-as-you-go (currently minimal)
+**Migration Effort**: N/A - Already on Cloudflare
+**Priority**: N/A - Already using
+**Notes**: Core infrastructure platform. All services designed for Cloudflare.
+
+### 2. Neon PostgreSQL
+
+**Projects**:
+- workers/db (database RPC service)
+
+**Status**: ACTIVE_DEPENDENCY
+**Monthly Cost**: Free tier or ~$19-69/month
+**Cloudflare Alternative**: D1 (SQLite) or Hyperdrive
+**Migration Effort**: 7-14 days
+**Migration Path**:
+1. Schema conversion (PostgreSQL → SQLite)
+2. Data migration
+3. Query rewrites
+4. Testing
+
+**Priority**: Medium
+**Notes**: Workers/db service uses Neon for PostgreSQL. Could migrate to D1 but would lose PostgreSQL-specific features. Hyperdrive could proxy to Neon with better performance.
+
+### 3. ClickHouse
+
+**Projects**:
+- workers/clickhouse_proxy
+- data-ingestion (analytics)
+
+**Status**: ACTIVE_DEPENDENCY
+**Monthly Cost**: Pay-as-you-go (ClickHouse Cloud)
+**Cloudflare Alternative**: Workers Analytics + D1
+**Migration Effort**: 30-60 days
+**Migration Path**:
+1. Evaluate analytics requirements
+2. Simple metrics → Workers Analytics
+3. Complex queries → Keep ClickHouse
+4. Aggregate data → D1 tables
+
+**Priority**: Low
+**Notes**: ClickHouse excellent for analytics. Keep for advanced use cases. Use Workers Analytics for simple metrics.
+
+### 4. GitHub (Repository Hosting)
+
+**Projects**:
+- All repositories
+- Webhooks for CI/CD
+- OAuth provider
+
+**Status**: ESSENTIAL_DEPENDENCY
+**Monthly Cost**: Free for public, $4/user/month for private
+**Cloudflare Alternative**: None
+**Migration Effort**: N/A - Cannot replace
+**Priority**: N/A - Essential
+**Notes**: Core version control. Cannot and should not replace.
+
+### 5. npm Registry
+
+**Projects**:
+- SDK packages (publishing)
+- All projects (dependencies)
+
+**Status**: ESSENTIAL_DEPENDENCY
+**Monthly Cost**: Free
+**Cloudflare Alternative**: None (though could self-host with Verdaccio)
+**Migration Effort**: N/A - Not worth it
+**Priority**: N/A - Essential
+**Notes**: Standard npm registry. Essential for package distribution.
+
+### 6. Vercel (Hosting)
+
+**Projects**:
+- app/ (Payload CMS)
+- docs/ (documentation site)
+
+**Status**: ACTIVE_DEPENDENCY
+**Monthly Cost**: $20/user/month for Pro features
+**Cloudflare Alternative**: Cloudflare Pages
+**Migration Effort**: 7-14 days per site
+**Migration Path**:
+1. Configure Pages project
+2. Update build settings
+3. Environment variables
+4. Test deployment
+5. Update DNS
+
+**Priority**: Medium
+**Notes**: Can migrate Next.js sites to Cloudflare Pages. Evaluate per site based on features needed.
+
+### 7. Upstash Redis
+
+**Projects**:
+- api/ (caching, rate limiting)
+
+**Status**: ACTIVE_DEPENDENCY
+**Monthly Cost**: Free tier (10,000 commands/day), then $0.20/100k
+**Cloudflare Alternative**: KV + Durable Objects + Queues
+**Migration Effort**: 7-14 days
+**Migration Path**:
+1. Caching → Cloudflare KV
+2. Pub/sub → Cloudflare Queues
+3. Rate limiting → Durable Objects
+4. Complex state → Durable Objects
+
+**Priority**: High
+**Notes**: Good candidate for migration. Cloudflare alternatives well-suited for all use cases.
+
+### 8. Inngest (Workflow Orchestration)
+
+**Projects**:
+- api/ (scheduled jobs, workflows)
+
+**Status**: ACTIVE_DEPENDENCY
+**Monthly Cost**: Free tier (1,000 runs/month), then $20/mo
+**Cloudflare Alternative**: Queues + Durable Objects + Cron Triggers
+**Migration Effort**: 14-30 days
+**Migration Path**:
+1. Simple cron jobs → Cron Triggers
+2. Event-driven workflows → Queues
+3. Stateful workflows → Durable Objects
+4. Complex orchestration → Custom service
+
+**Priority**: Medium
+**Notes**: Inngest provides nice abstractions, but Cloudflare primitives can handle all use cases.
+
+### 9. Sentry (Error Tracking)
+
+**Projects**:
+- app/
+- agent/
+- api/
+
+**Status**: ACTIVE_DEPENDENCY
+**Monthly Cost**: Free tier (5,000 errors/month), then $26/mo
+**Cloudflare Alternative**: Workers Analytics + custom logging
+**Migration Effort**: 7-14 days
+**Migration Path**:
+1. Error logging → Workers Analytics + D1
+2. Performance monitoring → Workers Analytics
+3. Custom dashboards → Build with D1 + Pages
+4. Alerting → Email/Slack notifications
+
+**Priority**: Medium
+**Notes**: Workers Analytics provides metrics. Custom logging to D1 for error details.
+
+### 10. PostHog (Product Analytics)
+
+**Projects**:
+- app/ (product analytics)
+
+**Status**: ACTIVE_DEPENDENCY
+**Monthly Cost**: Free tier (1M events/month), then $0.00045/event
+**Cloudflare Alternative**: Workers Analytics + custom analytics
+**Migration Effort**: 30-60 days
+**Migration Path**:
+1. Basic metrics → Workers Analytics
+2. Event tracking → Custom logger + D1
+3. Feature flags → D1 table
+4. A/B testing → Custom service
+5. Dashboards → Build with Pages
+
+**Priority**: Low
+**Notes**: PostHog feature-rich. Migrate only if cost becomes issue. Build custom for specific needs.
+
+### 11. Stripe (Payments)
+
+**Projects**:
+- api/ (marketplace, subscriptions)
+- workers/webhooks (webhook handling)
+
+**Status**: ESSENTIAL_DEPENDENCY
+**Monthly Cost**: 2.9% + 30¢ per transaction + $2/mo per subscription
+**Cloudflare Alternative**: None
+**Migration Effort**: N/A - Essential
+**Priority**: N/A - Essential
+**Notes**: No viable alternative. Essential for payments. Keep Stripe.
+
+### 12. Resend (Email Delivery)
+
+**Projects**:
+- workers/email (RPC service)
+
+**Status**: ACTIVE_DEPENDENCY
+**Monthly Cost**: Free tier (3,000 emails/month), then $20/mo for 50,000
+**Cloudflare Alternative**: Could use SES or custom SMTP
+**Migration Effort**: 14-30 days
+**Priority**: Low
+**Notes**: Resend provides excellent DX. Only migrate if cost becomes issue or need more control.
+
+### 13. WorkOS (Authentication)
+
+**Projects**:
+- workers/auth (RPC service)
+
+**Status**: ACTIVE_DEPENDENCY
+**Monthly Cost**: Free tier (1,000 MAU), then $0.05/MAU
+**Cloudflare Alternative**: Could build custom with Durable Objects
+**Migration Effort**: 30-60 days
+**Priority**: Low
+**Notes**: WorkOS provides enterprise SSO. Essential for B2B. Keep for now.
+
+### 14. OpenAI (AI Models)
+
+**Projects**:
+- api/ (AI features)
+- agent/ (code generation)
+
+**Status**: ACTIVE_DEPENDENCY
+**Monthly Cost**: Pay-per-token (varies by model)
+**Cloudflare Alternative**: Workers AI (partial)
+**Migration Effort**: 14-30 days (gradual)
+**Priority**: Medium
+**Notes**: Workers AI for simple models. Keep OpenAI for GPT-4, function calling.
+
+### 15. Anthropic (Claude Models)
+
+**Projects**:
+- api/ (AI features)
+- agent/ (code generation)
+
+**Status**: ACTIVE_DEPENDENCY
+**Monthly Cost**: Pay-per-token (varies by model)
+**Cloudflare Alternative**: Workers AI (partial)
+**Migration Effort**: 14-30 days (gradual)
+**Priority**: Medium
+**Notes**: Essential for high-quality AI. Workers AI for some use cases. Keep Anthropic for advanced features.
+
+## Migration Priority Matrix
+
+### High Priority (Month 1)
+1. **Upstash Redis** → Cloudflare KV + Durable Objects + Queues
+   - Clear migration path
+   - Good cost savings
+   - Feature parity
+
+### Medium Priority (Month 2-3)
+1. **Inngest** → Cloudflare Queues + Durable Objects + Cron
+   - Reduces external dependencies
+   - More control over workflows
+
+2. **Sentry** → Workers Analytics + custom logging
+   - Cost savings at scale
+   - More control over data
+
+3. **Vercel** → Cloudflare Pages (evaluate per site)
+   - Better integration with Workers
+   - Cost savings for high-traffic sites
+
+4. **Neon** → Evaluate D1 or Hyperdrive (per use case)
+   - Only for simple use cases
+   - Keep Neon for complex PostgreSQL features
+
+5. **AI Models** → Partial migration to Workers AI
+   - Use Workers AI where suitable
+   - Keep premium APIs for advanced features
+
+### Low Priority (Month 4-6)
+1. **PostHog** → Custom analytics (only if cost becomes issue)
+2. **Resend** → Custom email service (only if need more control)
+3. **WorkOS** → Custom auth (only if need more control)
+4. **ClickHouse** → Evaluate alternatives (only for simple analytics)
+
+### Keep (Essential)
+1. **Cloudflare** - Core infrastructure
+2. **GitHub** - Version control
+3. **npm** - Package registry
+4. **Stripe** - Payments (no alternative)
+
+## Infrastructure Consolidation Plan
+
+### Phase 1: Caching & Rate Limiting (Week 1-2)
+- Migrate Upstash Redis to Cloudflare KV + Durable Objects
+- Cost savings: ~$20-50/month
+- Effort: 7-14 days
+
+### Phase 2: Monitoring & Logging (Week 3-4)
+- Migrate Sentry to Workers Analytics + D1 logging
+- Cost savings: ~$26/month (after free tier)
+- Effort: 7-14 days
+
+### Phase 3: Workflows (Month 2)
+- Migrate Inngest to Cloudflare Queues + Durable Objects
+- Cost savings: ~$20/month (after free tier)
+- Effort: 14-30 days
+
+### Phase 4: Hosting Evaluation (Month 2-3)
+- Evaluate Vercel → Cloudflare Pages per site
+- Potential savings: ~$20/user/month
+- Effort: 7-14 days per site
+
+### Phase 5: AI Optimization (Month 3-4)
+- Gradual migration to Workers AI where suitable
+- Keep premium APIs for advanced features
+- Cost optimization, not full migration
+- Effort: 14-30 days
+
+## Cost Optimization Summary
+
+**Current Monthly Infrastructure Cost**: ~$500-1,000
+**Optimized Monthly Infrastructure Cost**: ~$200-400
+**Potential Savings**: ~$300-600/month (~$3,600-7,200/year)
+
+## Recommendations
+
+1. **Immediate**: Migrate Upstash Redis (clear win)
+2. **Short-term**: Migrate monitoring (Sentry) and workflows (Inngest)
+3. **Medium-term**: Evaluate hosting (Vercel), database (Neon), AI models
+4. **Long-term**: Only migrate analytics (PostHog), email (Resend), auth (WorkOS) if cost/control becomes issue
+5. **Never**: Keep Stripe, GitHub, npm (essential dependencies)
+
+## Conclusion
+
+Focus on **high-impact, low-risk** migrations in Phase 1-3 (Upstash, Sentry, Inngest). These provide clear cost savings, reduce external dependencies, and have straightforward migration paths. Evaluate Phase 4-5 migrations on a case-by-case basis.
