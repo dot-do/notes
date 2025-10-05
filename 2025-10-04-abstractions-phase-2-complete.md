@@ -4,6 +4,8 @@
 **Status:** Phase 2 Complete - All 7 generators implemented
 **LOC Generated:** ~70,000+ lines of production-ready code from single MDXLD
 
+> **📝 Historical Note:** This document reflects the original implementation. Function names referenced here (e.g., `generateAPI`, `validateForAPI`) have since been simplified to 1-2 words (e.g., `api`, `forApi`). See commit bde9a52 (2025-10-04) for the simplification refactor. The architecture and functionality remain unchanged.
+
 ## Executive Summary
 
 Phase 2 of the Business-as-Code Abstractions system is **complete**. All 7 protocol generators have been implemented, enabling the transformation of a single MDXLD definition into multiple production-ready implementations.

@@ -5,6 +5,8 @@
 **Architecture:** Single Cloudflare Worker + Durable Object
 **Protocols:** API, GraphQL, MCP, RPC, Web (all from one MDXLD)
 
+> **📝 Historical Note:** This document reflects the original implementation. Function names referenced here (e.g., `createExecutor`, `detectProtocol`, `parseRequestBody`) have since been simplified to 1-2 words (e.g., `executor`, `detect`, `parse`). See commit bde9a52 (2025-10-04) for the simplification refactor. The architecture and functionality remain unchanged.
+
 ## Executive Summary
 
 Phase 3 of the Business-as-Code Abstractions system is **complete**. We've built a **universal MDXLD execution engine** that runs code dynamically across all protocols without code generation or deployment cycles.
